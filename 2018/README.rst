@@ -9,4 +9,5 @@ fashion. For the record, *yes*, I am regretting this quite a bit.
 
 * Day 1: Chronal Calibration [SML]
 * Day 2: Inventory Management System [C]
+* Day 3: No Matter How You Slice It [Java]
 

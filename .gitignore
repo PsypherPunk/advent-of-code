@@ -1,6 +1,7 @@
 .idea/
 cmake-build-debug/
 CMakeLists.txt
+*.iml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

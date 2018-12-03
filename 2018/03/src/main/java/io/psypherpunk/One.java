@@ -6,10 +6,11 @@ import java.nio.file.Files;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Main {
+public class One {
 
     private static final String LINE = "^#([0-9]+) @ ([0-9]+),([0-9]+): ([0-9]+)x([0-9]+)$";
 
+    @SuppressWarnings("Duplicates")
     public static void main(String[] args) throws IOException  {
         Pattern pattern = Pattern.compile(LINE);
         int[][] sheet = new int[1000][1000];

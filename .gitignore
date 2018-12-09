@@ -2,6 +2,8 @@
 cmake-build-debug/
 CMakeLists.txt
 *.iml
+2018/06/one/
+2018/06/two/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

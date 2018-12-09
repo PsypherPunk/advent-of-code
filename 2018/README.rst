@@ -12,4 +12,5 @@ fashion. For the record, *yes*, I am regretting this quite a bit.
 * Day 3: No Matter How You Slice It [Java]
 * Day 4: Repose Record [C++]
 * Day 5: Alchemical Reduction [JavaScript]
+* Day 6: Chronal Coordinates [C#]
 

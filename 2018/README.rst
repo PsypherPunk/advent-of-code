@@ -14,6 +14,7 @@ fashion. For the record, *yes*, I am regretting this quite a bit.
 * Day 5: Alchemical Reduction [JavaScript]
 * Day 6: Chronal Coordinates [C#]
 * Day 7: The Sum of Its Parts [Python]*
+* Day 8: Memory Maneuver [Perl]
 
 \*Incomplete.
 

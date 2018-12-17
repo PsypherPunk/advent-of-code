@@ -16,6 +16,7 @@ fashion. For the record, *yes*, I am regretting this quite a bit.
 * Day 7: The Sum of Its Parts [Python]*
 * Day 8: Memory Maneuver [Perl]
 * Day 9: Marble Mania [TypeScript**]
+* Day 10: The Stars Align [Ruby]
 
 \*Incomplete
 

@@ -17,6 +17,7 @@ fashion. For the record, *yes*, I am regretting this quite a bit.
 * Day 8: Memory Maneuver [Perl]
 * Day 9: Marble Mania [TypeScript**]
 * Day 10: The Stars Align [Ruby]
+* Day 11: Chronal Charge [Python/Numpy]
 
 \*Incomplete
 

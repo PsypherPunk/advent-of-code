@@ -18,6 +18,7 @@ fashion. For the record, *yes*, I am regretting this quite a bit.
 * Day 9: Marble Mania [TypeScript**]
 * Day 10: The Stars Align [Ruby]
 * Day 11: Chronal Charge [Python/Numpy]
+* Day 12: Subterranean Sustainability [bash]
 
 \*Incomplete
 

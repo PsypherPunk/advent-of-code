@@ -13,14 +13,13 @@ fashion. For the record, *yes*, I am regretting this quite a bit.
 * Day 4: Repose Record [C++]
 * Day 5: Alchemical Reduction [JavaScript]
 * Day 6: Chronal Coordinates [C#]
-* Day 7: The Sum of Its Parts [Python]*
+* Day 7: The Sum of Its Parts [*]
 * Day 8: Memory Maneuver [Perl]
-* Day 9: Marble Mania [TypeScript**]
+* Day 9: Marble Mania [TypeScript/deno]
 * Day 10: The Stars Align [Ruby]
 * Day 11: Chronal Charge [Python/Numpy]
 * Day 12: Subterranean Sustainability [bash]
+* Day 13: Mine Cart Madness [Lua]
 
 \*Incomplete
-
-\*\*Using `Deno <https://github.com/denoland/deno>`_.
 

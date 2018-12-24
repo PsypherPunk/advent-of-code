@@ -20,6 +20,7 @@ fashion. For the record, *yes*, I am regretting this quite a bit.
 * Day 11: Chronal Charge [Python/Numpy]
 * Day 12: Subterranean Sustainability [bash]
 * Day 13: Mine Cart Madness [Lua]
+* Day 14: Chocolate Charts [Tcl]
 
 \*Incomplete
 

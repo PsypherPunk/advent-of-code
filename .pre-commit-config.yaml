@@ -1,0 +1,8 @@
+repos:
+-   repo: local
+    hooks:
+    - id: rst-lint
+      name: rst-lint
+      entry: rst-lint
+      language: system
+      files: '^.+\.rst$'

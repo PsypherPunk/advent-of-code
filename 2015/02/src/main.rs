@@ -28,11 +28,15 @@ pub fn format_number(number: usize) -> String {
     reverse.join(",")
 }
 
-pub fn present_wrapping_paper(input: &str) -> usize {
-    let dimensions = input
+fn parse_dimensions(input: &str) -> Vec<usize> {
+    input
         .split("x")
         .map(|n| n.parse::<usize>().unwrap())
-        .collect::<Vec<usize>>();
+        .collect::<Vec<usize>>()
+}
+
+fn present_wrapping_paper(input: &str) -> usize {
+    let dimensions = parse_dimensions(input);
     let l = dimensions[0];
     let w = dimensions[1];
     let h = dimensions[2];
@@ -42,7 +46,7 @@ pub fn present_wrapping_paper(input: &str) -> usize {
     sides.iter().sum::<usize>() + (*sides.iter().min().unwrap() / 2)
 }
 
-fn calculate_wrapping_paper(input: String) -> usize {
+fn calculate_wrapping_paper(input: &String) -> usize {
     let mut total_wrapping_paper = 0;
     for line in input.lines() {
         total_wrapping_paper += present_wrapping_paper(line);
@@ -50,10 +54,30 @@ fn calculate_wrapping_paper(input: String) -> usize {
     total_wrapping_paper
 }
 
+fn present_ribbon(input: &str) -> usize {
+    let mut dimensions = parse_dimensions(input);
+    let l = dimensions[0];
+    let w = dimensions[1];
+    let h = dimensions[2];
+    dimensions.sort();
+
+    (2 * dimensions[0]) + (2 * dimensions[1]) + l * w * h
+}
+
+fn calculate_ribbon(input: &String) -> usize {
+    let mut total_ribbon = 0;
+    for line in input.lines() {
+        total_ribbon += present_ribbon(line);
+    }
+    total_ribbon
+}
+
 fn main() {
     let input = read_input();
-    let total_wrapping_paper = calculate_wrapping_paper(input);
-    print!("The elves will need {} square feet of wrapping paper.", format_number(total_wrapping_paper));
+    let total_wrapping_paper = calculate_wrapping_paper(&input);
+    let total_ribbon = calculate_ribbon(&input);
+    println!("The elves will need {} square feet of wrapping paper.", format_number(total_wrapping_paper));
+    println!("The elves will need {} feet of ribbon.", format_number(total_ribbon));
 }
 
 #[cfg(test)]
@@ -61,12 +85,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_2_3_4() {
+    fn test_wrapping_2_3_4() {
         assert_eq!(present_wrapping_paper("2x3x4"), 58);
     }
 
     #[test]
-    fn test_1_1_10() {
+    fn test_wrapping_1_1_10() {
         assert_eq!(present_wrapping_paper("1x1x10"), 43);
+    }
+
+    #[test]
+    fn test_ribbon_2_3_4() {
+        assert_eq!(present_ribbon("2x3x4"), 34);
+    }
+
+    #[test]
+    fn test_ribbon_1_1_10() {
+        assert_eq!(present_ribbon("1x1x10"), 14);
     }
 }

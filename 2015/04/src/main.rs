@@ -17,11 +17,11 @@ fn read_input() -> String {
     }
 }
 
-fn get_nonce(secret_key: String) -> usize {
+fn get_nonce(secret_key: String, prefix_count: usize) -> usize {
     for nonce in 1.. {
         let input = format!("{}{}", &secret_key, nonce.to_string().as_str());
         let digest = format!("{:x}", md5::compute(input.as_bytes()));
-        if digest.starts_with("00000") {
+        if digest.starts_with(&"0".repeat(prefix_count)) {
             return nonce;
         }
     }
@@ -30,8 +30,10 @@ fn get_nonce(secret_key: String) -> usize {
 
 fn main() {
     let input = read_input();
-    let nonce = get_nonce(String::from(input.trim()));
-    println!("The lowest number that produces such a hash is {}", nonce);
+    for n in [5, 6].iter() {
+        let nonce = get_nonce(String::from(input.trim()), *n);
+        println!("The lowest number that produces a hash with {} zeroes is {}", n, nonce);
+    }
 }
 
 #[cfg(test)]
@@ -40,11 +42,11 @@ mod tests {
 
     #[test]
     fn test_abcdef() {
-        assert_eq!(get_nonce(String::from("abcdef")), 609043);
+        assert_eq!(get_nonce(String::from("abcdef"), 5), 609043);
     }
 
     #[test]
     fn test_pqrstuv() {
-        assert_eq!(get_nonce(String::from("pqrstuv")), 1048970);
+        assert_eq!(get_nonce(String::from("pqrstuv"), 5), 1048970);
     }
 }

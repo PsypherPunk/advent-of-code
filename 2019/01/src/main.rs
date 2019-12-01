@@ -8,29 +8,53 @@ fn read_input() -> String {
             let mut content = String::new();
             file.read_to_string(&mut content).unwrap();
             content
-        },
+        }
         Err(error) => {
             panic!("Error opening file {}: {}", filename, error);
         }
     }
 }
 
-fn get_fuel_for_module_of(mass: usize) -> usize {
+fn get_fuel_for_module(mass: isize) -> isize {
     (mass / 3) - 2
 }
 
-fn get_total_fuel_requirement(input: String) -> usize {
+fn get_total_fuel_requirement(input: &String) -> isize {
     input
         .lines()
-        .map(|line| line.parse::<usize>().unwrap())
-        .map(|mass| get_fuel_for_module_of(mass))
+        .map(|line| line.parse::<isize>().unwrap())
+        .map(|mass| get_fuel_for_module(mass))
+        .sum()
+}
+
+fn get_fuel_for_module_including_fuel(mass: isize) -> isize {
+    let fuel_for_mass = (mass / 3) - 2;
+    match fuel_for_mass {
+        fuel if fuel <= 0 => 0,
+        _ => fuel_for_mass + get_fuel_for_module_including_fuel(fuel_for_mass),
+    }
+}
+
+fn get_total_fuel_requirement_including_fuel(input: String) -> isize {
+    input
+        .lines()
+        .map(|line| line.parse::<isize>().unwrap())
+        .map(|mass| get_fuel_for_module_including_fuel(mass))
         .sum()
 }
 
 fn main() {
     let input = read_input();
-    let total_fuel_requirement = get_total_fuel_requirement(input);
-    println!("The sum of the fuel requirements is {}.", total_fuel_requirement);
+    let total_fuel_requirement = get_total_fuel_requirement(&input);
+    let total_fuel_requirement_including_fuel = get_total_fuel_requirement_including_fuel(input);
+    println!(
+        "The sum of the fuel requirements is: {}",
+        total_fuel_requirement
+    );
+    println!(
+        "The sum of the fuel requirements, including fuel, is: {}",
+        total_fuel_requirement_including_fuel
+    );
 }
 
 #[cfg(test)]
@@ -39,21 +63,36 @@ mod tests {
 
     #[test]
     fn test_12() {
-        assert_eq!(get_fuel_for_module_of(12), 2);
+        assert_eq!(get_fuel_for_module(12), 2);
     }
 
     #[test]
     fn test_14() {
-        assert_eq!(get_fuel_for_module_of(14), 2);
+        assert_eq!(get_fuel_for_module(14), 2);
     }
 
     #[test]
     fn test_1969() {
-        assert_eq!(get_fuel_for_module_of(1969), 654);
+        assert_eq!(get_fuel_for_module(1969), 654);
     }
 
     #[test]
     fn test_100756() {
-        assert_eq!(get_fuel_for_module_of(100756), 33583);
+        assert_eq!(get_fuel_for_module(100756), 33583);
+    }
+
+    #[test]
+    fn test_14_inc_fuel() {
+        assert_eq!(get_fuel_for_module_including_fuel(14), 2);
+    }
+
+    #[test]
+    fn test_1969_inc_fuel() {
+        assert_eq!(get_fuel_for_module_including_fuel(1969), 966);
+    }
+
+    #[test]
+    fn test_100756_inc_fuel() {
+        assert_eq!(get_fuel_for_module_including_fuel(100756), 50346);
     }
 }

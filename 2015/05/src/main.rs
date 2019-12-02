@@ -28,7 +28,15 @@ fn is_string_nice(string: &str) -> bool {
         && twice_in_a_row.find(string).unwrap().is_some()
 }
 
-fn count_nice_strings(input: String) -> usize {
+fn is_string_nice_new_rules(string: &str) -> bool {
+    let two_letters_repeated= FRegex::new(r"(..).*\1").unwrap();
+    let one_letter_repeated_with_one_between = FRegex::new(r"(.).\1").unwrap();
+
+    two_letters_repeated.find(string).unwrap().is_some()
+        && one_letter_repeated_with_one_between.find(string).unwrap().is_some()
+}
+
+fn count_nice_strings(input: &String) -> usize {
     input
         .lines()
         .map(|line| is_string_nice(line))
@@ -36,9 +44,18 @@ fn count_nice_strings(input: String) -> usize {
         .count()
 }
 
+fn count_nice_strings_new_rules(input: String) -> usize {
+    input
+        .lines()
+        .map(|line| is_string_nice_new_rules(line))
+        .filter(|nn| *nn)
+        .count()
+}
+
 fn main() {
     let input = read_input();
-    println!("Number of nice strings: {}", count_nice_strings(input));
+    println!("Number of nice strings: {}", count_nice_strings(&input));
+    println!("Number of nice strings under the new rules: {}", count_nice_strings_new_rules(input));
 }
 
 #[cfg(test)]
@@ -68,5 +85,25 @@ mod tests {
     #[test]
     fn test_dvszwmarrgswjxmb() {
         assert_eq!(is_string_nice("dvszwmarrgswjxmb"), false);
+    }
+
+    #[test]
+    fn test_qjhvhtzxzqqjkmpb() {
+        assert_eq!(is_string_nice_new_rules("qjhvhtzxzqqjkmpb"), true);
+    }
+
+    #[test]
+    fn test_xxyxx() {
+        assert_eq!(is_string_nice_new_rules("xxyxx"), true);
+    }
+
+    #[test]
+    fn test_uurcxstgmygtbstg() {
+        assert_eq!(is_string_nice_new_rules("uurcxstgmygtbstg"), false);
+    }
+
+    #[test]
+    fn test_ieodomkazucvgmuy() {
+        assert_eq!(is_string_nice_new_rules("ieodomkazucvgmuy"), false);
     }
 }

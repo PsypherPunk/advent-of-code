@@ -68,7 +68,10 @@ fn main() {
 
     let final_state = find_noun_verb(input);
     println!("{:?}", final_state);
-    println!("100 * noun + verb is {}", 100 * final_state[1] + final_state[2]);
+    println!(
+        "100 * noun + verb is {}",
+        100 * final_state[1] + final_state[2]
+    );
 }
 
 #[cfg(test)]

@@ -32,7 +32,10 @@ fn main() {
     let input = read_input();
     for n in [5, 6].iter() {
         let nonce = get_nonce(String::from(input.trim()), *n);
-        println!("The lowest number that produces a hash with {} zeroes is {}", n, nonce);
+        println!(
+            "The lowest number that produces a hash with {} zeroes is {}",
+            n, nonce
+        );
     }
 }
 

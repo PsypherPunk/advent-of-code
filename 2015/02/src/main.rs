@@ -76,8 +76,14 @@ fn main() {
     let input = read_input();
     let total_wrapping_paper = calculate_wrapping_paper(&input);
     let total_ribbon = calculate_ribbon(&input);
-    println!("The elves will need {} square feet of wrapping paper.", format_number(total_wrapping_paper));
-    println!("The elves will need {} feet of ribbon.", format_number(total_ribbon));
+    println!(
+        "The elves will need {} square feet of wrapping paper.",
+        format_number(total_wrapping_paper)
+    );
+    println!(
+        "The elves will need {} feet of ribbon.",
+        format_number(total_ribbon)
+    );
 }
 
 #[cfg(test)]

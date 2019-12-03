@@ -23,17 +23,25 @@ fn is_string_nice(string: &str) -> bool {
     let disallowed = FRegex::new(r"(ab|cd|pq|xy)").unwrap();
     let twice_in_a_row = FRegex::new(r"(.)\1").unwrap();
 
-    vowels.find_iter(string).map(|m| m.as_str()).collect::<Vec<&str>>().len() >= 3
+    vowels
+        .find_iter(string)
+        .map(|m| m.as_str())
+        .collect::<Vec<&str>>()
+        .len()
+        >= 3
         && disallowed.find(string).unwrap().is_none()
         && twice_in_a_row.find(string).unwrap().is_some()
 }
 
 fn is_string_nice_new_rules(string: &str) -> bool {
-    let two_letters_repeated= FRegex::new(r"(..).*\1").unwrap();
+    let two_letters_repeated = FRegex::new(r"(..).*\1").unwrap();
     let one_letter_repeated_with_one_between = FRegex::new(r"(.).\1").unwrap();
 
     two_letters_repeated.find(string).unwrap().is_some()
-        && one_letter_repeated_with_one_between.find(string).unwrap().is_some()
+        && one_letter_repeated_with_one_between
+            .find(string)
+            .unwrap()
+            .is_some()
 }
 
 fn count_nice_strings(input: &String) -> usize {
@@ -55,7 +63,10 @@ fn count_nice_strings_new_rules(input: String) -> usize {
 fn main() {
     let input = read_input();
     println!("Number of nice strings: {}", count_nice_strings(&input));
-    println!("Number of nice strings under the new rules: {}", count_nice_strings_new_rules(input));
+    println!(
+        "Number of nice strings under the new rules: {}",
+        count_nice_strings_new_rules(input)
+    );
 }
 
 #[cfg(test)]

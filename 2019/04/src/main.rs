@@ -18,16 +18,26 @@ fn read_input() -> String {
     }
 }
 
-fn has_two_adjacent_digits_the_same(password: &usize) -> bool {
-    let duplicates = password
+fn get_adjacent_duplicates(password: &usize) -> Vec<String> {
+    password
         .to_string()
         .chars()
         .group_by(|&x| x)
         .into_iter()
         .map(|(_, r)| r.collect())
-        .collect::<Vec<String>>();
+        .collect::<Vec<String>>()
+}
+
+fn has_two_adjacent_digits_the_same(password: &usize) -> bool {
+    let duplicates = get_adjacent_duplicates(&password);
 
     duplicates.iter().filter(|g| g.len() > 1).count() > 0
+}
+
+fn has_exactly_two_adjacent_digits_the_same(password: &usize) -> bool {
+    let duplicates = get_adjacent_duplicates(&password);
+
+    duplicates.iter().filter(|g| g.len() == 2).count() > 0
 }
 
 fn has_non_decreasing_digits(password: &usize) -> bool {
@@ -53,10 +63,29 @@ fn get_possible_password_count(input: &String) -> usize {
     possibility_count
 }
 
+fn get_better_possible_password_count(input: String) -> usize {
+    let inputs = input.trim().split("-").collect::<Vec<&str>>();
+
+    let start = inputs[0].parse::<usize>().unwrap();
+    let end = inputs[1].parse::<usize>().unwrap();
+
+    let mut possibility_count = 0;
+    for possibility in start..=end {
+        if has_non_decreasing_digits(&possibility)
+            && has_exactly_two_adjacent_digits_the_same(&possibility)
+        {
+            possibility_count += 1;
+        }
+    }
+    possibility_count
+}
+
 fn main() {
     let input = read_input();
     let possible_password_count = get_possible_password_count(&input);
-    println!("How many different passwords within the range given in your puzzle input meet all of the criteria? {}", possible_password_count)
+    println!("How many different passwords within the range given in your puzzle input meet all of the criteria? {}", possible_password_count);
+    let better_possible_password_count = get_better_possible_password_count(input);
+    println!("How many different passwords within the range given in your puzzle input meet all of the criteria? {}", better_possible_password_count);
 }
 
 #[cfg(test)]
@@ -84,6 +113,30 @@ mod tests {
         assert_eq!(
             get_possible_password_count(&String::from("123789-123789")),
             0
+        );
+    }
+
+    #[test]
+    fn test_112233() {
+        assert_eq!(
+            get_better_possible_password_count(String::from("112233-112233")),
+            1,
+        );
+    }
+
+    #[test]
+    fn test_123444() {
+        assert_eq!(
+            get_better_possible_password_count(String::from("123444-123444")),
+            0,
+        );
+    }
+
+    #[test]
+    fn test_111122() {
+        assert_eq!(
+            get_better_possible_password_count(String::from("111122-111122")),
+            1,
         );
     }
 }

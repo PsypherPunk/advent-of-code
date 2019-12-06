@@ -40,6 +40,36 @@ fn count_orbits(orbits: &HashMap<&str, &str>) -> usize {
     orbits.keys().map(|o| get_transfer(o, 0, orbits)).sum()
 }
 
+fn get_route<'a>(
+    satellite: &'a str,
+    orbits: &'a HashMap<&'a str, &'a str>,
+    route: &'a mut Vec<&'a str>,
+) -> &'a mut Vec<&'a str> {
+    if satellite == "COM" {
+        route
+    } else {
+        let next = orbits.get(satellite).unwrap();
+        route.push(satellite);
+        get_route(next, orbits, route)
+    }
+}
+
+fn get_minimum_orbital_transfers(orbits: &HashMap<&str, &str>) -> usize {
+    let mut you_route: Vec<&str> = Vec::new();
+    let you_path = get_route("YOU", orbits, &mut you_route);
+
+    let mut san_route: Vec<&str> = Vec::new();
+    let san_path = get_route("SAN", orbits, &mut san_route);
+
+    for (distance, obj) in you_path.iter().enumerate() {
+        match san_path.iter().position(|&o| &o == obj) {
+            Some(o) => return distance + o - 2,
+            None => {}
+        }
+    }
+    panic!("Couldn't find a route to Santa!");
+}
+
 fn main() {
     let input = read_input();
     let orbits = read_map(&input);
@@ -48,6 +78,11 @@ fn main() {
         "What is the total number of direct and indirect orbits in your map data? {}",
         total_orbits
     );
+    let minimum_orbital_transfers = get_minimum_orbital_transfers(&orbits);
+    println!(
+        "What is the minimum number of orbital transfers required…? {}",
+        minimum_orbital_transfers
+    );
 }
 
 #[cfg(test)]
@@ -55,7 +90,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_map() {
+    fn test_one() {
         let input = String::from(
             r#"COM)B
 B)C
@@ -71,5 +106,26 @@ K)L"#,
         );
         let orbits = read_map(&input);
         assert_eq!(count_orbits(&orbits), 42);
+    }
+
+    #[test]
+    fn test_two() {
+        let input = String::from(
+            r#"COM)B
+B)C
+C)D
+D)E
+E)F
+B)G
+G)H
+D)I
+E)J
+J)K
+K)L
+K)YOU
+I)SAN"#,
+        );
+        let orbits = read_map(&input);
+        assert_eq!(get_minimum_orbital_transfers(&orbits), 4);
     }
 }

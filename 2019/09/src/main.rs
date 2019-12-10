@@ -167,6 +167,13 @@ fn main() {
     let mut amplifier: Amplifier = Amplifier::new(&input);
     let boost = amplifier.run(None, 1);
     println!("What BOOST keycode does it produce? {}", boost.unwrap());
+
+    let mut amplifier: Amplifier = Amplifier::new(&input);
+    let distress_signal = amplifier.run(None, 2);
+    println!(
+        "What are the coordinates of the distress signal? {}",
+        distress_signal.unwrap(),
+    );
 }
 
 #[cfg(test)]

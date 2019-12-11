@@ -85,6 +85,28 @@ impl Robot {
             }
         };
     }
+
+    fn render(&self) {
+        let mut y_coords = self.squares.keys()
+            .map(|(_, y)| *y)
+            .collect::<Vec<isize>>();
+        y_coords.sort();
+        let mut x_coords = self.squares.keys()
+            .map(|(x, _)| *x)
+            .collect::<Vec<isize>>();
+        x_coords.sort();
+        for y in (*y_coords.first().unwrap()..=*y_coords.last().unwrap()).rev() {
+            for x in *x_coords.first().unwrap()..=*x_coords.last().unwrap() {
+                let square = match self.squares.get(&(x, y)) {
+                    Some(1) => '#',
+                    _ => ' ',
+                };
+                print!("{}", square);
+            }
+            print!("\n");
+        }
+
+    }
 }
 
 impl Intcode {
@@ -244,6 +266,7 @@ fn parse_opcodes(initial_state: &String) -> Vec<isize> {
 
 fn main() {
     let input = read_input();
+
     let mut robot = Robot::new(&input);
     robot.intcode.inputs.push(0);
     loop {
@@ -258,7 +281,6 @@ fn main() {
         };
         robot.rotate(rotation);
         robot.advance();
-        println!("{:?}", robot.location);
         let input = match robot.squares.get(&robot.location) {
             Some(c) => *c,
             None => 0,
@@ -266,6 +288,28 @@ fn main() {
         robot.intcode.inputs.push(input);
     }
     println!("How many panels does it paint at least once? {}", robot.squares.keys().len());
+
+    let mut robot = Robot::new(&input);
+    robot.intcode.inputs.push(1);
+    loop {
+        let colour = match robot.intcode.run() {
+            Some(n) => n,
+            None => break,
+        };
+        robot.squares.insert(robot.location, colour);
+        let rotation = match robot.intcode.run() {
+            Some(n) => n,
+            None => break,
+        };
+        robot.rotate(rotation);
+        robot.advance();
+        let input = match robot.squares.get(&robot.location) {
+            Some(c) => *c,
+            None => 0,
+        };
+        robot.intcode.inputs.push(input);
+    }
+    robot.render();
 }
 
 #[cfg(test)]

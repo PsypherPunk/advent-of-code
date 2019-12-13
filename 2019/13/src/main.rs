@@ -1,6 +1,10 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
+use std::{thread, time};
+
+use termion::{clear, cursor};
 
 #[derive(Clone, Debug)]
 struct Intcode {
@@ -13,7 +17,8 @@ struct Intcode {
 #[derive(Clone, Debug)]
 struct Cabinet {
     intcode: Intcode,
-    screen: HashMap<(isize, isize), isize>
+    screen: HashMap<(isize, isize), isize>,
+    score: isize,
 }
 
 impl Cabinet {
@@ -21,7 +26,33 @@ impl Cabinet {
         Cabinet {
             intcode: Intcode::new(input),
             screen: HashMap::new(),
+            score: 0,
         }
+    }
+
+    fn render(&self) {
+        let width = self.screen.keys().map(|(x, _)| *x).max().unwrap();
+        let height = self.screen.keys().map(|(_, y)| *y).max().unwrap();
+        print!("{}{}", clear::All, cursor::Goto(1, 1));
+        for y in 0..=height {
+            for x in 0..=width {
+                let tile = match self.screen.get(&(x as isize, y as isize)) {
+                    Some(t) => match t {
+                        0 => " ",
+                        1 => "+",
+                        2 => "#",
+                        3 => "=",
+                        4 => "@",
+                        _ => panic!("Oops!"),
+                    },
+                    None => " ",
+                };
+                print!("{}", tile);
+            }
+            println!();
+        }
+        println!("Score: {}", self.score);
+        thread::sleep(time::Duration::from_millis(10));
     }
 }
 
@@ -202,6 +233,39 @@ fn main() {
     println!(
         "How many block tiles are on the screen when the game exits? {}",
         blocks.len()
+    );
+
+    let mut cabinet = Cabinet::new(&input);
+    cabinet.intcode.opcode[0] = 2;
+    'outer: loop {
+        let mut tile: [isize; 3] = [0, 0, 0];
+        for i in 0..=2 {
+            tile[i] = match cabinet.intcode.run() {
+                Some(n) => n,
+                None => break 'outer,
+            };
+        }
+        if tile[0] == -1 && tile[1] == 0 {
+            cabinet.score = tile[2];
+        } else {
+            cabinet.screen.insert((tile[0], tile[1]), tile[2]);
+        }
+        let ball = cabinet.screen.iter().find(|(_, tile)| *tile == &4);
+        let paddle = cabinet.screen.iter().find(|(_, tile)| *tile == &3);
+        if let Some(ball) = ball {
+            if let Some(paddle) = paddle {
+                match (ball.0).0.cmp(&(paddle.0).0) {
+                    Ordering::Less => cabinet.intcode.inputs.push(-1),
+                    Ordering::Greater => cabinet.intcode.inputs.push(1),
+                    Ordering::Equal => cabinet.intcode.inputs.push(0),
+                }
+            }
+        }
+        cabinet.render();
+    }
+    println!(
+        "What is your score after the last block is broken? {}",
+        cabinet.score
     );
 }
 

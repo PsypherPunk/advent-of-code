@@ -17,8 +17,9 @@ fn read_input() -> String {
 
 fn parse_digits(input: &str) -> Vec<isize> {
     input
-        .lines()
-        .flat_map(|line| line.chars().map(|n| n.to_digit(10).unwrap() as isize))
+        .trim()
+        .chars()
+        .map(|n| n.to_digit(10).unwrap() as isize)
         .collect::<Vec<isize>>()
 }
 
@@ -52,11 +53,37 @@ fn fft(digits: &[isize], phase: usize) -> String {
         }
         input = elements.clone();
     }
-    let output = input
+    input
         .iter()
         .map(|digit| digit.to_string())
-        .collect::<Vec<String>>();
-    output.join("")
+        .collect::<String>()
+}
+
+fn fft2(input: &str, phases: usize) -> String {
+    let offset = input
+        .chars()
+        .take(7)
+        .collect::<String>()
+        .parse::<usize>()
+        .unwrap();
+    let mut digits = input
+        .chars()
+        .map(|c| c.to_string().parse::<isize>().unwrap())
+        .cycle()
+        .take(input.len() * 10_000)
+        .skip(offset)
+        .collect::<Vec<isize>>();
+
+    for _ in 0..phases {
+        for i in (0..digits.len() - 1).rev() {
+            digits[i] = (digits[i] + digits[i + 1]) % 10;
+        }
+    }
+
+    digits[..8]
+        .iter()
+        .map(|n| n.to_string())
+        .collect::<String>()
 }
 
 fn main() {
@@ -66,6 +93,13 @@ fn main() {
     println!(
         "…what are the first eight digits in the final output list? {}",
         &output[..8]
+    );
+
+    let input = read_input();
+    let output = fft2(&input.trim(), 100);
+    println!(
+        "…what is the eight-digit message embedded in the final output list? {}",
+        output,
     )
 }
 
@@ -102,5 +136,26 @@ mod tests {
         let digits = parse_digits(&input);
         let output = fft(&digits, 100);
         assert_eq!("52432133", &output[..8]);
+    }
+
+    #[test]
+    fn test_03036732577212944063491565474664() {
+        let input = String::from("03036732577212944063491565474664");
+        let output = fft2(&input, 100);
+        assert_eq!("84462026", output);
+    }
+
+    #[test]
+    fn test_02935109699940807407585447034323() {
+        let input = String::from("02935109699940807407585447034323");
+        let output = fft2(&input, 100);
+        assert_eq!("78725270", output);
+    }
+
+    #[test]
+    fn test_03081770884921959731165446850517() {
+        let input = String::from("03081770884921959731165446850517");
+        let output = fft2(&input, 100);
+        assert_eq!("53553731", output);
     }
 }

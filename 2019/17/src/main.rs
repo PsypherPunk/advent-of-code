@@ -21,6 +21,10 @@ impl Droid {
             position: (0, 0),
         }
     }
+
+    fn wake_up(&mut self) {
+        self.intcode.opcode[0] = 2;
+    }
 }
 
 impl Intcode {
@@ -185,7 +189,7 @@ fn map_shield(droid: &mut Droid) -> Vec<Vec<char>> {
     while let Some(c) = droid.intcode.run() {
         match char::from(c as u8) {
             '\n' => {
-                if row.len() > 0 {
+                if !row.is_empty() {
                     shield.push(row);
                     row = Vec::new();
                 }
@@ -216,18 +220,56 @@ fn locate_intersections(shield: &[Vec<char>]) -> Vec<(usize, usize)> {
     intersections
 }
 
+fn render_shield(shield: &[Vec<char>]) {
+    for row in shield.iter() {
+        for point in row.iter() {
+            print!("{}", point);
+        }
+        println!();
+    }
+}
+
 fn main() {
     let input = read_input();
     let mut droid = Droid::new(&input.trim());
 
     let shield = map_shield(&mut droid);
-    println!("{:?}", shield);
     let intersections = locate_intersections(&shield);
     let sum_alignment_parameters: usize = intersections.iter().map(|(x, y)| *x * *y).sum();
     println!(
         "What is the sum of the alignment parameters for the scaffold intersections? {}",
         sum_alignment_parameters
     );
+
+    let mut droid = Droid::new(&input.trim());
+    droid.wake_up();
+    //    let shield = map_shield(&mut droid);
+    //    render_shield(&shield);
+    // After displaying the shield, mapped the following by hand…
+    let main_movement_routine = "A,B,B,A,B,C,A,C,B,C";
+    let a = "L,4,L,6,L,8,L,12";
+    let b = "L,8,R,12,L,12";
+    let c = "R,12,L,6,L,6,L,8";
+    let feed = "n";
+
+    let instructions = vec![main_movement_routine, a, b, c, feed];
+    let mut inputs = Vec::new();
+    for instruction in instructions.iter() {
+        for ch in instruction.chars() {
+            inputs.push(ch as isize);
+        }
+        inputs.push('\n' as isize);
+    }
+    inputs.reverse();
+    droid.intcode.inputs.append(inputs.as_mut());
+    while let Some(output) = droid.intcode.run() {
+        if !char::from(output as u8).is_ascii() {
+            println!(
+                "…how much dust does the vacuum robot report it has collected? {}",
+                output
+            );
+        }
+    }
 }
 
 #[cfg(test)]

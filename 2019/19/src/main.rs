@@ -23,15 +23,41 @@ impl Drone {
         let mut total: usize = 0;
         for y in 0..size {
             for x in 0..size {
-                let intcode = self.intcode.clone();
-                self.intcode.inputs.push(y as isize);
-                self.intcode.inputs.push(x as isize);
-                if let 1 = self.intcode.run().unwrap() { total += 1 }
-                self.intcode = intcode;
+                if let 1 = self.get_point_pulled(x, y) {
+                    total += 1
+                };
             }
         }
 
         total
+    }
+
+    fn get_point_pulled(&mut self, x: usize, y: usize) -> isize {
+        let intcode = self.intcode.clone();
+
+        self.intcode.inputs.push(y as isize);
+        self.intcode.inputs.push(x as isize);
+        let output = self.intcode.run().unwrap();
+        self.intcode = intcode;
+        output
+    }
+
+    fn get_nearest_corner_in_fit(&mut self, size: usize) -> (usize, usize) {
+        let size = size - 1;
+
+        for y in size.. {
+            for x in 0.. {
+                if let 1 = self.get_point_pulled(x, y) {
+                    if self.get_point_pulled(x + size, y - size) == 1 {
+                        return (x, y - size);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        (0, 0)
     }
 }
 
@@ -184,6 +210,12 @@ fn main() {
         "How many points are affected by the tractor beam in the 50x50 area closest to the emitter? {}",
         drone.scan(50),
     );
+
+    let (x, y) = drone.get_nearest_corner_in_fit(100);
+    println!(
+        "What value do you get if you take that point's X coordinate, multiply it by 10000, then add the point's Y coordinate? {}",
+        (x * 10_000) + y,
+    )
 }
 
 #[cfg(test)]

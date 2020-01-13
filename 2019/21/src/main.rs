@@ -19,6 +19,21 @@ impl Springdroid {
             intcode: Intcode::new(input),
         }
     }
+
+    fn run_springscript(&mut self, springscript: &str) -> Option<isize> {
+        for ch in springscript.chars() {
+            self.intcode.inputs.push_back(ch as isize);
+        }
+
+        while let Some(output) = self.intcode.run() {
+            if output > 0 && output <= 127 {
+                print!("{}", char::from(output as u8));
+            } else {
+                return Some(output);
+            }
+        }
+        None
+    }
 }
 
 impl Intcode {
@@ -164,24 +179,33 @@ fn parse_opcodes(initial_state: &str) -> Vec<isize> {
 
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt.");
-    let mut droid = Springdroid::new(&input.trim());
 
-    let springscript = r#"OR A T
-AND B T
+    let mut droid = Springdroid::new(&input.trim());
+    let part_one = r#"OR A T
 AND C T
 NOT T J
 AND D J
 WALK
 "#;
-    for ch in springscript.chars() {
-        droid.intcode.inputs.push_back(ch as isize);
+    if let Some(output) = droid.run_springscript(part_one) {
+        println!("What amount of hull damage does it report? {}", output);
     }
-    while let Some(output) = droid.intcode.run() {
-        if char::from(output as u8).is_ascii() {
-            print!("{}", char::from(output as u8));
-        } else {
-            println!("What amount of hull damage does it report? {}", output);
-        }
+
+    let mut droid = Springdroid::new(&input.trim());
+    let part_two = r#"OR B J
+AND C J
+NOT J J
+AND D J
+AND H J
+NOT A T
+OR T J
+RUN
+"#;
+    if let Some(output) = droid.run_springscript(part_two) {
+        println!(
+            "What amount of hull damage does the springdroid now report? {}",
+            output,
+        );
     }
 }
 

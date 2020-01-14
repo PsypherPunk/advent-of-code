@@ -231,6 +231,66 @@ fn network(mut computers: Vec<Computer>) -> isize {
         for computer in computers.iter_mut() {
             if computer.intcode.state == State::NeedInput {
                 computer.intcode.inputs.push_back(-1);
+                computer.intcode.state = State::Ready;
+            }
+        }
+    }
+}
+
+fn natwork(mut computers: Vec<Computer>) -> isize {
+    let mut nat: Vec<Packet> = Vec::new();
+    let mut y: isize = -1;
+    let mut packets: VecDeque<Packet> = VecDeque::new();
+
+    loop {
+        // Receive packets.
+        for computer in computers.iter_mut() {
+            if let Some(packet) = computer.run() {
+                packets.push_back(packet);
+            }
+        }
+
+        // Dispatch packets.
+        while !packets.is_empty() {
+            let packet = packets.pop_front().unwrap();
+            if packet.destination == 255 {
+                nat.push(packet);
+            } else {
+                computers[packet.destination as usize]
+                    .intcode
+                    .inputs
+                    .push_back(packet.x);
+                computers[packet.destination as usize]
+                    .intcode
+                    .inputs
+                    .push_back(packet.y);
+                computers[packet.destination as usize].intcode.state = State::Ready;
+            }
+        }
+
+        // If all computers are idle, NAT it.
+        let waiting = computers
+            .iter()
+            .filter(|computer| computer.intcode.state == State::NeedInput)
+            .count();
+        if waiting == computers.len() && !nat.is_empty() {
+            let packet = nat.pop().unwrap();
+            nat.clear();
+            if y == packet.y {
+                return y;
+            } else {
+                y = packet.y;
+            }
+            computers[0].intcode.inputs.push_back(packet.x);
+            computers[0].intcode.inputs.push_back(packet.y);
+            computers[0].intcode.state = State::Ready;
+        }
+
+        // Pass -1 to all computers awaiting input.
+        for computer in computers.iter_mut() {
+            if computer.intcode.state == State::NeedInput {
+                computer.intcode.inputs.push_back(-1);
+                computer.intcode.state = State::Ready;
             }
         }
     }
@@ -242,11 +302,18 @@ fn main() {
     let computers = (0..50)
         .map(|address| Computer::new(&input, address))
         .collect::<Vec<Computer>>();
-
     println!(
         "What is the Y value of the first packet sent to address 255? {}",
         network(computers),
     );
+
+    let computers = (0..50)
+        .map(|address| Computer::new(&input, address))
+        .collect::<Vec<Computer>>();
+    println!(
+        "What is the first Y value delivered by the NAT to the computer at address 0 twice in a row? {}",
+        natwork(computers),
+    )
 }
 
 #[cfg(test)]

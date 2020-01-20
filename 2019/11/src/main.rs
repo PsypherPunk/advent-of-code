@@ -27,7 +27,7 @@ struct Robot {
 }
 
 impl Robot {
-    fn new(input: &String) -> Robot {
+    fn new(input: &str) -> Robot {
         Robot {
             location: (0, 0),
             orientation: Orientation::Up,
@@ -38,18 +38,10 @@ impl Robot {
 
     fn advance(&mut self) {
         self.location = match self.orientation {
-            Orientation::Up => {
-                (self.location.0, self.location.1 + 1)
-            },
-            Orientation::Right => {
-                (self.location.0 + 1, self.location.1)
-            },
-            Orientation::Down => {
-                (self.location.0, self.location.1 - 1)
-            },
-            Orientation::Left => {
-                (self.location.0 - 1, self.location.1)
-            },
+            Orientation::Up => (self.location.0, self.location.1 - 1),
+            Orientation::Right => (self.location.0 + 1, self.location.1),
+            Orientation::Down => (self.location.0, self.location.1 + 1),
+            Orientation::Left => (self.location.0 - 1, self.location.1),
         };
     }
 
@@ -87,15 +79,11 @@ impl Robot {
     }
 
     fn render(&self) {
-        let mut y_coords = self.squares.keys()
-            .map(|(_, y)| *y)
-            .collect::<Vec<isize>>();
+        let mut y_coords = self.squares.keys().map(|(_, y)| *y).collect::<Vec<isize>>();
         y_coords.sort();
-        let mut x_coords = self.squares.keys()
-            .map(|(x, _)| *x)
-            .collect::<Vec<isize>>();
+        let mut x_coords = self.squares.keys().map(|(x, _)| *x).collect::<Vec<isize>>();
         x_coords.sort();
-        for y in (*y_coords.first().unwrap()..=*y_coords.last().unwrap()).rev() {
+        for y in *y_coords.first().unwrap()..=*y_coords.last().unwrap() {
             for x in *x_coords.first().unwrap()..=*x_coords.last().unwrap() {
                 let square = match self.squares.get(&(x, y)) {
                     Some(1) => '#',
@@ -103,14 +91,13 @@ impl Robot {
                 };
                 print!("{}", square);
             }
-            print!("\n");
+            println!();
         }
-
     }
 }
 
 impl Intcode {
-    fn new(input: &String) -> Intcode {
+    fn new(input: &str) -> Intcode {
         let mut opcode = parse_opcodes(input);
         let mut extension = vec![0; 1000];
         opcode.append(&mut extension);
@@ -256,14 +243,15 @@ fn read_input() -> String {
     }
 }
 
-fn parse_opcodes(initial_state: &String) -> Vec<isize> {
+fn parse_opcodes(initial_state: &str) -> Vec<isize> {
     initial_state
         .trim()
-        .split(",")
+        .split(',')
         .map(|s| s.parse::<isize>().unwrap())
         .collect::<Vec<isize>>()
 }
 
+#[allow(clippy::while_let_loop)]
 fn main() {
     let input = read_input();
 
@@ -287,7 +275,10 @@ fn main() {
         };
         robot.intcode.inputs.push(input);
     }
-    println!("How many panels does it paint at least once? {}", robot.squares.keys().len());
+    println!(
+        "How many panels does it paint at least once? {}",
+        robot.squares.keys().len()
+    );
 
     let mut robot = Robot::new(&input);
     robot.intcode.inputs.push(1);

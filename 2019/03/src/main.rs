@@ -23,27 +23,27 @@ fn trace_wire(steps: Vec<&str>) -> Vec<(isize, isize)> {
     let mut current: (isize, isize) = (0, 0);
     for step in steps {
         match step {
-            step if step.starts_with("U") => {
+            step if step.starts_with('U') => {
                 for y in (current.1 + 1)..=(current.1 + step[1..].parse::<isize>().unwrap()) {
                     current = (current.0, y);
                     locations.push(current);
                 }
             }
-            step if step.starts_with("R") => {
+            step if step.starts_with('R') => {
                 for x in (current.0 + 1)..=(current.0 + step[1..].parse::<isize>().unwrap()) {
                     current = (x, current.1);
                     locations.push(current);
                 }
             }
-            step if step.starts_with("D") => {
-                for y in ((current.1 - step[1..].parse::<isize>().unwrap())..=(current.1 - 1)).rev()
+            step if step.starts_with('D') => {
+                for y in ((current.1 - step[1..].parse::<isize>().unwrap())..(current.1)).rev()
                 {
                     current = (current.0, y);
                     locations.push(current);
                 }
             }
-            step if step.starts_with("L") => {
-                for x in ((current.0 - step[1..].parse::<isize>().unwrap())..=(current.0 - 1)).rev()
+            step if step.starts_with('L') => {
+                for x in ((current.0 - step[1..].parse::<isize>().unwrap())..(current.0)).rev()
                 {
                     current = (x, current.1);
                     locations.push(current);
@@ -56,11 +56,11 @@ fn trace_wire(steps: Vec<&str>) -> Vec<(isize, isize)> {
     locations
 }
 
-fn find_closest_intersection(input: &String) -> usize {
+fn find_closest_intersection(input: &str) -> usize {
     let mut routes: Vec<HashSet<(isize, isize)>> = Vec::new();
 
     for line in input.lines() {
-        let steps = line.split(",").collect::<Vec<&str>>();
+        let steps = line.split(',').collect::<Vec<&str>>();
         let route = HashSet::from_iter(trace_wire(steps));
         routes.push(route);
     }
@@ -76,7 +76,7 @@ fn get_fewest_steps(input: String) -> usize {
     let mut unique: [HashSet<(isize, isize)>; 2] = [HashSet::new(), HashSet::new()];
 
     for (i, line) in input.lines().enumerate() {
-        let steps = line.split(",").collect::<Vec<&str>>();
+        let steps = line.split(',').collect::<Vec<&str>>();
         routes[i] = trace_wire(steps);
         unique[i] = HashSet::from_iter(routes[i].clone());
     }
@@ -95,14 +95,14 @@ fn main() {
     let input = read_input();
     let closest_intersection = find_closest_intersection(&input);
     println!(
-        "The Manhattan distance to the closest intersection is: {}",
-        closest_intersection
+        "What is the Manhattan distance…? {}",
+        closest_intersection,
     );
 
     let fewest_steps = get_fewest_steps(input);
     println!(
         "What is the fewest combined steps the wires must take to reach an intersection? {}",
-        fewest_steps
+        fewest_steps,
     );
 }
 

@@ -11,14 +11,12 @@ struct Intcode {
 
 struct Droid {
     intcode: Intcode,
-    position: (isize, isize),
 }
 
 impl Droid {
     fn new(input: &str) -> Self {
         Droid {
             intcode: Intcode::new(input),
-            position: (0, 0),
         }
     }
 
@@ -200,6 +198,7 @@ fn map_shield(droid: &mut Droid) -> Vec<Vec<char>> {
     shield
 }
 
+#[allow(clippy::collapsible_if)]
 fn locate_intersections(shield: &[Vec<char>]) -> Vec<(usize, usize)> {
     let mut intersections = Vec::new();
 
@@ -220,6 +219,7 @@ fn locate_intersections(shield: &[Vec<char>]) -> Vec<(usize, usize)> {
     intersections
 }
 
+#[allow(dead_code)]
 fn render_shield(shield: &[Vec<char>]) {
     for row in shield.iter() {
         for point in row.iter() {

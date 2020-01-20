@@ -211,16 +211,17 @@ fn parse_opcodes(initial_state: &str) -> Vec<isize> {
         .collect::<Vec<isize>>()
 }
 
+#[allow(clippy::needless_range_loop)]
 fn main() {
     let input = read_input();
 
     let mut cabinet = Cabinet::new(&input);
-    'outer: loop {
+    'outer_p1: loop {
         let mut tile: [isize; 3] = [0, 0, 0];
         for i in 0..=2 {
             tile[i] = match cabinet.intcode.run() {
                 Some(n) => n,
-                None => break 'outer,
+                None => break 'outer_p1,
             };
         }
         cabinet.screen.insert((tile[0], tile[1]), tile[2]);
@@ -232,17 +233,17 @@ fn main() {
         .collect::<Vec<&isize>>();
     println!(
         "How many block tiles are on the screen when the game exits? {}",
-        blocks.len()
+        blocks.len(),
     );
 
     let mut cabinet = Cabinet::new(&input);
     cabinet.intcode.opcode[0] = 2;
-    'outer: loop {
+    'outer_p2: loop {
         let mut tile: [isize; 3] = [0, 0, 0];
         for i in 0..=2 {
             tile[i] = match cabinet.intcode.run() {
                 Some(n) => n,
-                None => break 'outer,
+                None => break 'outer_p2,
             };
         }
         if tile[0] == -1 && tile[1] == 0 {
@@ -265,7 +266,7 @@ fn main() {
     }
     println!(
         "What is your score after the last block is broken? {}",
-        cabinet.score
+        cabinet.score,
     );
 }
 

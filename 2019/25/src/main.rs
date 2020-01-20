@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
-use std::io::{self, Error};
 use std::fs;
+use std::io::{self, Error};
 
 #[derive(Clone, Debug, PartialEq)]
 enum State {

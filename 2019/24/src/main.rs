@@ -183,10 +183,8 @@ fn get_bug_count_after_minutes(minutes: usize, mut bugs: HashSet<RecursivePoint>
                 if count != 1 {
                     bugs.remove(&tile);
                 }
-            } else {
-                if count == 1 || count == 2 {
-                    bugs.insert(tile);
-                }
+            } else if count == 1 || count == 2 {
+                bugs.insert(tile);
             }
         }
     }

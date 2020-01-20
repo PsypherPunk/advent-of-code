@@ -9,7 +9,7 @@ struct Amplifier {
 }
 
 impl Amplifier {
-    fn new(input: &String) -> Amplifier {
+    fn new(input: &str) -> Amplifier {
         let mut opcode = parse_opcodes(input);
         let mut extension = vec![0; 1000];
         opcode.append(&mut extension);
@@ -154,10 +154,10 @@ fn read_input() -> String {
     }
 }
 
-fn parse_opcodes(initial_state: &String) -> Vec<isize> {
+fn parse_opcodes(initial_state: &str) -> Vec<isize> {
     initial_state
         .trim()
-        .split(",")
+        .split(',')
         .map(|s| s.parse::<isize>().unwrap())
         .collect::<Vec<isize>>()
 }

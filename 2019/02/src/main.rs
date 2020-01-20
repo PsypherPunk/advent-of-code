@@ -15,10 +15,10 @@ fn read_input() -> String {
     }
 }
 
-fn parse_opcodes(initial_state: &String) -> Vec<usize> {
+fn parse_opcodes(initial_state: &str) -> Vec<usize> {
     initial_state
         .trim()
-        .split(",")
+        .split(',')
         .map(|s| s.parse::<usize>().unwrap())
         .collect::<Vec<usize>>()
 }
@@ -50,8 +50,8 @@ fn find_noun_verb(input: String) -> Vec<usize> {
             opcodes[1] = noun;
             opcodes[2] = verb;
             let final_state = get_final_state(opcodes.clone());
-            if final_state[0] == 19690720 {
-                return opcodes.clone();
+            if final_state[0] == 19_690_720 {
+                return opcodes;
             }
         }
     }
@@ -64,12 +64,11 @@ fn main() {
     opcodes[1] = 12;
     opcodes[2] = 2;
     let final_state = get_final_state(opcodes);
-    println!("The value in position 0 is: {}", final_state[0]);
+    println!("What value is left at position 0… {}", final_state[0]);
 
     let final_state = find_noun_verb(input);
-    println!("{:?}", final_state);
     println!(
-        "100 * noun + verb is {}",
+        "What is 100 * noun + verb? {}",
         100 * final_state[1] + final_state[2]
     );
 }

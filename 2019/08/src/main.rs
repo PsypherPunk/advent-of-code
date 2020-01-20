@@ -15,7 +15,8 @@ fn read_input() -> String {
     }
 }
 
-fn build_image(width: usize, height: usize, data: &String) -> Vec<Vec<Vec<u32>>> {
+#[allow(clippy::needless_range_loop)]
+fn build_image(width: usize, height: usize, data: &str) -> Vec<Vec<Vec<u32>>> {
     let mut image: Vec<Vec<Vec<u32>>> = Vec::new();
 
     let mut pixels = data.trim().chars();
@@ -37,19 +38,21 @@ fn build_image(width: usize, height: usize, data: &String) -> Vec<Vec<Vec<u32>>>
     image
 }
 
-fn render_image(width: usize, height: usize, image: &Vec<Vec<Vec<u32>>>) -> Vec<Vec<Option<u32>>> {
+fn render_image(width: usize, height: usize, image: &[Vec<Vec<u32>>]) -> Vec<Vec<Option<u32>>> {
     let mut render: Vec<Vec<Option<u32>>> = vec![vec![None; width]; height];
 
     for layer in image.iter() {
         for (y, row) in layer.iter().enumerate() {
             for (x, pixel) in row.iter().enumerate() {
                 match render[y][x] {
-                    Some(_) => {},
-                    None => render[y][x] = match *pixel {
-                        0 => Some(0),
-                        1 => Some(1),
-                        2 => None,
-                        _ => panic!("Oops!"),
+                    Some(_) => {}
+                    None => {
+                        render[y][x] = match *pixel {
+                            0 => Some(0),
+                            1 => Some(1),
+                            2 => None,
+                            _ => panic!("Oops!"),
+                        }
                     }
                 }
             }
@@ -59,7 +62,7 @@ fn render_image(width: usize, height: usize, image: &Vec<Vec<Vec<u32>>>) -> Vec<
     render
 }
 
-fn draw_image(render: &Vec<Vec<Option<u32>>>) {
+fn draw_image(render: &[Vec<Option<u32>>]) {
     for row in render.iter() {
         for pixel in row.iter() {
             let out = match pixel {
@@ -69,7 +72,7 @@ fn draw_image(render: &Vec<Vec<Option<u32>>>) {
             };
             print!("{}", out);
         }
-        print!("\n");
+        println!();
     }
 }
 

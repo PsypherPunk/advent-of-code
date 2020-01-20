@@ -18,7 +18,7 @@ fn read_input() -> String {
     }
 }
 
-fn get_adjacent_duplicates(password: &usize) -> Vec<String> {
+fn get_adjacent_duplicates(password: usize) -> Vec<String> {
     password
         .to_string()
         .chars()
@@ -28,34 +28,34 @@ fn get_adjacent_duplicates(password: &usize) -> Vec<String> {
         .collect::<Vec<String>>()
 }
 
-fn has_two_adjacent_digits_the_same(password: &usize) -> bool {
-    let duplicates = get_adjacent_duplicates(&password);
+fn has_two_adjacent_digits_the_same(password: usize) -> bool {
+    let duplicates = get_adjacent_duplicates(password);
 
     duplicates.iter().filter(|g| g.len() > 1).count() > 0
 }
 
-fn has_exactly_two_adjacent_digits_the_same(password: &usize) -> bool {
-    let duplicates = get_adjacent_duplicates(&password);
+fn has_exactly_two_adjacent_digits_the_same(password: usize) -> bool {
+    let duplicates = get_adjacent_duplicates(password);
 
     duplicates.iter().filter(|g| g.len() == 2).count() > 0
 }
 
-fn has_non_decreasing_digits(password: &usize) -> bool {
+fn has_non_decreasing_digits(password: usize) -> bool {
     let mut password_string = password.to_string().chars().collect::<Vec<char>>();
     password_string.sort();
 
     String::from_iter(password_string) == password.to_string()
 }
 
-fn get_possible_password_count(input: &String) -> usize {
-    let inputs = input.trim().split("-").collect::<Vec<&str>>();
+fn get_possible_password_count(input: &str) -> usize {
+    let inputs = input.trim().split('-').collect::<Vec<&str>>();
 
     let start = inputs[0].parse::<usize>().unwrap();
     let end = inputs[1].parse::<usize>().unwrap();
 
     let mut possibility_count = 0;
     for possibility in start..=end {
-        if has_non_decreasing_digits(&possibility) && has_two_adjacent_digits_the_same(&possibility)
+        if has_non_decreasing_digits(possibility) && has_two_adjacent_digits_the_same(possibility)
         {
             possibility_count += 1;
         }
@@ -64,15 +64,15 @@ fn get_possible_password_count(input: &String) -> usize {
 }
 
 fn get_better_possible_password_count(input: String) -> usize {
-    let inputs = input.trim().split("-").collect::<Vec<&str>>();
+    let inputs = input.trim().split('-').collect::<Vec<&str>>();
 
     let start = inputs[0].parse::<usize>().unwrap();
     let end = inputs[1].parse::<usize>().unwrap();
 
     let mut possibility_count = 0;
     for possibility in start..=end {
-        if has_non_decreasing_digits(&possibility)
-            && has_exactly_two_adjacent_digits_the_same(&possibility)
+        if has_non_decreasing_digits(possibility)
+            && has_exactly_two_adjacent_digits_the_same(possibility)
         {
             possibility_count += 1;
         }
@@ -83,9 +83,12 @@ fn get_better_possible_password_count(input: String) -> usize {
 fn main() {
     let input = read_input();
     let possible_password_count = get_possible_password_count(&input);
-    println!("How many different passwords within the range given in your puzzle input meet all of the criteria? {}", possible_password_count);
+    println!("How many different passwords…? {}", possible_password_count);
     let better_possible_password_count = get_better_possible_password_count(input);
-    println!("How many different passwords within the range given in your puzzle input meet all of the criteria? {}", better_possible_password_count);
+    println!(
+        "How many different passwords…? {}",
+        better_possible_password_count,
+    );
 }
 
 #[cfg(test)]

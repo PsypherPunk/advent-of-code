@@ -16,11 +16,11 @@ fn read_input() -> String {
     }
 }
 
-fn read_map(input: &String) -> HashMap<&str, &str> {
+fn read_map(input: &str) -> HashMap<&str, &str> {
     let mut orbits: HashMap<&str, &str> = HashMap::new();
 
     for orbit in input.lines() {
-        let pair: Vec<&str> = orbit.split(")").collect();
+        let pair: Vec<&str> = orbit.split(')').collect();
         let satellite = *pair.last().unwrap();
         let obj = *pair.first().unwrap();
         orbits.insert(satellite, obj);
@@ -62,9 +62,8 @@ fn get_minimum_orbital_transfers(orbits: &HashMap<&str, &str>) -> usize {
     let san_path = get_route("SAN", orbits, &mut san_route);
 
     for (distance, obj) in you_path.iter().enumerate() {
-        match san_path.iter().position(|&o| &o == obj) {
-            Some(o) => return distance + o - 2,
-            None => {}
+        if let Some(o) = san_path.iter().position(|&o| &o == obj) {
+            return distance + o - 2;
         }
     }
     panic!("Couldn't find a route to Santa!");
@@ -75,7 +74,7 @@ fn main() {
     let orbits = read_map(&input);
     let total_orbits = count_orbits(&orbits);
     println!(
-        "What is the total number of direct and indirect orbits in your map data? {}",
+        "What is the total number of direct and indirect orbits…? {}",
         total_orbits
     );
     let minimum_orbital_transfers = get_minimum_orbital_transfers(&orbits);

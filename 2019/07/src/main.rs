@@ -10,7 +10,7 @@ struct Amplifier {
 }
 
 impl Amplifier {
-    fn new(input: &String) -> Amplifier {
+    fn new(input: &str) -> Amplifier {
         let opcode = parse_opcodes(input);
         Amplifier {
             opcode,
@@ -169,15 +169,15 @@ fn read_input() -> String {
     }
 }
 
-fn parse_opcodes(initial_state: &String) -> Vec<isize> {
+fn parse_opcodes(initial_state: &str) -> Vec<isize> {
     initial_state
         .trim()
-        .split(",")
+        .split(',')
         .map(|s| s.parse::<isize>().unwrap())
         .collect::<Vec<isize>>()
 }
 
-fn get_output(opcodes: &mut Vec<isize>, mut inputs: Vec<usize>, mut position: usize) -> usize {
+fn get_output(opcodes: &mut [isize], mut inputs: Vec<usize>, mut position: usize) -> usize {
     let mut input;
 
     while position < opcodes.len() {
@@ -230,7 +230,6 @@ fn get_output(opcodes: &mut Vec<isize>, mut inputs: Vec<usize>, mut position: us
                     1 => opcodes[position + 1],
                     _ => panic!("Invalid mode at position {}", opcodes[position]),
                 } as usize;
-                position += 2;
                 return p1;
             }
             5 => {
@@ -312,12 +311,12 @@ fn get_output(opcodes: &mut Vec<isize>, mut inputs: Vec<usize>, mut position: us
     0
 }
 
-fn run_amplifier_sequence(opcodes: &Vec<isize>) -> usize {
+fn run_amplifier_sequence(opcodes: &mut [isize]) -> usize {
     let mut output = 0;
     let mut outputs = vec![];
     for combination in (0..=4).permutations(5) {
         for phase_setting in combination.iter() {
-            output = get_output(opcodes.clone().as_mut(), vec![output, *phase_setting], 0);
+            output = get_output(opcodes, vec![output, *phase_setting], 0);
         }
         outputs.push(output);
         output = 0;
@@ -325,7 +324,7 @@ fn run_amplifier_sequence(opcodes: &Vec<isize>) -> usize {
     *outputs.iter().max().unwrap() as usize
 }
 
-fn run_feedback_loop(input: &String) -> usize {
+fn run_feedback_loop(input: &str) -> usize {
     let mut outputs: Vec<usize> = Vec::new();
 
     for combination in (5..=9).permutations(5) {
@@ -347,11 +346,11 @@ fn run_feedback_loop(input: &String) -> usize {
 
 fn main() {
     let input = read_input();
-    let opcodes = parse_opcodes(&input);
-    let highest_signal = run_amplifier_sequence(&opcodes);
+    let mut opcodes = parse_opcodes(&input);
+    let highest_signal = run_amplifier_sequence(&mut opcodes);
     println!(
         "What is the highest signal that can be sent to the thrusters? {}",
-        highest_signal
+        highest_signal,
     );
     let feedback_signal = run_feedback_loop(&input);
     println!(

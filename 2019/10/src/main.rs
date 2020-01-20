@@ -4,6 +4,8 @@ use std::io::prelude::*;
 
 use num::integer::gcd;
 
+type Point = (isize, isize);
+
 fn read_input() -> String {
     let filename = "input.txt";
     match File::open(filename) {
@@ -18,7 +20,7 @@ fn read_input() -> String {
     }
 }
 
-fn get_asteroids(input: &str) -> Vec<(isize, isize)> {
+fn get_asteroids(input: &str) -> Vec<Point> {
     input
         .trim()
         .lines()
@@ -29,29 +31,21 @@ fn get_asteroids(input: &str) -> Vec<(isize, isize)> {
                 .filter(|(_, c)| *c == '#')
                 .map(move |(x, _)| (x as isize, y as isize))
         })
-        .collect::<Vec<(isize, isize)>>()
+        .collect::<Vec<Point>>()
 }
 
 /// As the `target` is already relative to the origin, we need only
 /// calculate the arctangent.
-fn get_angle(target: &(isize, isize)) -> f64 {
+fn get_angle(target: &Point) -> f64 {
     let angle = f64::atan2(target.1 as f64, target.0 as f64).to_degrees() + 90_f64;
     ((angle % 360.0) + 360.0) % 360.0
 }
 
-fn get_best_asteroid(
-    asteroids: Vec<(isize, isize)>,
-) -> (
-    (isize, isize),
-    HashMap<(isize, isize), Vec<(isize, (isize, isize))>>,
-) {
-    let mut best_asteroid: (
-        (isize, isize),
-        HashMap<(isize, isize), Vec<(isize, (isize, isize))>>,
-    ) = ((0, 0), HashMap::new());
+fn get_best_asteroid(asteroids: Vec<Point>) -> (Point, HashMap<Point, Vec<(isize, Point)>>) {
+    let mut best_asteroid: (Point, HashMap<Point, Vec<(isize, Point)>>) = ((0, 0), HashMap::new());
 
     for source in asteroids.iter() {
-        let mut targets: HashMap<(isize, isize), Vec<(isize, (isize, isize))>> = HashMap::new();
+        let mut targets: HashMap<Point, Vec<(isize, Point)>> = HashMap::new();
         for target in asteroids.iter() {
             if source == target {
                 continue;
@@ -61,7 +55,7 @@ fn get_best_asteroid(
             let dist = gcd(dx.abs(), dy.abs());
             dx /= dist;
             dy /= dist;
-            let distances = targets.entry((dx, dy)).or_insert(Vec::new());
+            let distances = targets.entry((dx, dy)).or_insert_with(Vec::new);
             distances.push((dist, *target));
         }
         if targets.keys().len() > best_asteroid.1.keys().len() {
@@ -72,12 +66,10 @@ fn get_best_asteroid(
 }
 
 fn destroy(
-    station: (
-        (isize, isize),
-        HashMap<(isize, isize), Vec<(isize, (isize, isize))>>,
-    ),
-) -> Vec<(f64, (isize, isize), isize, (isize, isize))> {
-    let mut targets = station.1
+    station: (Point, HashMap<Point, Vec<(isize, Point)>>),
+) -> Vec<(f64, Point, isize, Point)> {
+    let mut targets = station
+        .1
         .iter()
         .flat_map(|(k, distances)| {
             let angle = get_angle(&k);
@@ -88,11 +80,10 @@ fn destroy(
         })
         .collect::<Vec<_>>();
 
-    targets
-        .sort_by(|a, b| {
-            a.0.partial_cmp(&b.0).unwrap().then(a.2.cmp(&b.2))
-//            a.2.cmp(&b.2).then(a.0.partial_cmp(&b.0).unwrap())
-        });
+    targets.sort_by(|a, b| {
+        a.0.partial_cmp(&b.0).unwrap().then(a.2.cmp(&b.2))
+        //            a.2.cmp(&b.2).then(a.0.partial_cmp(&b.0).unwrap())
+    });
 
     targets
 }
@@ -105,12 +96,8 @@ fn main() {
         "How many other asteroids can be detected from that location? {}",
         best_asteroid.1.keys().len()
     );
-    println!("{:?}", best_asteroid.0);
 
     let destruction_order = destroy(best_asteroid);
-    for (i, asteroid) in destruction_order.iter().enumerate() {
-        println!("{}, {:?}", i, asteroid.3);
-    }
     let two_hundredth = destruction_order.get(199).unwrap();
     println!(
         "…what do you get if you multiply its X coordinate by 100 and then add its Y coordinate? {}",

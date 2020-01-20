@@ -19,11 +19,11 @@ fn get_fuel_for_module(mass: isize) -> isize {
     (mass / 3) - 2
 }
 
-fn get_total_fuel_requirement(input: &String) -> isize {
+fn get_total_fuel_requirement(input: &str) -> isize {
     input
         .lines()
         .map(|line| line.parse::<isize>().unwrap())
-        .map(|mass| get_fuel_for_module(mass))
+        .map(get_fuel_for_module)
         .sum()
 }
 
@@ -39,7 +39,7 @@ fn get_total_fuel_requirement_including_fuel(input: String) -> isize {
     input
         .lines()
         .map(|line| line.parse::<isize>().unwrap())
-        .map(|mass| get_fuel_for_module_including_fuel(mass))
+        .map(get_fuel_for_module_including_fuel)
         .sum()
 }
 
@@ -48,12 +48,12 @@ fn main() {
     let total_fuel_requirement = get_total_fuel_requirement(&input);
     let total_fuel_requirement_including_fuel = get_total_fuel_requirement_including_fuel(input);
     println!(
-        "The sum of the fuel requirements is: {}",
-        total_fuel_requirement
+        "What is the sum of the fuel requirements… {}",
+        total_fuel_requirement,
     );
     println!(
-        "The sum of the fuel requirements, including fuel, is: {}",
-        total_fuel_requirement_including_fuel
+        "What is the sum of the fuel requirements… {}",
+        total_fuel_requirement_including_fuel,
     );
 }
 

@@ -68,9 +68,9 @@ fn get_fuel(reactions: &HashMap<String, Reaction>, fuel_count: usize) -> usize {
         name: String::from("FUEL"),
         quantity: fuel_count,
     }];
-    while need.len() != 0 {
+    while !need.is_empty() {
         let needed = need.pop().unwrap();
-        if needed.name == String::from("ORE") {
+        if needed.name == "ORE" {
             ore += needed.quantity;
         } else {
             let extra = *min(spare.get(&needed.name).unwrap_or(&0), &needed.quantity);

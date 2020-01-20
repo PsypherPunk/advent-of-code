@@ -156,11 +156,14 @@ fn main() {
     let mut moons = Moon::from_string(&input);
     simulate(&mut moons, 1000);
     let total_system_energy: isize = moons.iter().map(|moon| moon.get_total_energy()).sum();
-    println!("What is the total energy in the system after simulating the moons given in your scan for 1000 steps? {}", total_system_energy);
+    println!(
+        "What is the total energy in the system…? {}",
+        total_system_energy,
+    );
 
     let mut moons = Moon::from_string(&input);
     let steps = simulate_universe(&mut moons);
-    println!("How many steps does it take to reach the first state that exactly matches a previous state? {}", steps);
+    println!("How many steps does it take…? {}", steps);
 }
 
 #[cfg(test)]

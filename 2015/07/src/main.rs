@@ -130,6 +130,12 @@ fn main() {
 
     let a = parse_instructions("a", &instructions);
     println!("…what signal is ultimately provided to wire a? {}", a);
+
+    let mut instructions = read_instructions(&input.trim());
+    let input = &a.to_string()[..];
+    instructions.insert("b", vec![input]);
+    let a = parse_instructions("a", &instructions);
+    println!("What new signal is ultimately provided to wire a? {}", a);
 }
 
 #[cfg(test)]

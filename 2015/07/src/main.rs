@@ -1,76 +1,134 @@
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::prelude::*;
-use std::iter::FromIterator;
+use std::fs;
 
-fn read_input() -> String {
-    let filename = "input.txt";
-    match File::open(filename) {
-        Ok(mut file) => {
-            let mut content = String::new();
-            file.read_to_string(&mut content).unwrap();
-            content
+fn read_instructions(input: &str) -> HashMap<&str, Vec<&str>> {
+    input
+        .lines()
+        .map(|line| {
+            let split = line.trim().split(" -> ").collect::<Vec<&str>>();
+            (split[1], split[0].trim().split(' ').collect::<Vec<&str>>())
+        })
+        .collect()
+}
+
+fn parse_instructions(wire: &str, instructions: &HashMap<&str, Vec<&str>>) -> u16 {
+    let mut wires = HashMap::new();
+
+    loop {
+        if wires.contains_key(wire) {
+            return *wires.get(wire).unwrap();
         }
-        Err(error) => {
-            panic!("Error opening file {}: {}", filename, error);
+        for (&dest, inputs) in instructions.iter() {
+            if wires.contains_key(dest) {
+                continue;
+            }
+            match inputs.len() {
+                1 => match inputs[0].parse::<u16>() {
+                    Ok(n) => {
+                        wires.insert(dest, n);
+                    }
+                    Err(_) => {
+                        if wires.contains_key(inputs[0]) {
+                            wires.insert(dest, *wires.get(inputs[0]).unwrap());
+                        }
+                    }
+                },
+                _ => match inputs[0] {
+                    "NOT" => {
+                        if wires.contains_key(inputs[1]) {
+                            wires.insert(dest, !*wires.get(inputs[1]).unwrap());
+                        }
+                    }
+                    _ => match inputs[1] {
+                        "AND" => match inputs[0].parse::<u16>() {
+                            Ok(input) => {
+                                if wires.contains_key(inputs[2]) {
+                                    wires.insert(dest, input & *wires.get(inputs[2]).unwrap());
+                                }
+                            }
+                            Err(_) => {
+                                if wires.contains_key(inputs[0]) && wires.contains_key(inputs[2]) {
+                                    wires.insert(
+                                        dest,
+                                        *wires.get(inputs[0]).unwrap()
+                                            & *wires.get(inputs[2]).unwrap(),
+                                    );
+                                }
+                            }
+                        },
+                        "OR" => {
+                            if wires.contains_key(inputs[0]) && wires.contains_key(inputs[2]) {
+                                wires.insert(
+                                    dest,
+                                    *wires.get(inputs[0]).unwrap() | *wires.get(inputs[2]).unwrap(),
+                                );
+                            }
+                        }
+                        "LSHIFT" => {
+                            if wires.contains_key(inputs[0]) {
+                                wires.insert(
+                                    dest,
+                                    *wires.get(inputs[0]).unwrap()
+                                        << inputs[2].parse::<u16>().unwrap(),
+                                );
+                            }
+                        }
+                        "RSHIFT" => {
+                            if wires.contains_key(inputs[0]) {
+                                wires.insert(
+                                    dest,
+                                    *wires.get(inputs[0]).unwrap()
+                                        >> inputs[2].parse::<u16>().unwrap(),
+                                );
+                            }
+                        }
+                        _ => panic!("Invalid operator: {}", inputs[1]),
+                    },
+                },
+            }
         }
     }
 }
 
-fn read_instructions(input: &String) -> HashMap<&str, &str> {
-    let instructions = input
-        .lines()
-        .map(|line| {
-            let split = line.split(" -> ").collect::<Vec<&str>>();
-            (split[1], split[0])
-        })
-        .collect::<Vec<(&str, &str)>>();
+/// Find the signal on `wire` recursively.
+///
+/// _Note_: this doesn't appear to work.
+#[allow(dead_code)]
+fn get_signal(wire: &str, instructions: &HashMap<&str, Vec<&str>>) -> u16 {
+    let inputs = instructions.get(wire).unwrap();
 
-    let instructions: HashMap<&str, &str> = HashMap::from_iter(instructions);
-
-    instructions
-}
-
-fn get_signal(wire: &str, instructions: &HashMap<&str, &str>) -> u16 {
-    let signal = instructions.get(wire).unwrap();
-    println!("{:?} -> {:?}", wire, signal);
-    match *signal {
-        and if and.contains("AND") => {
-            let inputs = and.split(" ").collect::<Vec<&str>>();
-            match inputs[0].parse::<u16>() {
-                Ok(input) => input & get_signal(inputs[2], &instructions),
-                Err(_) => {
-                    get_signal(inputs[0], &instructions) & get_signal(inputs[2], &instructions)
+    match inputs[0] {
+        "NOT" => !get_signal(inputs[1], &instructions),
+        _ => match inputs.len() {
+            1 => match inputs[0].parse::<u16>() {
+                Ok(n) => n,
+                Err(_) => get_signal(inputs[0], &instructions),
+            },
+            _ => match inputs[1] {
+                "AND" => match inputs[0].parse::<u16>() {
+                    Ok(input) => input & get_signal(inputs[2], &instructions),
+                    Err(_) => {
+                        get_signal(inputs[0], &instructions) & get_signal(inputs[2], &instructions)
+                    }
                 },
-            }
-        },
-        or if or.contains("OR") => {
-            let inputs = or.split(" ").collect::<Vec<&str>>();
-            get_signal(inputs[0], &instructions) | get_signal(inputs[2], &instructions)
-        },
-        lshift if lshift.contains("LSHIFT") => {
-            let inputs = lshift.split(" ").collect::<Vec<&str>>();
-            get_signal(inputs[0], &instructions) << inputs[2].parse::<u16>().unwrap()
-        },
-        rshift if rshift.contains("RSHIFT") => {
-            let inputs = rshift.split(" ").collect::<Vec<&str>>();
-            get_signal(inputs[0], &instructions) >> inputs[2].parse::<u16>().unwrap()
-        },
-        not if not.contains("NOT") => {
-            let inputs = not.split(" ").collect::<Vec<&str>>();
-            !get_signal(inputs[1], &instructions)
-        },
-        number => match number.parse::<u16>() {
-            Ok(n) => n,
-            Err(_) => get_signal(number, &instructions),
+                "OR" => get_signal(inputs[0], &instructions) | get_signal(inputs[2], &instructions),
+                "LSHIFT" => {
+                    get_signal(inputs[0], &instructions) << inputs[2].parse::<u16>().unwrap()
+                }
+                "RSHIFT" => {
+                    get_signal(inputs[0], &instructions) >> inputs[2].parse::<u16>().unwrap()
+                }
+                _ => panic!("Invalid operator: {}", inputs[1]),
+            },
         },
     }
 }
 
 fn main() {
-    let input = read_input();
-    let instructions = read_instructions(&input);
-    let a = get_signal("a", &instructions);
+    let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
+    let instructions = read_instructions(&input.trim());
+
+    let a = parse_instructions("a", &instructions);
     println!("…what signal is ultimately provided to wire a? {}", a);
 }
 
@@ -79,7 +137,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_turn_on_0_0_through_999_999() {
+    fn test_simple_circuit() {
         let instructions: String = String::from(
             r#"123 -> x
 456 -> y
@@ -90,14 +148,16 @@ y RSHIFT 2 -> g
 NOT x -> h
 NOT y -> i"#,
         );
+
         let instructions = read_instructions(&instructions);
-        assert_eq!(get_signal("d", &instructions), 72);
-        assert_eq!(get_signal("e", &instructions), 507);
-        assert_eq!(get_signal("f", &instructions), 492);
-        assert_eq!(get_signal("g", &instructions), 114);
-        assert_eq!(get_signal("h", &instructions), 65412);
-        assert_eq!(get_signal("i", &instructions), 65079);
-        assert_eq!(get_signal("x", &instructions), 123);
-        assert_eq!(get_signal("y", &instructions), 456);
+
+        assert_eq!(parse_instructions("d", &instructions), 72);
+        assert_eq!(parse_instructions("e", &instructions), 507);
+        assert_eq!(parse_instructions("f", &instructions), 492);
+        assert_eq!(parse_instructions("g", &instructions), 114);
+        assert_eq!(parse_instructions("h", &instructions), 65412);
+        assert_eq!(parse_instructions("i", &instructions), 65079);
+        assert_eq!(parse_instructions("x", &instructions), 123);
+        assert_eq!(parse_instructions("y", &instructions), 456);
     }
 }

@@ -53,8 +53,8 @@ pub fn find_floor(instructions: String) -> i32 {
 fn main() {
     let input = read_input();
     let floor = find_floor(input);
-    println!("The instructions take Santa to floor {}.", floor);
-    format_number(1234567890);
+    println!("…what floor…? {}.", floor);
+    format_number(1_234_567_890);
 }
 
 #[cfg(test)]

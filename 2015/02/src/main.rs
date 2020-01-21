@@ -30,7 +30,7 @@ pub fn format_number(number: usize) -> String {
 
 fn parse_dimensions(input: &str) -> Vec<usize> {
     input
-        .split("x")
+        .split('x')
         .map(|n| n.parse::<usize>().unwrap())
         .collect::<Vec<usize>>()
 }
@@ -46,7 +46,7 @@ fn present_wrapping_paper(input: &str) -> usize {
     sides.iter().sum::<usize>() + (*sides.iter().min().unwrap() / 2)
 }
 
-fn calculate_wrapping_paper(input: &String) -> usize {
+fn calculate_wrapping_paper(input: &str) -> usize {
     let mut total_wrapping_paper = 0;
     for line in input.lines() {
         total_wrapping_paper += present_wrapping_paper(line);
@@ -64,7 +64,7 @@ fn present_ribbon(input: &str) -> usize {
     (2 * dimensions[0]) + (2 * dimensions[1]) + l * w * h
 }
 
-fn calculate_ribbon(input: &String) -> usize {
+fn calculate_ribbon(input: &str) -> usize {
     let mut total_ribbon = 0;
     for line in input.lines() {
         total_ribbon += present_ribbon(line);
@@ -77,13 +77,10 @@ fn main() {
     let total_wrapping_paper = calculate_wrapping_paper(&input);
     let total_ribbon = calculate_ribbon(&input);
     println!(
-        "The elves will need {} square feet of wrapping paper.",
-        format_number(total_wrapping_paper)
+        "…square feet of wrapping paper…? {}",
+        format_number(total_wrapping_paper),
     );
-    println!(
-        "The elves will need {} feet of ribbon.",
-        format_number(total_ribbon)
-    );
+    println!("…feet of ribbon…? {}", format_number(total_ribbon));
 }
 
 #[cfg(test)]

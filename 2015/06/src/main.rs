@@ -18,7 +18,7 @@ fn read_input() -> String {
     }
 }
 
-fn get_lit_count(input: &String) -> usize {
+fn get_lit_count(input: &str) -> usize {
     let mut grid: HashSet<(usize, usize)> = HashSet::new();
 
     let instruction =

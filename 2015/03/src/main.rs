@@ -30,7 +30,7 @@ pub fn format_number(number: usize) -> String {
     reverse.join(",")
 }
 
-fn count_houses(input: &String) -> usize {
+fn count_houses(input: &str) -> usize {
     let mut stops = vec![(0, 0)];
     for ch in input.chars() {
         let (x, y) = stops[0];
@@ -49,7 +49,7 @@ fn count_houses(input: &String) -> usize {
     houses.len()
 }
 
-fn count_houses_with_robo_santa(input: &String) -> usize {
+fn count_houses_with_robo_santa(input: &str) -> usize {
     let mut santa_stops = vec![(0, 0)];
     let mut robo_santa_stops = vec![(0, 0)];
 
@@ -94,12 +94,12 @@ fn count_houses_with_robo_santa(input: &String) -> usize {
 fn main() {
     let input = read_input();
     println!(
-        "{} houses receive at least one present.",
-        format_number(count_houses(&input))
+        "…at least one present? {}",
+        format_number(count_houses(&input)),
     );
     println!(
-        "This year, {} houses receive at least one present.",
-        format_number(count_houses_with_robo_santa(&input))
+        "…at least one present? {}",
+        format_number(count_houses_with_robo_santa(&input)),
     );
 }
 

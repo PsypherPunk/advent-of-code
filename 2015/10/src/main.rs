@@ -17,6 +17,12 @@ fn main() {
         output = look_and_say(&output);
     }
     println!("What is the length of the result? {}", &output.len());
+
+    let mut output = String::from(input);
+    for _ in 0..50 {
+        output = look_and_say(&output);
+    }
+    println!("What is the length of the new result? {}", &output.len());
 }
 
 #[cfg(test)]

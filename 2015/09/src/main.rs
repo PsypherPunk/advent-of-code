@@ -109,7 +109,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_decoded_difference() {
+    fn test_london_belfast_dublin() {
         let input = r#"London to Dublin = 464
 London to Belfast = 518
 Dublin to Belfast = 141"#;

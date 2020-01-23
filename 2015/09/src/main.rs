@@ -56,7 +56,7 @@ fn get_routes(input: &str) -> Vec<Route> {
         .collect::<Vec<Route>>()
 }
 
-fn get_shortest_route(input: &str) -> usize {
+fn get_route_distances(input: &str) -> Vec<usize> {
     let routes = get_routes(&input);
     let distances = get_distances(&routes);
     let locations = get_locations(&routes);
@@ -73,8 +73,21 @@ fn get_shortest_route(input: &str) -> usize {
                 })
                 .sum::<usize>()
         })
-        .min()
-        .unwrap()
+        .collect::<Vec<usize>>()
+}
+
+fn get_longest_route(input: &str) -> usize {
+    let mut distances = get_route_distances(input);
+    distances.sort();
+
+    *distances.iter().max().unwrap()
+}
+
+fn get_shortest_route(input: &str) -> usize {
+    let mut distances = get_route_distances(input);
+    distances.sort();
+
+    *distances.iter().min().unwrap()
 }
 
 fn main() {
@@ -82,8 +95,13 @@ fn main() {
 
     println!(
         "What is the distance of the shortest route? {}",
-        get_shortest_route(&input)
+        get_shortest_route(&input),
     );
+
+    println!(
+        "What is the distance of the longest route? {}",
+        get_longest_route(&input),
+    )
 }
 
 #[cfg(test)]

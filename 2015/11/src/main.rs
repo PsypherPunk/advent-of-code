@@ -27,6 +27,7 @@ fn has_at_least_two_pairs(password: &str) -> bool {
         >= 2
 }
 
+#[allow(clippy::needless_range_loop)]
 fn increment_password(password: &str) -> String {
     let mut next_password = password.chars().rev().collect::<Vec<char>>();
     for i in 0..password.len() {
@@ -47,13 +48,13 @@ fn increment_password(password: &str) -> String {
 fn get_next_password(password: &str) -> String {
     let mut password = String::from(password);
     loop {
+        password = increment_password(password.as_str());
         if has_increasing_straight(password.as_str())
             && !has_iol(password.as_str())
             && has_at_least_two_pairs(password.as_str())
         {
             break;
         }
-        password = increment_password(password.as_str());
     }
 
     password
@@ -62,10 +63,13 @@ fn get_next_password(password: &str) -> String {
 fn main() {
     let input = "hepxcrrq";
 
+    let next_password = get_next_password(input);
+    println!("…what should his next password be? {}", next_password);
+
     println!(
-        "…what should his next password be? {}",
-        get_next_password(input),
-    )
+        "What's the next one? {}",
+        get_next_password(next_password.as_str()),
+    );
 }
 
 #[cfg(test)]

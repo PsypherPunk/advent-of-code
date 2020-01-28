@@ -37,9 +37,7 @@ fn get_seating(input: &str) -> HashMap<String, HashMap<String, isize>> {
 /// Calculate the highest-scoring seating plan.
 ///
 /// Remember that `happiness` is bi-directional and circular.
-fn get_optimal_seating_plan(input: &str) -> isize {
-    let seating = get_seating(&input);
-
+fn get_optimal_seating_plan(seating: &HashMap<String, HashMap<String, isize>>) -> isize {
     seating
         .keys()
         .permutations(seating.keys().len())
@@ -66,13 +64,30 @@ fn get_optimal_seating_plan(input: &str) -> isize {
         .unwrap()
 }
 
+fn seat_yourself(seating: &mut HashMap<String, HashMap<String, isize>>) {
+    let neighbours = seating.keys().map(|guest| (guest.clone(), 0)).collect();
+    seating.insert(String::from("Me"), neighbours);
+
+    seating.iter_mut().for_each(|(_, neighbours)| {
+        neighbours.insert(String::from("Me"), 0);
+    });
+}
+
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
+    let mut seating = get_seating(&input);
 
     println!(
         "What is the total change in happiness for the optimal seating arrangement of the actual guest list? {}",
-        get_optimal_seating_plan(&input),
-    )
+        get_optimal_seating_plan(&seating),
+    );
+
+    seat_yourself(&mut seating);
+
+    println!(
+        "What is the total change in happiness for the optimal seating arrangement that actually includes yourself? {}",
+        get_optimal_seating_plan(&seating),
+    );
 }
 
 #[cfg(test)]

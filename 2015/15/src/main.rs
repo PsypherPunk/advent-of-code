@@ -5,6 +5,12 @@ use std::fs;
 use regex::Regex;
 
 #[derive(Debug)]
+struct Cookie {
+    calories: i32,
+    score: i32,
+}
+
+#[derive(Debug)]
 struct Ingredient {
     capacity: i32,
     durability: i32,
@@ -13,9 +19,9 @@ struct Ingredient {
     calories: i32,
 }
 
-fn get_best_cookie_score(input: &str) -> i32 {
+fn get_cookie_scores(input: &str) -> Vec<Cookie> {
     let ingredients = get_ingredients(&input);
-    let mut scores = Vec::new();
+    let mut cookies = Vec::new();
 
     for frosting in 1..=97 {
         for candy in 1..=97 {
@@ -37,17 +43,22 @@ fn get_best_cookie_score(input: &str) -> i32 {
                     + candy * ingredients.get("Candy").unwrap().texture
                     + butterscotch * ingredients.get("Butterscotch").unwrap().texture
                     + sugar * ingredients.get("Sugar").unwrap().texture;
-                scores.push(
-                    cmp::max(capacity, 0)
+                let calories = frosting * ingredients.get("Frosting").unwrap().calories
+                    + candy * ingredients.get("Candy").unwrap().calories
+                    + butterscotch * ingredients.get("Butterscotch").unwrap().calories
+                    + sugar * ingredients.get("Sugar").unwrap().calories;
+                cookies.push(Cookie {
+                    calories: cmp::max(calories, 0),
+                    score: cmp::max(capacity, 0)
                         * cmp::max(durability, 0)
                         * cmp::max(flavor, 0)
                         * cmp::max(texture, 0),
-                );
+                });
             }
         }
     }
-    scores.sort();
-    *scores.last().unwrap()
+    cookies.sort_by(|a, b| a.score.cmp(&b.score));
+    cookies
 }
 
 fn get_ingredients(input: &str) -> HashMap<String, Ingredient> {
@@ -75,10 +86,18 @@ fn get_ingredients(input: &str) -> HashMap<String, Ingredient> {
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
+    let cookies = get_cookie_scores(&input);
+
     println!(
         "…what is the total score of the highest-scoring cookie you can make? {}",
-        get_best_cookie_score(&input),
+        cookies.last().unwrap().score,
     );
+
+    let five_hundred = cookies.iter().filter(|cookie| cookie.calories == 500);
+    println!(
+        "…what is the total score of the highest-scoring cookie you can make with a calorie total of 500? {}",
+        five_hundred.last().unwrap().score,
+    )
 }
 
 #[cfg(test)]

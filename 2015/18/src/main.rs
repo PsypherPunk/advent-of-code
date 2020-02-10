@@ -74,6 +74,30 @@ fn animate_grid(grid: &HashMap<Point, bool>) -> HashMap<Point, bool> {
         .collect()
 }
 
+fn stick_lights(grid: &mut HashMap<Point, bool>) {
+    let (width, height) = grid.keys().max().unwrap();
+
+    for light in &[(0, 0), (*width, 0), (0, *height), (*width, *height)] {
+        grid.insert(*light, true);
+    }
+}
+
+#[allow(dead_code)]
+fn display_grid(grid: &HashMap<Point, bool>) {
+    let (width, height) = grid.keys().max().unwrap();
+
+    for y in 0..=*height {
+        for x in 0..=*width {
+            match grid.get(&(x, y)).unwrap() {
+                true => print!("#"),
+                false => print!("."),
+            }
+        }
+        println!();
+    }
+    println!();
+}
+
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
@@ -81,7 +105,17 @@ fn main() {
     for _ in 0..100 {
         grid = animate_grid(&grid);
     }
+    println!(
+        "…how many lights are on after 100 steps? {}",
+        get_lit_count(&grid),
+    );
 
+    let mut grid = get_grid(&input);
+    stick_lights(&mut grid);
+    for _ in 0..100 {
+        grid = animate_grid(&grid);
+        stick_lights(&mut grid);
+    }
     println!(
         "…how many lights are on after 100 steps? {}",
         get_lit_count(&grid),
@@ -93,7 +127,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
+    fn test_part1() {
         let input = r#".#.#.#
 ...##.
 #....#
@@ -107,5 +141,26 @@ mod tests {
         }
 
         assert_eq!(4, get_lit_count(&grid));
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = r#".#.#.#
+...##.
+#....#
+..#...
+#.#..#
+####.."#;
+        let mut grid = get_grid(&input);
+        stick_lights(&mut grid);
+        display_grid(&grid);
+
+        for _ in 0..5 {
+            grid = animate_grid(&grid);
+            stick_lights(&mut grid);
+            display_grid(&grid);
+        }
+
+        assert_eq!(17, get_lit_count(&grid));
     }
 }

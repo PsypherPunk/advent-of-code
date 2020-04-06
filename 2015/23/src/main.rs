@@ -109,6 +109,18 @@ fn main() {
         "What is the value in register b when the program in your puzzle input is finished executing? {}",
         registers.get("b").unwrap(),
     );
+
+    let mut registers = get_registers();
+    let value = registers.entry(String::from("a")).or_insert(0);
+    *value = 1;
+    let instructions = get_instructions(&input);
+
+    run_program(&mut registers, instructions);
+
+    println!(
+        "…what is the value in register b after the program is finished executing if register a starts as 1 instead? {}",
+        registers.get("b").unwrap(),
+    )
 }
 
 #[cfg(test)]

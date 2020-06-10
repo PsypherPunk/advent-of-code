@@ -1,8 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-use md5;
-
 fn read_input() -> String {
     let filename = "input.txt";
     match File::open(filename) {

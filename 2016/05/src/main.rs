@@ -26,12 +26,51 @@ fn get_password(input: &str) -> String {
     password.iter().collect()
 }
 
+fn get_better_password(input: &str) -> String {
+    let mut index = 0;
+    let mut password: [Option<char>; 8] = [None, None, None, None, None, None, None, None];
+
+    loop {
+        let mut hasher = Md5::new();
+        hasher.update(input.trim().as_bytes());
+        hasher.update(index.to_string().as_bytes());
+
+        let result = &hasher.finalize()[..];
+        let result_hex = hex::encode(result);
+
+        if result_hex.starts_with("00000") {
+            if let Ok(position) = result_hex
+                .chars()
+                .nth(5)
+                .unwrap()
+                .to_string()
+                .parse::<usize>()
+            {
+                if position <= 7 && password[position].is_none() {
+                    password[position] = Some(result_hex.chars().nth(6).unwrap());
+                    if password.iter().all(|x| x.is_some()) {
+                        break;
+                    }
+                }
+            }
+        }
+        index += 1;
+    }
+
+    password.iter().map(|o| o.unwrap()).collect()
+}
+
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
     println!(
         "Given the actual Door ID, what is the password? {}",
         get_password(&input),
+    );
+
+    println!(
+        "Given the actual Door ID and this new method, what is the password? {}",
+        get_better_password(&input),
     );
 }
 
@@ -44,5 +83,12 @@ mod tests {
         let input = "abc";
 
         assert_eq!("18f47a30", get_password(&input));
+    }
+
+    #[test]
+    fn test_05ace8e3() {
+        let input = "abc";
+
+        assert_eq!("05ace8e3", get_better_password(&input));
     }
 }

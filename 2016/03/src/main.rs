@@ -1,19 +1,40 @@
 use std::fs;
 
-fn get_valid_triangle_count(input: &str) -> usize {
+fn get_ints(input: &str) -> Vec<Vec<usize>> {
     input
         .trim()
         .lines()
         .map(|line| {
-            let abc = line.trim().split_whitespace().collect::<Vec<&str>>();
-            (
-                abc[0].parse::<usize>().unwrap(),
-                abc[1].parse::<usize>().unwrap(),
-                abc[2].parse::<usize>().unwrap(),
-            )
+            line.trim()
+                .split_whitespace()
+                .map(|s| s.parse::<usize>().unwrap())
+                .collect::<Vec<usize>>()
         })
-        .filter(|(a, b, c)| a + b > *c && b + c > *a && a + c > *b)
+        .collect::<Vec<Vec<usize>>>()
+}
+
+fn get_valid_triangle_count(input: &str) -> usize {
+    get_ints(&input)
+        .iter()
+        .filter(|&abc| {
+            abc[0] + abc[1] > abc[2] && abc[1] + abc[2] > abc[0] && abc[0] + abc[2] > abc[1]
+        })
         .count()
+}
+
+fn get_valid_triangle_count_columnar(input: &str) -> usize {
+    (0..3)
+        .map(|column| {
+            get_ints(&input).iter()
+                .map(|row| row[column])
+                .collect::<Vec<usize>>()
+                .chunks(3)
+                .filter(|&abc| {
+                    abc[0] + abc[1] > abc[2] && abc[1] + abc[2] > abc[0] && abc[0] + abc[2] > abc[1]
+                })
+                .count()
+        })
+        .sum()
 }
 
 fn main() {
@@ -23,6 +44,11 @@ fn main() {
         "…how many of the listed triangles are possible? {}",
         get_valid_triangle_count(&input),
     );
+
+    println!(
+        "…how many of the listed triangles are possible? {}",
+        get_valid_triangle_count_columnar(&input),
+    )
 }
 
 #[cfg(test)]

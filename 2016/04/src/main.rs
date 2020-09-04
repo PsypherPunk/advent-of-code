@@ -10,7 +10,6 @@ lazy_static! {
             .unwrap();
 }
 
-#[derive(Debug)]
 struct Room {
     encrypted_name: String,
     sector_id: usize,
@@ -40,6 +39,28 @@ impl Room {
 
         self.checksum == chars.iter().map(|(ch, _)| ch).take(5).collect::<String>()
     }
+
+    fn get_decrypted_name(&self) -> String {
+        self.encrypted_name
+            .chars()
+            .map(|ch| {
+                let a = b'a';
+                let shift = (&self.sector_id % 26) as u8;
+                match ch {
+                    '-' => ' ',
+                    _ => (((ch as u8 - a + shift) % 26) + a) as char,
+                }
+            })
+            .collect()
+    }
+}
+
+fn get_north_pole_objects_room(input: &str) -> Room {
+    input
+        .lines()
+        .map(|line| Room::from_str(&line))
+        .find(|room| room.is_real() && room.get_decrypted_name().contains("pole"))
+        .unwrap()
 }
 
 fn get_sector_id_sum(input: &str) -> usize {
@@ -57,7 +78,12 @@ fn main() {
     println!(
         "What is the sum of the sector IDs of the real rooms? {}",
         get_sector_id_sum(&input),
-    )
+    );
+
+    println!(
+        "What is the sector ID of the room where North Pole objects are stored? {}",
+        get_north_pole_objects_room(&input).sector_id,
+    );
 }
 
 #[cfg(test)]
@@ -94,5 +120,16 @@ mod tests {
         let room = Room::from_str(&input);
 
         assert_eq!(false, room.is_real());
+    }
+
+    #[test]
+    fn test_very_encrypted_name() {
+        let room = Room {
+            encrypted_name: "qzmt-zixmtkozy-ivhz".to_string(),
+            sector_id: 343,
+            checksum: "".to_string(),
+        };
+
+        assert_eq!("very encrypted name", room.get_decrypted_name());
     }
 }

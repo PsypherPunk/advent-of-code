@@ -12,9 +12,9 @@ fn get_password(input: &str) -> String {
         hasher.update(index.to_string().as_bytes());
 
         let result = &hasher.finalize()[..];
-        let result_hex = hex::encode(result);
 
-        if result_hex.starts_with("00000") {
+        if result[..2] == [0, 0] && (result[2] & 0xF0) >> 4 == 0 {
+            let result_hex = hex::encode(result);
             password.push(result_hex.chars().nth(5).unwrap());
             if password.len() == 8 {
                 break;
@@ -36,21 +36,14 @@ fn get_better_password(input: &str) -> String {
         hasher.update(index.to_string().as_bytes());
 
         let result = &hasher.finalize()[..];
-        let result_hex = hex::encode(result);
 
-        if result_hex.starts_with("00000") {
-            if let Ok(position) = result_hex
-                .chars()
-                .nth(5)
-                .unwrap()
-                .to_string()
-                .parse::<usize>()
-            {
-                if position <= 7 && password[position].is_none() {
-                    password[position] = Some(result_hex.chars().nth(6).unwrap());
-                    if password.iter().all(|x| x.is_some()) {
-                        break;
-                    }
+        if result[..2] == [0, 0] && (result[2] & 0xF0) >> 4 == 0 {
+            let position = (result[2] & 0x0F) as usize;
+            if position <= 7 && password[position].is_none() {
+                let result_hex = hex::encode(result);
+                password[position] = Some(result_hex.chars().nth(6).unwrap());
+                if password.iter().all(|x| x.is_some()) {
+                    break;
                 }
             }
         }

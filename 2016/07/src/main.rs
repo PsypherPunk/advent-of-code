@@ -18,18 +18,10 @@ fn supports_tls(ip: &str) -> bool {
         })
         .collect::<Vec<(bool, bool)>>();
 
-    if matches
-        .iter()
-        .find(|(hypernet, abba)| *hypernet && *abba)
-        .is_some()
-    {
+    if matches.iter().any(|(hypernet, abba)| *hypernet && *abba) {
         return false;
     }
-    if matches
-        .iter()
-        .find(|(hypernet, abba)| !*hypernet && *abba)
-        .is_some()
-    {
+    if matches.iter().any(|(hypernet, abba)| !*hypernet && *abba) {
         return true;
     }
 
@@ -56,21 +48,18 @@ fn supports_ssl(ip: &str) -> bool {
 
     let hypernet_matches = matches
         .iter()
-        .filter(|(hypernet, aba)| *hypernet && aba.len() > 0)
+        .filter(|(hypernet, aba)| *hypernet && !aba.is_empty())
         .flat_map(|(_, aba)| aba.clone())
         .collect::<Vec<String>>();
 
     matches
         .into_iter()
-        .filter(|(hypernet, aba)| !*hypernet && aba.len() > 0)
+        .filter(|(hypernet, aba)| !*hypernet && !aba.is_empty())
         .flat_map(|(_, aba)| aba)
         .any(|aba| {
             let aba = aba.chars().collect::<Vec<char>>();
             let supernet_bab = [aba[1], aba[0], aba[1]].iter().collect::<String>();
-            hypernet_matches
-                .iter()
-                .find(|&bab| *bab == supernet_bab)
-                .is_some()
+            hypernet_matches.iter().any(|bab| *bab == supernet_bab)
         })
 }
 

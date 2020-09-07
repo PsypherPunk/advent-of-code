@@ -36,11 +36,57 @@ fn supports_tls(ip: &str) -> bool {
     false
 }
 
+fn supports_ssl(ip: &str) -> bool {
+    let matches = ip
+        .split(&['[', ']'][..])
+        .enumerate()
+        .map(|(index, section)| {
+            (
+                index % 2 != 0,
+                section
+                    .chars()
+                    .collect::<Vec<char>>()
+                    .windows(3)
+                    .filter(|&window| window[0] != window[1] && window[0] == window[2])
+                    .map(|aba| aba.iter().collect::<String>())
+                    .collect::<Vec<String>>(),
+            )
+        })
+        .collect::<Vec<(bool, Vec<String>)>>();
+
+    let hypernet_matches = matches
+        .iter()
+        .filter(|(hypernet, aba)| *hypernet && aba.len() > 0)
+        .flat_map(|(_, aba)| aba.clone())
+        .collect::<Vec<String>>();
+
+    matches
+        .into_iter()
+        .filter(|(hypernet, aba)| !*hypernet && aba.len() > 0)
+        .flat_map(|(_, aba)| aba)
+        .any(|aba| {
+            let aba = aba.chars().collect::<Vec<char>>();
+            let supernet_bab = [aba[1], aba[0], aba[1]].iter().collect::<String>();
+            hypernet_matches
+                .iter()
+                .find(|&bab| *bab == supernet_bab)
+                .is_some()
+        })
+}
+
 fn get_ips_support_tls_count(input: &str) -> usize {
     input
         .trim()
         .lines()
         .filter(|line| supports_tls(line))
+        .count()
+}
+
+fn get_ips_support_ssl_count(input: &str) -> usize {
+    input
+        .trim()
+        .lines()
+        .filter(|line| supports_ssl(line))
         .count()
 }
 
@@ -50,6 +96,11 @@ fn main() {
     println!(
         "How many IPs in your puzzle input support TLS? {}",
         get_ips_support_tls_count(&input),
+    );
+
+    println!(
+        "How many IPs in your puzzle input support SSL? {}",
+        get_ips_support_ssl_count(&input),
     );
 }
 
@@ -83,5 +134,33 @@ mod tests {
         let input = "ioxxoj[asdfgh]zxcvbn";
 
         assert_eq!(1, get_ips_support_tls_count(&input));
+    }
+
+    #[test]
+    fn test_aba() {
+        let input = "aba[bab]xyz";
+
+        assert_eq!(1, get_ips_support_ssl_count(&input));
+    }
+
+    #[test]
+    fn test_xyx() {
+        let input = "xyx[xyx]xyx";
+
+        assert_eq!(0, get_ips_support_ssl_count(&input));
+    }
+
+    #[test]
+    fn test_eke() {
+        let input = "aaa[kek]eke";
+
+        assert_eq!(1, get_ips_support_ssl_count(&input));
+    }
+
+    #[test]
+    fn test_zaz() {
+        let input = "zazbz[bzb]cdb";
+
+        assert_eq!(1, get_ips_support_ssl_count(&input));
     }
 }

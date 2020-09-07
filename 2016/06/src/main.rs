@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
 
@@ -12,7 +13,7 @@ impl Signal {
         }
     }
 
-    fn get_error_corrected_message(&self) -> String {
+    fn get_message(&self, sort: fn(&(char, usize), &(char, usize)) -> Ordering) -> String {
         let mut counter = BTreeMap::new();
 
         self.signal.lines().for_each(|line| {
@@ -26,30 +27,20 @@ impl Signal {
             .into_iter()
             .map(|(_, ch_count)| {
                 let mut chars = ch_count.into_iter().collect::<Vec<(char, usize)>>();
-                chars.sort_by(|a, b| b.1.cmp(&a.1));
+                chars.sort_by(&sort);
                 chars.first().unwrap().0
             })
             .collect()
     }
 
-    fn get_modified_repetition_decoded_message(&self) -> String {
-        let mut counter = BTreeMap::new();
+    fn get_error_corrected_message(&self) -> String {
+        let sort: fn(&(char, usize), &(char, usize)) -> Ordering = |a, b| b.1.cmp(&a.1);
+        self.get_message(sort)
+    }
 
-        self.signal.lines().for_each(|line| {
-            line.chars().enumerate().for_each(|(pos, ch)| {
-                let pos_count = counter.entry(pos).or_insert_with(HashMap::new);
-                let ch_count = pos_count.entry(ch).or_insert(0);
-                *ch_count += 1;
-            })
-        });
-        counter
-            .into_iter()
-            .map(|(_, ch_count)| {
-                let mut chars = ch_count.into_iter().collect::<Vec<(char, usize)>>();
-                chars.sort_by(|a, b| a.1.cmp(&b.1));
-                chars.first().unwrap().0
-            })
-            .collect()
+    fn get_modified_repetition_decoded_message(&self) -> String {
+        let sort: fn(&(char, usize), &(char, usize)) -> Ordering = |a, b| a.1.cmp(&b.1);
+        self.get_message(sort)
     }
 }
 

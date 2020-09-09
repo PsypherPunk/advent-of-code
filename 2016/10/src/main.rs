@@ -35,9 +35,8 @@ impl Bot {
     fn receive_chip(&mut self, new_chip: usize) {
         let mut chips = self
             .chips
-            .clone()
-            .into_iter()
-            .map(|(_, chip)| chip)
+            .iter()
+            .map(|(_, chip)| *chip)
             .collect::<Vec<_>>();
         chips.push(new_chip);
         chips.sort();
@@ -126,8 +125,7 @@ impl Factory {
     }
 
     fn perform_instructions(&mut self) {
-        let bot_instructions = self.instructions.clone();
-        for (id, bot_instructions) in bot_instructions {
+        for (id, bot_instructions) in self.instructions.iter() {
             let bot = self.bots.get(&id).unwrap();
             if !bot.is_ready() {
                 continue;
@@ -161,6 +159,14 @@ fn main() {
 
     let mut factory = Factory::new(&input);
     factory.zoom();
+
+    let zero = *factory.outputs.get(&0).unwrap().get(0).unwrap();
+    let one = *factory.outputs.get(&1).unwrap().get(0).unwrap();
+    let two = *factory.outputs.get(&2).unwrap().get(0).unwrap();
+    println!(
+        "What do you get if you multiply together the values of…outputs 0, 1, and 2? {}",
+        zero * one * two,
+    );
 }
 
 #[cfg(test)]

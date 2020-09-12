@@ -64,7 +64,14 @@ fn main() {
     let assembunny = Assembunny::from_string(&input);
 
     println!(
-        "what value is left in register a? {}",
+        "…what value is left in register a? {}",
+        assembunny.registers.get("a").unwrap(),
+    );
+
+    let assembunny = Assembunny::from_string(&("cpy 1 c\n".to_owned() + &input));
+
+    println!(
+        "…what value is now left in register a? {}",
         assembunny.registers.get("a").unwrap(),
     );
 }

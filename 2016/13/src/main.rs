@@ -58,10 +58,17 @@ fn get_steps(previous: Step) -> Vec<Step> {
     steps
 }
 
-fn get_shortest_route(favourite: &str, destination: Point) -> usize {
+fn get_shortest_route(
+    favourite: &usize,
+    destination: Point,
+    limit: Option<usize>,
+) -> Option<usize> {
     let mut queue = VecDeque::new();
     let mut discovered = HashSet::new();
-    let favourite = favourite.trim().parse::<usize>().unwrap();
+    let limit = match limit {
+        Some(n) => n,
+        None => usize::max_value(),
+    };
 
     let root = Step {
         position: (1, 1),
@@ -73,12 +80,12 @@ fn get_shortest_route(favourite: &str, destination: Point) -> usize {
     while !queue.is_empty() {
         let step = queue.pop_front().unwrap();
         if step.position == destination {
-            return step.steps;
+            return Some(step.steps);
         }
 
         for next in get_steps(step)
             .iter()
-            .filter(|&next| is_open_space(&next.position, &favourite))
+            .filter(|&next| is_open_space(&next.position, favourite) && next.steps <= limit)
         {
             if !discovered.contains(next) {
                 queue.push_back((*next).clone());
@@ -87,15 +94,30 @@ fn get_shortest_route(favourite: &str, destination: Point) -> usize {
         }
     }
 
-    panic!("Unable to find destination!");
+    None
+}
+
+fn get_location_count(favourite: &usize) -> usize {
+    (0..50)
+        .flat_map(move |y| (0..50).map(move |x| (x as usize, y as usize)))
+        .filter(|point| is_open_space(point, favourite))
+        .map(|point| get_shortest_route(favourite, point, Some(50)))
+        .filter(|steps| steps.is_some())
+        .count()
 }
 
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
+    let favourite = input.trim().parse::<usize>().unwrap();
 
     println!(
         "What is the fewest number of steps required for you to reach 31,39? {}",
-        get_shortest_route(&input, (31, 39)),
+        get_shortest_route(&favourite, (31, 39), None).unwrap(),
+    );
+
+    println!(
+        "How many locations…can you reach in at most 50 steps? {}",
+        get_location_count(&favourite),
     );
 }
 
@@ -113,8 +135,8 @@ mod tests {
 
     #[test]
     fn test_7_4() {
-        let favourite = "10";
+        let favourite = 10 as usize;
 
-        assert_eq!(11, get_shortest_route(favourite, (7, 4)));
+        assert_eq!(11, get_shortest_route(&favourite, (7, 4), None).unwrap());
     }
 }

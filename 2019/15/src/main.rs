@@ -52,7 +52,7 @@ impl Droid {
         let mut section = HashMap::new();
 
         let mut current = (0, 0);
-        section.insert(current.clone(), 1);
+        section.insert(current, 1);
         while let Some(direction) = (1..=4)
             .find(|command| section.get(&get_step(*command, &current)).is_none())
             .or_else(|| backtrace.pop())

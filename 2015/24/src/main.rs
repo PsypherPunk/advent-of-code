@@ -36,8 +36,7 @@ fn get_passenger_compartment(input: &str, groups: usize) -> Vec<usize> {
     let mut smallest_groups = get_smallest_groups(&packages, groups).unwrap();
 
     if smallest_groups.len() > 1 {
-        smallest_groups
-            .sort_by(|a, b| get_quantum_entanglement(a).cmp(&get_quantum_entanglement(b)));
+        smallest_groups.sort_by_key(|a| get_quantum_entanglement(&a));
         smallest_groups.first().unwrap().to_vec()
     } else {
         smallest_groups.get(0).unwrap().to_vec()

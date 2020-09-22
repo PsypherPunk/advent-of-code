@@ -58,6 +58,16 @@ fn main() {
         "What is the first time you can press the button to get a capsule? {}",
         sculpture.get_capsule(),
     );
+
+    let mut sculpture = Sculpture::from_str(&input);
+    sculpture.discs.push(Disc {
+        positions: 11,
+        position: 0,
+    });
+    println!(
+        "…what is the first time you can press the button to get another capsule? {}",
+        sculpture.get_capsule(),
+    );
 }
 
 #[cfg(test)]

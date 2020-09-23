@@ -48,6 +48,11 @@ fn main() {
         "…what is the correct checksum? {}",
         fill_disk(input.trim(), 272),
     );
+
+    println!(
+        "…what is the correct checksum for this disk? {}",
+        fill_disk(input.trim(), 35651584),
+    );
 }
 
 #[cfg(test)]

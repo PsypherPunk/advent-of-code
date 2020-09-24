@@ -80,13 +80,41 @@ fn get_shortest_path(passcode: &str) -> String {
     panic!("Could not find path.");
 }
 
+fn get_longest_path_length(passcode: &str) -> usize {
+    let mut queue = VecDeque::new();
+    let start = Step::new(passcode, "", (0, 0));
+    queue.push_back(start);
+    let mut paths = Vec::new();
+
+    while !queue.is_empty() {
+        print!("{}\r", queue.len());
+        let step = queue.pop_front().unwrap();
+
+        if step.room == (3, 3) {
+            paths.push(step.path.len());
+            continue;
+        }
+
+        for next_step in step.get_steps() {
+            queue.push_back(next_step);
+        }
+    }
+
+    *paths.iter().max().unwrap()
+}
+
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
     println!(
         "…what is the shortest path…to reach the vault? {}",
         get_shortest_path(&input.trim()),
-    )
+    );
+
+    println!(
+        "What is the length of the longest path that reaches the vault? {}",
+        get_longest_path_length(&input.trim()),
+    );
 }
 
 #[cfg(test)]
@@ -112,5 +140,26 @@ mod tests {
         let input = "ulqzkmiv";
 
         assert_eq!("DRURDRUDDLLDLUURRDULRLDUUDDDRR", get_shortest_path(input));
+    }
+
+    #[test]
+    fn test_ihgpwlah_length() {
+        let input = "ihgpwlah";
+
+        assert_eq!(370, get_longest_path_length(input));
+    }
+
+    #[test]
+    fn test_kglvqrro_length() {
+        let input = "kglvqrro";
+
+        assert_eq!(492, get_longest_path_length(input));
+    }
+
+    #[test]
+    fn test_ulqzkmiv_length() {
+        let input = "ulqzkmiv";
+
+        assert_eq!(830, get_longest_path_length(input));
     }
 }

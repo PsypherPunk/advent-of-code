@@ -43,9 +43,14 @@ fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
     let map = get_map(&input, 40);
-
     println!(
         "…how many safe tiles are there? {}",
+        get_safe_tile_count(&map),
+    );
+
+    let map = get_map(&input, 400000);
+    println!(
+        "How many safe tiles are there in a total of 400000 rows? {}",
         get_safe_tile_count(&map),
     );
 }

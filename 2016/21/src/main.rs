@@ -1,5 +1,79 @@
 use std::fs;
 
+fn unscramble(instructions: &str, password: &str) -> String {
+    let mut password = password.chars().collect::<Vec<char>>();
+
+    for line in instructions.trim().lines().rev() {
+        let words = line.split_whitespace().collect::<Vec<&str>>();
+        match words[0] {
+            "swap" => match words[1] {
+                "position" => {
+                    let a = words[2].parse::<usize>().unwrap();
+                    let b = words[5].parse::<usize>().unwrap();
+                    password.swap(a, b);
+                }
+                "letter" => {
+                    let a = words[2].chars().next().unwrap();
+                    let b = words[5].chars().next().unwrap();
+                    let a = password.iter().position(|&c| c == a).unwrap();
+                    let b = password.iter().position(|&c| c == b).unwrap();
+                    password.swap(a, b);
+                }
+                _ => panic!(r#"Errr…¯\_(ツ)_/¯"#),
+            },
+            "rotate" => match words[1] {
+                "left" => {
+                    let rotation = words[2].parse::<usize>().unwrap();
+                    password.rotate_right(rotation);
+                }
+                "right" => {
+                    let rotation = words[2].parse::<usize>().unwrap();
+                    password.rotate_left(rotation);
+                }
+                "based" => {
+                    let a = words[6].chars().next().unwrap();
+                    let position = password.iter().position(|&c| c == a).unwrap();
+
+                    let rotation = match position {
+                        0 | 1 => 1,
+                        2 => 6,
+                        3 => 2,
+                        4 => 7,
+                        5 => 3,
+                        6 => 0,
+                        7 => 4,
+                        _ => panic!(r#"Errr…¯\_(ツ)_/¯"#),
+                    };
+
+                    password.rotate_left(rotation);
+                }
+                _ => panic!(r#"Errr…¯\_(ツ)_/¯"#),
+            },
+            "reverse" => {
+                let a = words[2].parse::<usize>().unwrap();
+                let b = words[4].parse::<usize>().unwrap();
+                let start = password[0..a].to_owned();
+                let mut middle = password[a..=b].to_owned();
+                middle.reverse();
+                let mut end = password[(b + 1)..].to_owned();
+
+                password = start;
+                password.append(&mut middle);
+                password.append(&mut end);
+            }
+            "move" => {
+                let a = words[5].parse::<usize>().unwrap();
+                let b = words[2].parse::<usize>().unwrap();
+                let ch = password.remove(a);
+                password.insert(b, ch);
+            }
+            _ => panic!(r#"Errr…¯\_(ツ)_/¯"#),
+        }
+    }
+
+    password.iter().collect()
+}
+
 fn scramble(instructions: &str, password: &str) -> String {
     let mut password = password.chars().collect::<Vec<char>>();
 
@@ -73,6 +147,11 @@ fn main() {
     println!(
         "…what is the result of scrambling abcdefgh? {}",
         scramble(&input, "abcdefgh"),
+    );
+
+    println!(
+        "What is the un-scrambled version of the scrambled password fbgdceah? {}",
+        unscramble(&input, "fbgdceah"),
     );
 }
 

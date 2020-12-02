@@ -41,12 +41,33 @@ fn get_valid_password_count(input: &str) -> usize {
         .count()
 }
 
+fn is_valid_otcas_password(policy: &Policy, password: &str) -> bool {
+    let a = password.chars().nth(policy.min_count - 1).unwrap() == policy.letter;
+    let b = password.chars().nth(policy.max_count - 1).unwrap() == policy.letter;
+
+    a ^ b
+}
+
+fn get_valid_otcas_password_count(input: &str) -> usize {
+    let policies_passwords = get_policies_passwords(&input);
+
+    policies_passwords
+        .iter()
+        .filter(|(policy, password)| is_valid_otcas_password(policy, password))
+        .count()
+}
+
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
     println!(
         "How many passwords are valid…? {}",
         get_valid_password_count(&input),
+    );
+
+    println!(
+        "How many passwords are valid…? {}",
+        get_valid_otcas_password_count(&input),
     );
 }
 
@@ -61,5 +82,14 @@ mod tests {
 2-9 c: ccccccccc""#;
 
         assert_eq!(2, get_valid_password_count(&input));
+    }
+
+    #[test]
+    fn test_part_two() {
+        let input = r#"1-3 a: abcde
+1-3 b: cdefg
+2-9 c: ccccccccc""#;
+
+        assert_eq!(1, get_valid_otcas_password_count(&input));
     }
 }

@@ -33,6 +33,21 @@ fn get_highest_seat_id(input: &str) -> usize {
         .unwrap()
 }
 
+fn get_seat_number(input: &str) -> usize {
+    let mut seat_ids: Vec<usize> = input.trim().lines().map(|line| get_seat_id(line)).collect();
+
+    seat_ids.sort_unstable();
+    let lowest = seat_ids.get(0).unwrap();
+
+    let (_, &seat_id) = seat_ids
+        .iter()
+        .enumerate()
+        .find(|&(idx, &seat_id)| idx != seat_id - lowest)
+        .unwrap();
+
+    seat_id - 1
+}
+
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
@@ -40,6 +55,8 @@ fn main() {
         "What is the highest seat ID on a boarding pass? {}",
         get_highest_seat_id(&input),
     );
+
+    println!("What is the ID of your seat? {}", get_seat_number(&input));
 }
 
 #[cfg(test)]

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter, Result};
 use std::fs;
 
 type Point = (isize, isize);
@@ -56,6 +57,37 @@ impl Cluster {
     }
 }
 
+impl Display for Cluster {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let &(max_x, max_y) = self.grid.keys().max().unwrap();
+        let moves = self
+            .get_viable_pairs()
+            .iter()
+            .flat_map(|pair| vec![pair.0, pair.1])
+            .collect::<Vec<_>>();
+
+        let output = (0..=max_x)
+            .map(|x| {
+                (0..=max_y)
+                    .map(|y| {
+                        let node = self.grid.get(&(x, y)).unwrap();
+                        match node {
+                            _ if (x, y) == (max_x, 0) => 'G',
+                            _ if (x, y) == (0, 0) => 'A',
+                            _ if node.used == 0 => '_',
+                            _ if !moves.contains(&node) => '#',
+                            _ => '.',
+                        }
+                    })
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        write!(f, "{}", output)
+    }
+}
+
 impl Node {
     fn from_str(input: &str) -> Self {
         let details = input.trim().split_whitespace().collect::<Vec<_>>();
@@ -77,4 +109,6 @@ fn main() {
         "How many viable pairs of nodes are there? {}",
         cluster.get_viable_pairs().len(),
     );
+
+    print!("{}", cluster);
 }

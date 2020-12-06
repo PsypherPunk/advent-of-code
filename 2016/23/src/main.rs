@@ -7,9 +7,9 @@ struct Assembunny {
 }
 
 impl Assembunny {
-    fn from_string(input: &str) -> Self {
+    fn from_string(input: &str, a: isize) -> Self {
         let mut registers = HashMap::new();
-        registers.insert("a".to_string(), 7);
+        registers.insert("a".to_string(), a);
 
         let mut instructions = input
             .trim()
@@ -95,7 +95,14 @@ impl Assembunny {
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
-    let assembunny = Assembunny::from_string(&input);
+    let assembunny = Assembunny::from_string(&input, 7);
+
+    println!(
+        "What value should be sent to the safe? {}",
+        assembunny.registers.get("a").unwrap(),
+    );
+
+    let assembunny = Assembunny::from_string(&input, 12);
 
     println!(
         "What value should be sent to the safe? {}",
@@ -117,7 +124,7 @@ cpy 1 a
 dec a
 dec a"#;
 
-        let assembunny = Assembunny::from_string(&input);
+        let assembunny = Assembunny::from_string(&input, 0);
 
         assert_eq!(3, *assembunny.registers.get("a").unwrap());
     }

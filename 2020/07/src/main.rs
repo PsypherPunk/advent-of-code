@@ -40,14 +40,14 @@ impl Regulations {
         containers
     }
 
-    fn get_content_count(&self, bag_type: &str) -> usize {
+    fn get_total_bag_count(&self, bag_type: &str) -> usize {
         let rules = self.rules.get(bag_type).unwrap();
 
         1 + match rules.len() {
             0 => 0,
             _ => rules
                 .iter()
-                .map(|rule| rule.count * self.get_content_count(&rule.bag_type))
+                .map(|rule| rule.count * self.get_total_bag_count(&rule.bag_type))
                 .sum(),
         }
     }
@@ -107,6 +107,11 @@ fn main() {
         "How many bag colors can eventually contain at least one shiny gold bag? {}",
         regulations.get_bags_containing("shiny gold").len(),
     );
+
+    println!(
+        "How many individual bags are required inside your single shiny gold bag? {}",
+        regulations.get_total_bag_count("shiny gold") - 1,
+    );
 }
 
 #[cfg(test)]
@@ -127,9 +132,21 @@ dotted black bags contain no other bags."#;
 
         let regulations = Regulations::from_str(&input).unwrap();
 
-        assert_eq!(12, regulations.get_content_count("vibrant plum"));
-        assert_eq!(1, regulations.get_content_count("faded blue"));
-
         assert_eq!(4, regulations.get_bags_containing("shiny gold").len());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let input = r#"shiny gold bags contain 2 dark red bags.
+dark red bags contain 2 dark orange bags.
+dark orange bags contain 2 dark yellow bags.
+dark yellow bags contain 2 dark green bags.
+dark green bags contain 2 dark blue bags.
+dark blue bags contain 2 dark violet bags.
+dark violet bags contain no other bags."#;
+
+        let regulations = Regulations::from_str(&input).unwrap();
+
+        assert_eq!(126, regulations.get_total_bag_count("shiny gold") - 1);
     }
 }

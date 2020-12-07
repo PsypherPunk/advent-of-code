@@ -109,6 +109,29 @@ impl Hvac {
             .min()
             .unwrap()
     }
+
+    fn get_shortest_path_with_return(&self) -> usize {
+        let targets = self.get_targets();
+        let distances = self.get_distances_between_targets(&targets);
+
+        let mut steps = (0..targets.len()).collect::<Vec<_>>();
+        steps.insert(0, 0);
+        steps
+            .iter()
+            .permutations(steps.len())
+            .filter(|permutation| {
+                *permutation.first().unwrap() == &0 && *permutation.last().unwrap() == &0
+            })
+            .map(|permutation| {
+                permutation
+                    .into_iter()
+                    .tuple_windows::<(&usize, &usize)>()
+                    .map(|(from, to)| distances.get(&(*from, *to)).unwrap())
+                    .sum()
+            })
+            .min()
+            .unwrap()
+    }
 }
 
 impl FromStr for Hvac {
@@ -166,6 +189,11 @@ fn main() {
     println!(
         "…what is the fewest number of steps…? {}",
         hvac.get_shortest_path(),
+    );
+
+    println!(
+        "What is the fewest number of steps…and then return to 0? {}",
+        hvac.get_shortest_path_with_return(),
     );
 }
 

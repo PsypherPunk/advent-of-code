@@ -15,15 +15,33 @@ fn get_first_invalid_number(numbers: &[usize], window_size: usize) -> usize {
         .iter()
         .skip(window_size)
         .zip(numbers.windows(window_size))
-        .find(|(candidate, window)| {
+        .find(|&(candidate, window)| {
             window
                 .iter()
                 .tuple_combinations()
-                .find(|&(a, b)| a + b == **candidate)
+                .find(|&(a, b)| a + b == *candidate)
                 .is_none()
         })
         .map(|(invalid, _)| *invalid)
         .unwrap()
+}
+
+fn get_encryption_weakness(numbers: &[usize], invalid_number: usize) -> usize {
+    let invalid_number_position = numbers
+        .iter()
+        .find(|&number| *number == invalid_number)
+        .unwrap();
+
+    let contiguous_set = (2..*invalid_number_position)
+        .map(|window_size| {
+            numbers
+                .windows(window_size)
+                .find(|contiguous_set| contiguous_set.iter().sum::<usize>() == invalid_number)
+        })
+        .find_map(|contiguous_set| contiguous_set)
+        .unwrap();
+
+    contiguous_set.iter().min().unwrap() + contiguous_set.iter().max().unwrap()
 }
 
 fn main() {
@@ -35,6 +53,11 @@ fn main() {
     println!(
         "What is the first number that does not have this property? {}",
         invalid_number,
+    );
+
+    println!(
+        "What is the encryption weakness in your XMAS-encrypted list of numbers? {}",
+        get_encryption_weakness(&numbers, invalid_number),
     );
 }
 
@@ -68,5 +91,13 @@ mod tests {
         let numbers = get_numbers(&INPUT);
 
         assert_eq!(127, get_first_invalid_number(&numbers, 5))
+    }
+
+    #[test]
+    fn test_part_two() {
+        let numbers = get_numbers(&INPUT);
+        let invalid_number = get_first_invalid_number(&numbers, 5);
+
+        assert_eq!(62, get_encryption_weakness(&numbers, invalid_number));
     }
 }

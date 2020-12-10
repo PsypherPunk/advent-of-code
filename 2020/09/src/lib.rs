@@ -27,12 +27,14 @@ pub fn get_first_invalid_number(numbers: &[usize], window_size: usize) -> usize 
 pub fn get_encryption_weakness(numbers: &[usize], invalid_number: usize) -> usize {
     let invalid_number_position = numbers
         .iter()
-        .find(|&number| *number == invalid_number)
+        .enumerate()
+        .find(|(_, &number)| number == invalid_number)
+        .map(|(position, _)| position)
         .unwrap();
 
-    let contiguous_set = (2..*invalid_number_position)
+    let contiguous_set = (2..)
         .map(|window_size| {
-            numbers
+            numbers[0..invalid_number_position]
                 .windows(window_size)
                 .find(|contiguous_set| contiguous_set.iter().sum::<usize>() == invalid_number)
         })

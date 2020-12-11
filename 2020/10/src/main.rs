@@ -12,4 +12,9 @@ fn main() {
         "What is the number of 1-jolt differences multiplied by the number of 3-jolt differences? {}",
         diffs.get(&1).unwrap() * diffs.get(&3).unwrap(),
     );
+
+    println!(
+        "What is the total number of distinct ways you can…connect the charging outlet to your device? {}",
+        get_distinct_ways(&joltages),
+    );
 }

@@ -1,19 +1,21 @@
-use itertools::Itertools;
 use std::collections::HashMap;
 
+use itertools::Itertools;
+
 pub fn get_adapter_joltages(input: &str) -> Vec<usize> {
-    input
+    let mut joltages = input
         .trim()
         .lines()
         .map(|line| line.parse().unwrap())
-        .collect()
+        .collect::<Vec<usize>>();
+    joltages.insert(0, 0);
+    joltages.sort_unstable();
+    joltages.push(joltages.last().unwrap() + 3);
+
+    joltages
 }
 
 pub fn get_joltage_differences(joltages: &[usize]) -> HashMap<usize, usize> {
-    let mut joltages = joltages.to_owned();
-    joltages.insert(0, 0);
-    joltages.sort_unstable();
-
     let mut diffs = HashMap::new();
     joltages
         .iter()
@@ -22,9 +24,27 @@ pub fn get_joltage_differences(joltages: &[usize]) -> HashMap<usize, usize> {
         .for_each(|diff| {
             *diffs.entry(diff).or_insert(0) += 1;
         });
-    *diffs.entry(3).or_insert(0) += 1;
 
     diffs
+}
+
+pub fn get_distinct_ways(joltages: &[usize]) -> usize {
+    let mut memoise: Vec<(usize, usize)> = Vec::with_capacity(joltages.len());
+
+    joltages.iter().for_each(|joltage| {
+        let sum = memoise
+            .iter()
+            .rev()
+            .take(3)
+            .filter(|(memo_joltage, _)| memo_joltage + 3 >= *joltage)
+            .map(|(_, s)| s)
+            .sum();
+        memoise.push((*joltage, std::cmp::max(1, sum)));
+    });
+
+    let (_, total) = memoise.last().unwrap();
+
+    *total
 }
 
 #[cfg(test)]
@@ -89,5 +109,19 @@ mod tests {
         let diffs = get_joltage_differences(&joltages);
 
         assert_eq!(220, diffs.get(&1).unwrap() * diffs.get(&3).unwrap());
+    }
+
+    #[test]
+    fn test_part_two_small() {
+        let joltages = get_adapter_joltages(&SMALL);
+
+        assert_eq!(8, get_distinct_ways(&joltages))
+    }
+
+    #[test]
+    fn test_part_two_large() {
+        let joltages = get_adapter_joltages(&LARGE);
+
+        assert_eq!(19208, get_distinct_ways(&joltages))
     }
 }

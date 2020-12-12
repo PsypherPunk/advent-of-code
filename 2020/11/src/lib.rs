@@ -3,17 +3,30 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
 type Point = (usize, usize);
+type Direction = (isize, isize);
 
-#[derive(Clone, Copy, PartialEq)]
+const LINE_OF_SIGHT: [Direction; 8] = [
+    (0, -1),
+    (1, -1),
+    (1, 0),
+    (1, 1),
+    (0, 1),
+    (-1, 1),
+    (-1, 0),
+    (-1, -1),
+];
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Position {
     Floor,
     EmptySeat,
     OccupiedSeat,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SeatLayout {
     positions: HashMap<Point, Position>,
+    tolerance: usize,
 }
 
 impl FromStr for SeatLayout {
@@ -33,6 +46,7 @@ impl FromStr for SeatLayout {
                             match char {
                                 '.' => Position::Floor,
                                 'L' => Position::EmptySeat,
+                                '#' => Position::OccupiedSeat,
                                 _ => panic!("Unexpected character: {}", char),
                             },
                         )
@@ -41,7 +55,10 @@ impl FromStr for SeatLayout {
             })
             .collect();
 
-        Ok(Self { positions })
+        Ok(Self {
+            positions,
+            tolerance: 4,
+        })
     }
 }
 
@@ -74,25 +91,52 @@ impl SeatLayout {
             .count()
     }
 
+    pub fn set_tolerance(&mut self, tolerance: usize) {
+        self.tolerance = tolerance;
+    }
+
     fn get_occupied_neighbour_count(&self, point: &Point) -> usize {
         let (px, py) = point;
-        let (max_x, max_y) = self.positions.keys().max().unwrap();
 
         (py.saturating_sub(1)..=py + 1)
-            .flat_map(|ny| {
+            .map(|ny| {
                 (px.saturating_sub(1)..=px + 1)
                     .map(move |nx| (nx, ny))
-                    .collect::<Vec<Point>>()
+                    .filter(|neighbour| *neighbour != *point)
+                    .filter(|neighbour| {
+                        matches!(self.positions.get(neighbour), Some(Position::OccupiedSeat))
+                    })
+                    .count()
             })
-            .filter(|neighbour| *neighbour != *point)
-            .filter(|(nx, ny)| nx <= max_x && ny <= max_y)
-            .filter(|neighbour| {
-                matches!(
-                    self.positions.get(neighbour).unwrap(),
-                    Position::OccupiedSeat
-                )
+            .sum()
+    }
+
+    fn get_visible_neighbour_count(&self, point: &Point) -> usize {
+        let (px, py) = point;
+
+        LINE_OF_SIGHT
+            .iter()
+            .map(|(los_x, los_y)| {
+                let mut visible_seats = 0;
+                let (mut view_x, mut view_y) = ((*px as isize + los_x), (*py as isize + los_y));
+                while view_x >= 0 && view_y >= 0 {
+                    match self.positions.get(&(view_x as usize, view_y as usize)) {
+                        Some(Position::OccupiedSeat) => {
+                            visible_seats = 1;
+                            break;
+                        }
+                        None | Some(Position::EmptySeat) => {
+                            break;
+                        }
+                        _ => {
+                            view_x += los_x;
+                            view_y += los_y;
+                        }
+                    }
+                }
+                visible_seats
             })
-            .count()
+            .sum()
     }
 
     fn get_next_layout(&self) -> SeatLayout {
@@ -105,14 +149,40 @@ impl SeatLayout {
                     _ => (*point, Position::EmptySeat),
                 },
                 Position::OccupiedSeat => match self.get_occupied_neighbour_count(point) {
-                    n if n >= 4 => (*point, Position::EmptySeat),
+                    n if n >= self.tolerance => (*point, Position::EmptySeat),
                     _ => (*point, Position::OccupiedSeat),
                 },
                 _ => (*point, position),
             })
             .collect();
 
-        SeatLayout { positions }
+        SeatLayout {
+            positions,
+            tolerance: self.tolerance,
+        }
+    }
+
+    fn get_next_visible_layout(&self) -> SeatLayout {
+        let positions = self
+            .positions
+            .iter()
+            .map(|(point, &position)| match position {
+                Position::EmptySeat => match self.get_visible_neighbour_count(point) {
+                    0 => (*point, Position::OccupiedSeat),
+                    _ => (*point, Position::EmptySeat),
+                },
+                Position::OccupiedSeat => match self.get_visible_neighbour_count(point) {
+                    n if n >= self.tolerance => (*point, Position::EmptySeat),
+                    _ => (*point, Position::OccupiedSeat),
+                },
+                _ => (*point, position),
+            })
+            .collect();
+
+        SeatLayout {
+            positions,
+            tolerance: self.tolerance,
+        }
     }
 }
 
@@ -121,7 +191,21 @@ pub fn get_stable_layout(seat_layout: &SeatLayout) -> SeatLayout {
     loop {
         let next = current.get_next_layout();
 
-        println!("{}", &current);
+        println!("{}\n", &current);
+
+        if next == current {
+            return next;
+        }
+        current = next.clone();
+    }
+}
+
+pub fn get_correct_stable_layout(seat_layout: &SeatLayout) -> SeatLayout {
+    let mut current = seat_layout.clone();
+    loop {
+        let next = current.get_next_visible_layout();
+
+        println!("{}\n", &current);
 
         if next == current {
             return next;
@@ -152,6 +236,83 @@ L.LLLLL.LL"#;
         assert_eq!(
             37,
             get_stable_layout(&seat_layout).get_occupied_seat_count(),
+        );
+    }
+
+    #[test]
+    fn test_part_two_8() {
+        let input = r#".......#.
+...#.....
+.#.......
+.........
+..#L....#
+....#....
+.........
+#........
+...#....."#;
+        let seat_layout = SeatLayout::from_str(&input).unwrap();
+
+        assert_eq!(
+            Position::EmptySeat,
+            *seat_layout.positions.get(&(3, 4)).unwrap(),
+        );
+        assert_eq!(8, seat_layout.get_visible_neighbour_count(&(3, 4)),);
+    }
+
+    #[test]
+    fn test_part_two_0() {
+        let input = r#".##.##.
+#.#.#.#
+##...##
+...L...
+##...##
+#.#.#.#
+.##.##."#;
+        let seat_layout = SeatLayout::from_str(&input).unwrap();
+
+        assert_eq!(
+            Position::EmptySeat,
+            *seat_layout.positions.get(&(3, 3)).unwrap(),
+        );
+        assert_eq!(0, seat_layout.get_visible_neighbour_count(&(3, 3)),);
+    }
+
+    #[test]
+    fn test_part_two_problem_step() {
+        let before = r#"#.LL.LL.L#
+#LLLLLL.LL
+L.L.L..L..
+LLLL.LL.LL
+L.LL.LL.LL
+L.LLLLL.LL
+..L.L.....
+LLLLLLLLL#
+#.LLLLLL.L
+#.LLLLL.L#"#;
+        let after = r#"#.L#.##.L#
+#L#####.LL
+L.#.#..#..
+##L#.##.##
+#.##.#L.##
+#.#####.#L
+..#.#.....
+LLL####LL#
+#.L#####.L
+#.L####.L#"#;
+        let before = SeatLayout::from_str(&before).unwrap();
+        let after = SeatLayout::from_str(&after).unwrap();
+
+        assert_eq!(after, before.get_next_visible_layout());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let mut seat_layout = SeatLayout::from_str(&INPUT).unwrap();
+        seat_layout.set_tolerance(5);
+
+        assert_eq!(
+            26,
+            get_correct_stable_layout(&seat_layout).get_occupied_seat_count(),
         );
     }
 }

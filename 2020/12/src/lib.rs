@@ -19,7 +19,9 @@ struct Navigation {
 pub struct Ferry {
     facing: Complex<i32>,
     position: Complex<i32>,
+    bearing: Complex<i32>,
     navigation: Navigation,
+    waypoint: Complex<i32>,
 }
 
 impl FromStr for Ferry {
@@ -48,7 +50,9 @@ impl FromStr for Ferry {
         Ok(Self {
             facing: Complex::i(),
             position: Complex::new(0, 0),
+            bearing: Complex::new(0, 0),
             navigation: Navigation { instructions },
+            waypoint: Complex::new(1, 10),
         })
     }
 }
@@ -60,24 +64,31 @@ impl Ferry {
             match action {
                 Action::North(value) => {
                     self.position += value;
+                    self.waypoint += value;
                 }
                 Action::South(value) => {
                     self.position -= value;
+                    self.waypoint -= value;
                 }
                 Action::East(value) => {
                     self.position.im += value;
+                    self.waypoint.im += value;
                 }
                 Action::West(value) => {
                     self.position.im -= value;
+                    self.waypoint.im -= value;
                 }
                 Action::Left(value) => {
                     self.facing *= Complex::i().powi(-value / 90);
+                    self.waypoint *= Complex::i().powi(-value / 90);
                 }
                 Action::Right(value) => {
                     self.facing *= Complex::i().powi(value / 90);
+                    self.waypoint *= Complex::i().powi(value / 90);
                 }
                 Action::Forward(value) => {
                     self.position += self.facing * value;
+                    self.bearing += self.waypoint * value;
                 }
             }
         });
@@ -85,8 +96,12 @@ impl Ferry {
         self.position
     }
 
-    pub fn get_manhattan_distanct(&self) -> i32 {
+    pub fn get_position_manhattan_distance(&self) -> i32 {
         self.position.im.abs() + self.position.re.abs()
+    }
+
+    pub fn get_bearing_manhattan_distance(&self) -> i32 {
+        self.bearing.im.abs() + self.bearing.re.abs()
     }
 }
 
@@ -106,6 +121,15 @@ F11"#;
 
         ferry.navigate();
 
-        assert_eq!(25, ferry.position.re.abs() + ferry.position.im.abs(),);
+        assert_eq!(25, ferry.position.re.abs() + ferry.position.im.abs());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let mut ferry = Ferry::from_str(&INPUT).unwrap();
+
+        ferry.navigate();
+
+        assert_eq!(286, ferry.bearing.re.abs() + ferry.bearing.im.abs());
     }
 }

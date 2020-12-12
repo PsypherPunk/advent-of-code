@@ -11,6 +11,14 @@ fn main() {
 
     println!(
         "What is the Manhattan distance between that location and the ship's starting position? {}",
-        ferry.get_manhattan_distanct(),
+        ferry.get_position_manhattan_distance(),
+    );
+
+    let mut ferry = Ferry::from_str(&input).unwrap();
+    ferry.navigate();
+
+    println!(
+        "What is the Manhattan distance between that location and the ship's starting position? {}",
+        ferry.get_bearing_manhattan_distance(),
     );
 }

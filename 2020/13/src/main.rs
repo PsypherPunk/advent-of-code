@@ -12,4 +12,9 @@ fn main() {
         "What is the ID…multiplied by the number of minutes…? {}",
         bus_id * wait,
     );
+
+    println!(
+        "What is the earliest timestamp…? {}",
+        notes.get_earliest_timestamp_with_offset(),
+    );
 }

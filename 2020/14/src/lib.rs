@@ -3,40 +3,93 @@ use std::collections::HashMap;
 type BitMask = Vec<(usize, Option<bool>)>;
 type Memory = HashMap<usize, usize>;
 
+struct MemoryWrite {
+    address: usize,
+    value: usize,
+}
+
+fn get_bitmask(mask: &str) -> BitMask {
+    mask.chars()
+        .rev()
+        .enumerate()
+        .map(|(index, bit)| {
+            (
+                index,
+                match bit {
+                    'X' => None,
+                    '0' => Some(false),
+                    '1' => Some(true),
+                    _ => panic!("Invalid character: {}", bit),
+                },
+            )
+        })
+        .collect()
+}
+
+fn get_memory_write(instruction: &str) -> MemoryWrite {
+    let address_end = instruction.chars().position(|c| c == ']').unwrap();
+    let value_start = instruction.chars().position(|c| c == '=').unwrap() + 2;
+
+    let address = instruction[4..address_end].parse().unwrap();
+    let value = instruction[value_start..].parse().unwrap();
+
+    MemoryWrite { address, value }
+}
+
 pub fn read_initialization_program(input: &str) -> usize {
     let mut memory = Memory::new();
     let mut bitmask = BitMask::new();
 
     input.trim().lines().for_each(|line| match line {
         mask if mask.starts_with("mask") => {
-            bitmask = line[7..]
-                .chars()
-                .rev()
-                .enumerate()
-                .map(|(bit, char)| {
-                    (
-                        bit,
-                        match char {
-                            'X' => None,
-                            '0' => Some(false),
-                            '1' => Some(true),
-                            _ => panic!("Invalid character: {}", char),
-                        },
-                    )
-                })
-                .collect();
+            bitmask = get_bitmask(&line[7..]);
         }
         mem if mem.starts_with("mem") => {
-            let address_end = mem.chars().position(|c| c == ']').unwrap();
-            let value_start = mem.chars().position(|c| c == '=').unwrap() + 2;
-
-            let address = mem[4..address_end].parse().unwrap();
-            let mut value = mem[value_start..].parse().unwrap();
+            let mut write = get_memory_write(&mem);
 
             for (i, bit) in bitmask.iter().filter(|(_, bm)| bm.is_some()) {
-                value = (value & !(1 << i)) | ((bit.unwrap() as usize) << i);
+                write.value = (write.value & !(1 << i)) | ((bit.unwrap() as usize) << i);
             }
-            memory.insert(address, value);
+            memory.insert(write.address, write.value);
+        }
+        _ => panic!("Invalid instruction: {}", line),
+    });
+
+    memory.values().sum()
+}
+
+pub fn read_initialization_program_v2(input: &str) -> usize {
+    let mut memory = Memory::new();
+    let mut bitmask = BitMask::new();
+
+    input.trim().lines().for_each(|line| match line {
+        mask if mask.starts_with("mask") => {
+            bitmask = get_bitmask(&line[7..]);
+        }
+        mem if mem.starts_with("mem") => {
+            let write = get_memory_write(&mem);
+
+            let mut addresses = vec![write.address];
+            for (index, bit) in bitmask.iter() {
+                match bit {
+                    Some(true) => {
+                        let bits = 1 << index;
+                        for address in &mut addresses {
+                            *address |= bits;
+                        }
+                    }
+                    Some(false) => {}
+                    None => {
+                        let bits = 1 << index;
+                        for address in addresses.clone() {
+                            addresses.push(address ^ bits)
+                        }
+                    }
+                }
+            }
+            for address in addresses {
+                memory.insert(address, write.value);
+            }
         }
         _ => panic!("Invalid instruction: {}", line),
     });
@@ -56,5 +109,15 @@ mem[7] = 101
 mem[8] = 0"#;
 
         assert_eq!(165, read_initialization_program(&input));
+    }
+
+    #[test]
+    fn test_part_two() {
+        let input = r#"mask = 000000000000000000000000000000X1001X
+mem[42] = 100
+mask = 00000000000000000000000000000000X0XX
+mem[26] = 1"#;
+
+        assert_eq!(208, read_initialization_program_v2(&input));
     }
 }

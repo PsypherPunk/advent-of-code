@@ -9,4 +9,9 @@ fn main() {
         "What is the sum of all values left in memory after it completes? {}",
         read_initialization_program(&input),
     );
+
+    println!(
+        "What is the sum of all values left in memory after it completes? {}",
+        read_initialization_program_v2(&input),
+    );
 }

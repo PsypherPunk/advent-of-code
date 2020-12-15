@@ -40,4 +40,11 @@ mod tests {
 
         assert_eq!(436, get_nth_number_for_input(&numbers, 2020));
     }
+
+    #[test]
+    fn test_part_two() {
+        let numbers = get_numbers(&INPUT);
+
+        assert_eq!(175594, get_nth_number_for_input(&numbers, 30000000));
+    }
 }

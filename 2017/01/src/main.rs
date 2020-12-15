@@ -9,4 +9,9 @@ fn main() {
         "What is the solution to your captcha? {}",
         get_sum_of_identical_digits(&input),
     );
+
+    println!(
+        "What is the solution to your new captcha? {}",
+        get_sum_of_halfway_digits(&input),
+    );
 }

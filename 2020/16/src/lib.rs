@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 
 type Ticket = Vec<usize>;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Rule {
     lower: usize,
     upper: usize,
@@ -47,7 +47,6 @@ impl FromStr for Document {
                     [a, b] => [a, b],
                     _ => panic!(),
                 };
-                let field = field.split_whitespace().next().unwrap();
                 let rules = rules
                     .trim()
                     .split(" or ")
@@ -86,27 +85,104 @@ impl FromStr for Document {
     }
 }
 
+impl Rule {
+    fn is_valid_value(&self, value: usize) -> bool {
+        value >= self.lower && value <= self.upper
+    }
+}
+
 impl Document {
+    fn get_invalid_ticket_values(&self, ticket: &[usize]) -> Vec<usize> {
+        ticket
+            .iter()
+            .filter(|&value| {
+                self.rules
+                    .values()
+                    .map(|rules| {
+                        rules
+                            .iter()
+                            .find(|rule| rule.is_valid_value(*value))
+                            .is_none()
+                    })
+                    .all(|matches_rule| matches_rule)
+            })
+            .cloned()
+            .collect::<Vec<_>>()
+    }
+
+    fn is_valid_ticket(&self, ticket: &[usize]) -> bool {
+        self.get_invalid_ticket_values(&ticket).is_empty()
+    }
+
     pub fn get_ticket_scanning_error_rate(&self) -> usize {
         self.nearby_tickets
             .iter()
-            .flat_map(|ticket| {
-                ticket
+            .flat_map(|ticket| self.get_invalid_ticket_values(&ticket))
+            .sum()
+    }
+
+    fn get_your_ticket(&self) -> HashMap<String, usize> {
+        let valid_tickets = self
+            .nearby_tickets
+            .iter()
+            .filter(|ticket| self.is_valid_ticket(&ticket))
+            .collect::<Vec<_>>();
+
+        let columnar = (0..self.your_ticket.len())
+            .map(|index| {
+                valid_tickets
                     .iter()
-                    .filter(|&value| {
-                        self.rules
-                            .values()
-                            .map(|rules| {
-                                rules
-                                    .iter()
-                                    .find(|rule| *value >= rule.lower && *value <= rule.upper)
-                                    .is_none()
-                            })
-                            .all(|matches_rule| matches_rule)
-                    })
+                    .map(|ticket| ticket[index])
                     .collect::<Vec<_>>()
             })
-            .sum()
+            .collect::<Vec<_>>();
+
+        let mut rule_indices = self
+            .rules
+            .iter()
+            .map(|(field, rules)| {
+                (
+                    field,
+                    columnar
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, column)| {
+                            column
+                                .iter()
+                                .all(|&value| rules.iter().any(|rule| rule.is_valid_value(value)))
+                        })
+                        .map(|(index, _)| index)
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        rule_indices.sort_by(|(_, a), (_, b)| a.len().cmp(&b.len()));
+        let mut resolved_indices = HashSet::new();
+
+        rule_indices
+            .iter()
+            .map(|(field, indices)| {
+                match indices
+                    .iter()
+                    .find(|&index| !resolved_indices.contains(index))
+                {
+                    Some(index) => {
+                        resolved_indices.insert(*index);
+                        (field.to_string(), *self.your_ticket.get(*index).unwrap())
+                    }
+                    None => unreachable!(),
+                }
+            })
+            .collect()
+    }
+
+    pub fn get_departure_product(&self) -> usize {
+        self.get_your_ticket()
+            .iter()
+            .filter(|(field, _)| field.starts_with("departure"))
+            .map(|(_, value)| value)
+            .product()
     }
 }
 
@@ -132,5 +208,27 @@ nearby tickets:
         let document = Document::from_str(&input).unwrap();
 
         assert_eq!(71, document.get_ticket_scanning_error_rate());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let input = r#"class: 0-1 or 4-19
+row: 0-5 or 8-19
+seat: 0-13 or 16-19
+
+your ticket:
+11,12,13
+
+nearby tickets:
+3,9,18
+15,1,5
+5,14,9"#;
+
+        let document = Document::from_str(&input).unwrap();
+        let your_ticket = document.get_your_ticket();
+
+        assert_eq!(11, *your_ticket.get("row").unwrap());
+        assert_eq!(12, *your_ticket.get("class").unwrap());
+        assert_eq!(13, *your_ticket.get("seat").unwrap());
     }
 }

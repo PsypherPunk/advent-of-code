@@ -12,4 +12,9 @@ fn main() {
         "What is your ticket scanning error rate? {}",
         document.get_ticket_scanning_error_rate(),
     );
+
+    println!(
+        "What do you get if you multiply those six values together? {}",
+        document.get_departure_product(),
+    );
 }

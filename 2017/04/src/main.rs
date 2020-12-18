@@ -9,4 +9,9 @@ fn main() {
         "How many passphrases are valid? {}",
         get_valid_passphrase_count(&input),
     );
+
+    println!(
+        "…how many passphrases are valid? {}",
+        get_valid_non_anagram_passphrase_count(&input),
+    );
 }

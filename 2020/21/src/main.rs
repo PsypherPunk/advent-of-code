@@ -12,4 +12,9 @@ fn main() {
         "How many times do any of those ingredients appear? {}",
         food.get_safe_count(),
     );
+
+    println!(
+        "What is your canonical dangerous ingredient list? {}",
+        food.get_canonical_dangerous_ingredients(),
+    );
 }

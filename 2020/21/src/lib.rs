@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 
-#[derive(Debug)]
 pub struct Food {
     ingredients: Vec<String>,
     allergens: HashMap<String, HashSet<String>>,
@@ -15,7 +14,7 @@ impl FromStr for Food {
         let mut all_allergens = HashMap::new();
 
         s.trim().lines().for_each(|line| {
-            let (ingredients, allergens) = match line.splitn(2, '(').collect::<Vec<_>>()[..] {
+            let (ingredients, allergens) = match line.split('(').collect::<Vec<_>>()[..] {
                 [a, b] => (a, b),
                 _ => panic!("Invalid line: {}", line),
             };
@@ -31,13 +30,13 @@ impl FromStr for Food {
             allergens[8..(allergens.len() - 1)]
                 .split(',')
                 .for_each(|allergen| {
-                    all_allergens
-                        .entry(allergen.to_string())
-                        .and_modify(|allergen_ingredients: &mut HashSet<String>| {
-                            allergen_ingredients
-                                .retain(|ingredient| ingredients.contains(ingredient));
-                        })
-                        .or_insert_with(|| ingredients.clone());
+                    let allergen_ingredients = all_allergens
+                        .entry(allergen.trim().to_string())
+                        .or_insert(ingredients.clone());
+                    *allergen_ingredients = ingredients
+                        .intersection(allergen_ingredients)
+                        .cloned()
+                        .collect();
                 });
         });
 
@@ -50,15 +49,40 @@ impl FromStr for Food {
 
 impl Food {
     pub fn get_safe_count(&self) -> usize {
-        let allergens = self.allergens.values().flatten().collect::<HashSet<_>>();
+        let allergen_ingredients = self.allergens.values().flatten().collect::<HashSet<_>>();
 
         self.ingredients
             .iter()
-            .filter(|ingredient| !allergens.contains(*ingredient))
+            .filter(|ingredient| !allergen_ingredients.contains(*ingredient))
             .count()
     }
 
-    pub fn get_canonical_dangerous_ingredients() {}
+    pub fn get_canonical_dangerous_ingredients(&self) -> String {
+        let mut to_check = self.allergens.clone();
+        let mut canonical_dangerous_ingredients = Vec::new();
+
+        while let Some((allergen, ingredient)) = to_check
+            .iter()
+            .filter_map(|(allergen, ingredients)| match ingredients.len() {
+                1 => Some((allergen.clone(), ingredients.iter().next().unwrap().clone())),
+                _ => None,
+            })
+            .next()
+        {
+            to_check.remove(&allergen).unwrap();
+            to_check.values_mut().for_each(|ingredients| {
+                ingredients.remove(&ingredient);
+            });
+            canonical_dangerous_ingredients.push((allergen, ingredient));
+        }
+
+        canonical_dangerous_ingredients.sort_unstable_by(|(a, _), (b, _)| a.cmp(&b));
+        canonical_dangerous_ingredients
+            .iter()
+            .map(|(_, ingredient)| ingredient.as_str())
+            .collect::<Vec<_>>()
+            .join(",")
+    }
 }
 
 #[cfg(test)]
@@ -73,8 +97,17 @@ sqjhc mxmxvkd sbzzf (contains fish)"#;
     #[test]
     fn test_part_one() {
         let food = Food::from_str(&INPUT).unwrap();
-        dbg!(&food);
 
         assert_eq!(5, food.get_safe_count());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let food = Food::from_str(&INPUT).unwrap();
+
+        assert_eq!(
+            "mxmxvkd,sqjhc,fvjkl",
+            food.get_canonical_dangerous_ingredients()
+        );
     }
 }

@@ -1,84 +1,88 @@
 use std::cmp::Ordering;
-use std::collections::VecDeque;
-use std::str::FromStr;
 
 pub struct CrabCups {
+    cups: Vec<usize>,
     current_cup: usize,
-    cups: VecDeque<usize>,
-}
-
-impl FromStr for CrabCups {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let cups: VecDeque<usize> = s
-            .trim()
-            .chars()
-            .map(|ch| char::to_digit(ch, 10).unwrap() as usize)
-            .collect();
-
-        Ok(Self {
-            current_cup: *cups.get(0).unwrap(),
-            cups,
-        })
-    }
 }
 
 impl CrabCups {
-    fn get_cup_position(&self, cup: &usize) -> usize {
-        self.cups.iter().position(|c| c == cup).unwrap()
+    pub fn from_str(s: &str, num_cups: usize) -> Self {
+        let cups = s
+            .trim()
+            .chars()
+            .map(|c| c.to_digit(10).unwrap() as usize)
+            .collect::<Vec<_>>();
+
+        let mut pointers = (1..=num_cups + 1).collect::<Vec<_>>();
+        pointers[num_cups] = *cups.get(0).unwrap();
+        cups.windows(2).for_each(|window| match window {
+            [a, b] => pointers[*a] = *b,
+            _ => panic!(r#"¯\_(ツ)_/¯"#),
+        });
+        pointers[*cups.last().unwrap()] = *cups.get(0).unwrap();
+        if num_cups > cups.len() {
+            pointers[*cups.last().unwrap()] = cups.len() + 1;
+        }
+
+        Self {
+            cups: pointers,
+            current_cup: *cups.get(0).unwrap(),
+        }
     }
 
-    pub fn do_move(&mut self) {
-        let mut three_cups = Vec::new();
-        for _ in 1..=3 {
-            let removed = self
-                .cups
-                .remove((self.get_cup_position(&self.current_cup) + 1) % self.cups.len())
-                .unwrap();
-            three_cups.push(removed);
-        }
+    fn dereference_pointers(&self, start: usize, limit: usize) -> Vec<usize> {
+        let mut pointer = self.cups[start];
 
-        let mut destination_cup = match self.current_cup {
-            1 => *self.cups.iter().max().unwrap(),
-            _ => self.current_cup - 1,
-        };
-        while three_cups.contains(&destination_cup) {
-            destination_cup = match destination_cup {
-                1 => *self.cups.iter().max().unwrap(),
-                _ => destination_cup - 1,
-            };
-        }
+        (1..=limit)
+            .map(|_| {
+                let cup = pointer;
+                pointer = self.cups[cup];
 
-        let destination_cup_position = self
-            .cups
-            .iter()
-            .position(|c| *c == destination_cup)
-            .unwrap();
-        three_cups
-            .iter()
-            .enumerate()
-            .for_each(|(i, cup)| self.cups.insert(destination_cup_position + 1 + i, *cup));
-
-        let current_cup_position = self.get_cup_position(&self.current_cup);
-        self.current_cup = match (current_cup_position + 1).cmp(&self.cups.len()) {
-            Ordering::Greater | Ordering::Equal => *self.cups.get(0).unwrap(),
-            Ordering::Less => *self.cups.get(current_cup_position + 1).unwrap(),
-        };
+                cup
+            })
+            .collect::<Vec<_>>()
     }
 
     pub fn get_labels(&self) -> String {
-        let one_position = self.cups.iter().position(|c| *c == 1).unwrap();
-
-        let mut after = self.cups.iter().skip(one_position + 1).collect::<Vec<_>>();
-        let before = self.cups.iter().take(one_position).collect::<Vec<_>>();
-        after.extend(before.iter());
-
-        after
+        self.dereference_pointers(1, self.cups.len() - 2)
             .iter()
             .map(|cup| cup.to_string())
             .collect::<Vec<_>>()
             .join("")
+    }
+
+    fn make_move(&mut self) {
+        let three_cups = self.dereference_pointers(self.current_cup, 3);
+
+        self.cups[self.current_cup] = self.cups[*three_cups.last().unwrap()];
+
+        let mut destination_cup = match self.current_cup.cmp(&1) {
+            Ordering::Greater => self.current_cup - 1,
+            _ => self.cups.len() - 1,
+        };
+        while three_cups.contains(&destination_cup) {
+            destination_cup = match destination_cup.cmp(&1) {
+                Ordering::Greater => destination_cup - 1,
+                _ => self.cups.len() - 1,
+            };
+        }
+
+        self.cups[*three_cups.last().unwrap()] = self.cups[destination_cup];
+        self.cups[destination_cup] = *three_cups.first().unwrap();
+
+        self.current_cup = self.cups[self.current_cup];
+    }
+
+    pub fn make_moves(&mut self, moves: usize) {
+        for _ in 0..moves {
+            self.make_move();
+        }
+    }
+
+    pub fn get_cup_product_two_clockwise_of_one(&self) -> usize {
+        let cups = self.dereference_pointers(1, 2);
+
+        cups.get(0).unwrap() * cups.get(1).unwrap()
     }
 }
 
@@ -90,12 +94,22 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let mut crab_cups = CrabCups::from_str(&INPUT).unwrap();
+        let mut crab_cups = CrabCups::from_str(&INPUT, INPUT.trim().len());
 
-        for _ in 0..10 {
-            crab_cups.do_move();
-        }
+        crab_cups.make_moves(100);
 
-        assert_eq!("92658374", crab_cups.get_labels());
+        assert_eq!("67384529", crab_cups.get_labels());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let mut crab_cups = CrabCups::from_str(&INPUT, 1_000_000);
+
+        crab_cups.make_moves(10_000_000);
+
+        assert_eq!(
+            149245887792,
+            crab_cups.get_cup_product_two_clockwise_of_one(),
+        );
     }
 }

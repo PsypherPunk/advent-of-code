@@ -12,4 +12,13 @@ fn main() {
         "…how many tiles are left with the black side up? {}",
         lobby.get_black_tile_count(),
     );
+
+    let mut lobby = Lobby::from_str(&input).unwrap();
+    for _ in 1..=100 {
+        lobby = lobby.get_next_day();
+    }
+    println!(
+        "How many tiles will be black after 100 days? {}",
+        lobby.get_black_tile_count(),
+    );
 }

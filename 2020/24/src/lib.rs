@@ -5,11 +5,13 @@ use num::complex::Complex;
 
 type Directions = HashMap<Vec<char>, Complex<isize>>;
 
+#[derive(Clone, Copy, Debug)]
 enum Tile {
     Black,
     White,
 }
 
+#[derive(Debug)]
 pub struct Lobby {
     tiles: HashMap<Complex<isize>, Tile>,
 }
@@ -65,6 +67,52 @@ impl Lobby {
             .filter(|tile| matches!(tile, Tile::Black))
             .count()
     }
+
+    fn get_neighbours(&self, tile: &Complex<isize>) -> Vec<Complex<isize>> {
+        get_directions()
+            .iter()
+            .map(|(_, direction)| tile + direction)
+            .collect()
+    }
+
+    pub fn get_next_day(&self) -> Self {
+        let new = self
+            .tiles
+            .iter()
+            .flat_map(|(location, _)| {
+                self.get_neighbours(&location)
+                    .iter()
+                    .map(|neighbour| (*neighbour, Tile::White))
+                    .collect::<Vec<_>>()
+            })
+            .collect::<HashMap<_, _>>();
+
+        let combined = new
+            .into_iter()
+            .chain(self.tiles.clone())
+            .collect::<HashMap<_, _>>();
+
+        let tiles = combined
+            .into_iter()
+            .map(|(location, tile)| {
+                let black_adjacent = self
+                    .get_neighbours(&location)
+                    .iter()
+                    .filter_map(|neighbour| self.tiles.get(neighbour))
+                    .filter(|neighbour| matches!(neighbour, Tile::Black))
+                    .count();
+                let tile = match tile {
+                    Tile::Black if black_adjacent == 0 || black_adjacent > 2 => Tile::White,
+                    Tile::White if black_adjacent == 2 => Tile::Black,
+                    _ => tile,
+                };
+                (location, tile)
+            })
+            .filter(|(_, tile)| matches!(tile, Tile::Black))
+            .collect::<HashMap<_, _>>();
+
+        Self { tiles }
+    }
 }
 
 #[cfg(test)]
@@ -115,5 +163,16 @@ nwwswee"#,
         let lobby = Lobby::from_str(&INPUT).unwrap();
 
         assert_eq!(10, lobby.get_black_tile_count());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let mut lobby = Lobby::from_str(&INPUT).unwrap();
+
+        for _ in 1..=100 {
+            lobby = lobby.get_next_day();
+        }
+
+        assert_eq!(2208, lobby.get_black_tile_count());
     }
 }

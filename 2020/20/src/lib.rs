@@ -4,11 +4,11 @@ use std::str::FromStr;
 
 type Point = (isize, isize);
 
-const SEA_MONSTER: &'static str = r##"                  #
+const SEA_MONSTER: &str = r##"                  #
 #    ##    ##    ###
  #  #  #  #  #  #"##;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 enum Pixel {
     White,
     Black,
@@ -16,10 +16,10 @@ enum Pixel {
 
 #[derive(Clone)]
 struct Border {
-    top: u128,
-    right: u128,
-    bottom: u128,
-    left: u128,
+    top: String,
+    right: String,
+    bottom: String,
+    left: String,
 }
 
 #[derive(Clone)]
@@ -27,7 +27,6 @@ pub struct Tile {
     pub id: usize,
     pixels: HashMap<Point, Pixel>,
     border: Border,
-    adjacent: (Option<usize>, Option<usize>, Option<usize>, Option<usize>),
 }
 
 pub struct Image {
@@ -80,47 +79,17 @@ impl Border {
         let (max_x, max_y) = pixels.keys().max().unwrap();
 
         let top = (0..=*max_x)
-            .enumerate()
-            .map(|(index, x)| {
-                let bit = match pixels.get(&(x, 0)).unwrap() {
-                    Pixel::White => 0,
-                    Pixel::Black => 1,
-                };
-                bit << index
-            })
-            .sum();
+            .map(|x| pixels.get(&(x, 0)).unwrap().to_string())
+            .collect::<String>();
         let right = (0..=*max_y)
-            .enumerate()
-            .map(|(index, y)| {
-                let bit = match pixels.get(&(*max_x, y)).unwrap() {
-                    Pixel::White => 0,
-                    Pixel::Black => 1,
-                };
-                bit << index
-            })
-            .sum();
+            .map(|y| pixels.get(&(*max_x, y)).unwrap().to_string())
+            .collect::<String>();
         let bottom = (0..=*max_x)
-            .rev()
-            .enumerate()
-            .map(|(index, x)| {
-                let bit = match pixels.get(&(x, *max_y)).unwrap() {
-                    Pixel::White => 0,
-                    Pixel::Black => 1,
-                };
-                bit << index
-            })
-            .sum();
+            .map(|x| pixels.get(&(x, *max_y)).unwrap().to_string())
+            .collect::<String>();
         let left = (0..=*max_y)
-            .rev()
-            .enumerate()
-            .map(|(index, y)| {
-                let bit = match pixels.get(&(0, y)).unwrap() {
-                    Pixel::White => 0,
-                    Pixel::Black => 1,
-                };
-                bit << index
-            })
-            .sum();
+            .map(|y| pixels.get(&(0, y)).unwrap().to_string())
+            .collect::<String>();
 
         Self {
             top,
@@ -158,12 +127,7 @@ impl FromStr for Tile {
 
         let border = Border::from_pixels(&pixels);
 
-        Ok(Self {
-            id,
-            pixels,
-            border,
-            adjacent: (None, None, None, None),
-        })
+        Ok(Self { id, pixels, border })
     }
 }
 
@@ -215,10 +179,7 @@ impl FromStr for Image {
             })
             .collect();
 
-        let mut image = Image { tiles };
-        image.find_adjacent_tiles();
-
-        Ok(image)
+        Ok(Image { tiles })
     }
 }
 
@@ -227,48 +188,21 @@ impl Image {
         let corners = self
             .tiles
             .iter()
-            .filter(|tile| match tile.adjacent {
-                (None, Some(_), Some(_), None) => true,
-                (None, None, Some(_), Some(_)) => true,
-                (Some(_), None, None, Some(_)) => true,
-                (Some(_), Some(_), None, None) => true,
-                _ => false,
+            .filter(|tile| {
+                self.tiles
+                    .iter()
+                    .find(|other| tile.id != other.id && tile.border.top == other.border.bottom)
+                    .is_none()
+                    && self
+                        .tiles
+                        .iter()
+                        .find(|other| tile.id != other.id && tile.border.left == other.border.right)
+                        .is_none()
             })
             .map(|tile| tile.id)
             .collect::<HashSet<_>>();
 
         corners.into_iter().collect()
-    }
-
-    fn find_adjacent_tiles(&mut self) {
-        for i in 0..self.tiles.len() {
-            self.tiles[i].adjacent = (
-                match self.tiles.iter().find(|adj| {
-                    adj.id != self.tiles[i].id && adj.border.bottom == self.tiles[i].border.top
-                }) {
-                    Some(adj) => Some(adj.id),
-                    None => None,
-                },
-                match self.tiles.iter().find(|adj| {
-                    adj.id != self.tiles[i].id && adj.border.left == self.tiles[i].border.right
-                }) {
-                    Some(adj) => Some(adj.id),
-                    None => None,
-                },
-                match self.tiles.iter().find(|adj| {
-                    adj.id != self.tiles[i].id && adj.border.top == self.tiles[i].border.bottom
-                }) {
-                    Some(adj) => Some(adj.id),
-                    None => None,
-                },
-                match self.tiles.iter().find(|adj| {
-                    adj.id != self.tiles[i].id && adj.border.right == self.tiles[i].border.left
-                }) {
-                    Some(adj) => Some(adj.id),
-                    None => None,
-                },
-            );
-        }
     }
 
     pub fn get_final_image(&mut self) -> Tile {
@@ -288,9 +222,21 @@ impl Image {
                     (0, 0) => self
                         .tiles
                         .iter()
-                        .find(|tile| match tile.adjacent {
-                            (None, Some(_), Some(_), None) => true,
-                            _ => false,
+                        .find(|tile| {
+                            self.tiles
+                                .iter()
+                                .find(|other| {
+                                    tile.id != other.id && tile.border.top == other.border.bottom
+                                })
+                                .is_none()
+                                && self
+                                    .tiles
+                                    .iter()
+                                    .find(|other| {
+                                        tile.id != other.id
+                                            && tile.border.left == other.border.right
+                                    })
+                                    .is_none()
                         })
                         .unwrap(),
                     (nx, 0) => {
@@ -298,12 +244,7 @@ impl Image {
                         self.tiles
                             .iter()
                             .find(|tile| {
-                                tile.id == left.adjacent.1.unwrap()
-                                    && tile.adjacent.0.is_none()
-                                    && tile.adjacent.3.is_some()
-                                    && ((nx == row - 1) ^ tile.adjacent.1.is_some())
-                                    && ((nx == 0) ^ tile.adjacent.3.is_some())
-                                    && tile.adjacent.3.unwrap() == left.id
+                                left.id != tile.id && tile.border.left == left.border.right
                             })
                             .unwrap()
                     }
@@ -311,14 +252,7 @@ impl Image {
                         let up = arrangement.get(&(nx, ny - 1)).unwrap();
                         self.tiles
                             .iter()
-                            .find(|tile| {
-                                tile.id == up.adjacent.2.unwrap()
-                                    && tile.adjacent.0.is_some()
-                                    && ((nx == row - 1) ^ tile.adjacent.1.is_some())
-                                    && ((nx == 0) ^ tile.adjacent.3.is_some())
-                                    && ((ny == row - 1) ^ tile.adjacent.2.is_some())
-                                    && tile.adjacent.0.unwrap() == up.id
-                            })
+                            .find(|tile| up.id != tile.id && tile.border.top == up.border.bottom)
                             .unwrap()
                     }
                 };
@@ -355,18 +289,17 @@ impl Image {
             id: 0,
             pixels,
             border: Border {
-                top: 0,
-                right: 0,
-                bottom: 0,
-                left: 0,
+                top: "".to_string(),
+                right: "".to_string(),
+                bottom: "".to_string(),
+                left: "".to_string(),
             },
-            adjacent: (None, None, None, None),
         }
     }
 }
 
 impl Tile {
-    fn flip_y(&self) -> Self {
+    fn flip_y(&self) -> Tile {
         let (_, height) = self.pixels.keys().max().unwrap();
 
         let pixels = self
@@ -377,15 +310,14 @@ impl Tile {
 
         let border = Border::from_pixels(&pixels);
 
-        Self {
+        Tile {
             id: self.id,
             pixels,
             border,
-            adjacent: (None, None, None, None),
         }
     }
 
-    fn flip_x(&self) -> Self {
+    fn flip_x(&self) -> Tile {
         let (width, _) = self.pixels.keys().max().unwrap();
 
         let pixels = self
@@ -396,15 +328,14 @@ impl Tile {
 
         let border = Border::from_pixels(&pixels);
 
-        Self {
+        Tile {
             id: self.id,
             pixels,
             border,
-            adjacent: (None, None, None, None),
         }
     }
 
-    fn rotate_anti_clockwise(&self) -> Self {
+    fn rotate_anti_clockwise(&self) -> Tile {
         let (width, _) = self.pixels.keys().max().unwrap();
 
         let pixels = self
@@ -413,16 +344,12 @@ impl Tile {
             .map(|((x, y), pixel)| ((*y, (x * -1) + width), pixel.clone()))
             .collect();
 
-        Self {
+        let border = Border::from_pixels(&pixels);
+
+        Tile {
             id: self.id,
             pixels,
-            border: Border {
-                top: self.border.right,
-                right: self.border.bottom,
-                bottom: self.border.left,
-                left: self.border.top,
-            },
-            adjacent: (None, None, None, None),
+            border,
         }
     }
 
@@ -442,10 +369,7 @@ impl Tile {
                     )
                 })
             })
-            .filter(|(_, pixel)| match pixel {
-                Pixel::Black => true,
-                _ => false,
-            })
+            .filter(|(_, pixel)| matches!(pixel, Pixel::Black))
             .collect()
     }
 
@@ -487,10 +411,7 @@ impl Tile {
                     (0..=(max_x - sea_monster_width))
                         .filter(|x| {
                             sea_monster.iter().all(|((sx, sy), _)| {
-                                match tile.pixels.get(&(x + sx, y + sy)) {
-                                    Some(Pixel::Black) => true,
-                                    _ => false,
-                                }
+                                matches!(tile.pixels.get(&(x + sx, y + sy)), Some(Pixel::Black))
                             })
                         })
                         .count()

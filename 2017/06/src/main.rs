@@ -9,4 +9,9 @@ fn main() {
         "…how many…cycles must be completed…? {}",
         get_steps_to_repeat(&input),
     );
+
+    println!(
+        "How many cycles are in the infinite loop…? {}",
+        get_infinite_loop_cycles(&input),
+    );
 }

@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 fn get_memory_banks(input: &str) -> Vec<usize> {
     input
@@ -47,6 +47,20 @@ pub fn get_steps_to_repeat(input: &str) -> usize {
     steps
 }
 
+pub fn get_infinite_loop_cycles(input: &str) -> usize {
+    let mut seen = HashMap::new();
+    let mut memory_banks = get_memory_banks(input);
+
+    let mut steps = 0;
+    while !seen.contains_key(&memory_banks) {
+        seen.insert(memory_banks.clone(), steps);
+        cycle_memory_banks(&mut memory_banks);
+        steps += 1;
+    }
+
+    steps - seen.get(&memory_banks).unwrap()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -56,5 +70,12 @@ mod tests {
         let input = "0 2 7 0";
 
         assert_eq!(5, get_steps_to_repeat(&input));
+    }
+
+    #[test]
+    fn test_part_two() {
+        let input = "0 2 7 0";
+
+        assert_eq!(4, get_infinite_loop_cycles(&input));
     }
 }

@@ -12,4 +12,9 @@ fn main() {
         "What is the name of the bottom program? {}",
         tower.get_bottom_program(),
     );
+
+    println!(
+        "…what would its weight need to be…? {}",
+        tower.get_corrected_wrong_weight(),
+    );
 }

@@ -1,23 +1,12 @@
 use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::str::FromStr;
 
-#[derive(Debug, Eq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 struct Program {
     name: String,
     weight: usize,
-}
-
-impl PartialEq for Program {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-impl Hash for Program {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-    }
+    children: Vec<String>,
 }
 
 impl FromStr for Program {
@@ -29,13 +18,17 @@ impl FromStr for Program {
             _ => panic!(r#"¯\_(ツ)_/¯"#),
         };
 
-        Ok(Self { name, weight })
+        Ok(Self {
+            name,
+            weight,
+            children: Vec::new(),
+        })
     }
 }
 
 #[derive(Debug)]
 pub struct Tower {
-    programs: HashMap<Program, Vec<String>>,
+    programs: HashMap<String, Program>,
 }
 
 impl FromStr for Tower {
@@ -46,11 +39,17 @@ impl FromStr for Tower {
             .trim()
             .lines()
             .map(|line| match line.split(" -> ").collect::<Vec<_>>()[..] {
-                [a, b] => (
-                    Program::from_str(a).unwrap(),
-                    b.split(", ").map(|n| n.to_string()).collect::<Vec<_>>(),
-                ),
-                [a] => (Program::from_str(a).unwrap(), Vec::new()),
+                [a, b] => {
+                    let mut program = Program::from_str(a).unwrap();
+                    program
+                        .children
+                        .extend(b.split(", ").map(|n| n.to_string()).collect::<Vec<_>>());
+                    (program.name.clone(), program)
+                }
+                [a] => {
+                    let program = Program::from_str(a).unwrap();
+                    (program.name.clone(), program)
+                }
                 _ => panic!(r#"¯\_(ツ)_/¯"#),
             })
             .collect();
@@ -59,21 +58,98 @@ impl FromStr for Tower {
     }
 }
 
+fn get_mode(numbers: Vec<usize>) -> usize {
+    let mut counts = HashMap::new();
+
+    numbers
+        .iter()
+        .copied()
+        .max_by_key(|&number| {
+            let count = counts.entry(number).or_insert(0);
+            *count += 1;
+            *count
+        })
+        .unwrap()
+}
+
 impl Tower {
     pub fn get_bottom_program(&self) -> String {
         let parents = self
             .programs
-            .keys()
+            .values()
             .map(|k| k.name.clone())
             .collect::<HashSet<_>>();
         let children = self
             .programs
             .values()
+            .map(|program| program.children.clone())
             .flatten()
-            .cloned()
             .collect::<HashSet<_>>();
 
         parents.difference(&children).next().unwrap().clone()
+    }
+
+    fn get_total_program_weight(&self, program: &Program) -> usize {
+        program.weight
+            + program
+                .children
+                .iter()
+                .map(|child| {
+                    let child = self.programs.get(child).unwrap();
+                    self.get_total_program_weight(child)
+                })
+                .sum::<usize>()
+    }
+
+    fn get_parent(&self, child: &Program) -> &Program {
+        self.programs
+            .values()
+            .find(|parent| parent.children.contains(&child.name))
+            .unwrap()
+    }
+
+    fn get_mismatch_from_program(&self, name: &str) -> &Program {
+        let program = self.programs.get(name).unwrap();
+
+        let child_weights = program
+            .children
+            .iter()
+            .map(|child| {
+                let child = self.programs.get(child).unwrap();
+                self.get_total_program_weight(child)
+            })
+            .collect();
+
+        let mode = get_mode(child_weights);
+
+        let unbalanced_child = program.children.iter().find(|&child| {
+            let child = self.programs.get(child).unwrap();
+            self.get_total_program_weight(child) != mode
+        });
+
+        match unbalanced_child {
+            Some(child) => self.get_mismatch_from_program(child),
+            None => program,
+        }
+    }
+
+    pub fn get_corrected_wrong_weight(&self) -> usize {
+        let bottom = self.get_bottom_program();
+
+        let dodgy_program = self.get_mismatch_from_program(&bottom);
+        let parent = self.get_parent(dodgy_program);
+        let child_weights = parent
+            .children
+            .iter()
+            .map(|child| {
+                let child = self.programs.get(child).unwrap();
+                self.get_total_program_weight(child)
+            })
+            .collect::<Vec<_>>();
+        let mode = get_mode(child_weights);
+        let difference = self.get_total_program_weight(dodgy_program) - mode;
+
+        dodgy_program.weight - difference
     }
 }
 
@@ -81,9 +157,7 @@ impl Tower {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_part_one() {
-        let input = r#"pbga (66)
+    static INPUT: &str = r#"pbga (66)
 xhth (57)
 ebii (61)
 havc (66)
@@ -97,8 +171,17 @@ ugml (68) -> gyxo, ebii, jptl
 gyxo (61)
 cntj (57)"#;
 
-        let tower = Tower::from_str(&input).unwrap();
+    #[test]
+    fn test_part_one() {
+        let tower = Tower::from_str(&INPUT).unwrap();
 
         assert_eq!("tknk".to_string(), tower.get_bottom_program());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let tower = Tower::from_str(&INPUT).unwrap();
+
+        assert_eq!(60, tower.get_corrected_wrong_weight());
     }
 }

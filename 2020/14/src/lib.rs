@@ -74,16 +74,18 @@ pub fn read_initialization_program_v2(input: &str) -> usize {
                 match bit {
                     Some(true) => {
                         let bits = 1 << index;
-                        for address in &mut addresses {
-                            *address |= bits;
-                        }
+                        addresses
+                            .iter_mut()
+                            .for_each(|address| *address |= bits);
                     }
                     Some(false) => {}
                     None => {
                         let bits = 1 << index;
-                        for address in addresses.clone() {
-                            addresses.push(address ^ bits)
-                        }
+                        let new = addresses
+                            .iter()
+                            .map(|address| *address ^ bits)
+                            .collect::<Vec<_>>();
+                        addresses.extend(new);
                     }
                 }
             }

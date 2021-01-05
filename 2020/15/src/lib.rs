@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub fn get_numbers(input: &str) -> Vec<usize> {
     input
         .trim()
@@ -9,19 +7,19 @@ pub fn get_numbers(input: &str) -> Vec<usize> {
 }
 
 pub fn get_nth_number_for_input(input: &[usize], nth: usize) -> usize {
-    let mut turns = HashMap::with_capacity(nth);
+    let mut turns = vec![0; nth];
 
     input.iter().enumerate().for_each(|(turn, number)| {
-        turns.insert(*number, turn + 1);
+        turns[*number] = turn + 1;
     });
 
     let mut previous_number = 0;
     ((input.len() + 1)..nth).for_each(|current_turn| {
-        let next_number = match turns.get(&previous_number) {
-            Some(turn_last_seen) => current_turn - turn_last_seen,
-            None => 0,
+        let next_number = match turns[previous_number] {
+            0 => 0,
+            turn_last_seen => current_turn - turn_last_seen,
         };
-        turns.insert(previous_number, current_turn);
+        turns[previous_number] = current_turn;
         previous_number = next_number;
     });
 

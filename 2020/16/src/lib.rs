@@ -1,19 +1,16 @@
 use std::collections::{HashMap, HashSet};
+use std::ops::RangeInclusive;
 use std::str::FromStr;
 
 type Ticket = Vec<usize>;
-
-#[derive(Debug, PartialEq)]
-struct Rule {
-    lower: usize,
-    upper: usize,
-}
 
 pub struct Document {
     rules: HashMap<String, Vec<Rule>>,
     your_ticket: Ticket,
     nearby_tickets: Vec<Ticket>,
 }
+
+struct Rule(RangeInclusive<usize>);
 
 impl FromStr for Rule {
     type Err = ();
@@ -23,10 +20,10 @@ impl FromStr for Rule {
             [a, b] => [a, b],
             _ => return Err(()),
         };
-        Ok(Rule {
-            lower: lower.parse().unwrap(),
-            upper: upper.parse().unwrap(),
-        })
+        Ok(Rule(RangeInclusive::new(
+            lower.parse().unwrap(),
+            upper.parse().unwrap(),
+        )))
     }
 }
 
@@ -85,12 +82,6 @@ impl FromStr for Document {
     }
 }
 
-impl Rule {
-    fn is_valid_value(&self, value: usize) -> bool {
-        value >= self.lower && value <= self.upper
-    }
-}
-
 impl Document {
     fn get_invalid_ticket_values(&self, ticket: &[usize]) -> Vec<usize> {
         ticket
@@ -98,12 +89,7 @@ impl Document {
             .filter(|&value| {
                 self.rules
                     .values()
-                    .map(|rules| {
-                        rules
-                            .iter()
-                            .find(|rule| rule.is_valid_value(*value))
-                            .is_none()
-                    })
+                    .map(|rules| rules.iter().find(|rule| rule.0.contains(value)).is_none())
                     .all(|matches_rule| matches_rule)
             })
             .cloned()
@@ -149,7 +135,7 @@ impl Document {
                         .filter(|(_, column)| {
                             column
                                 .iter()
-                                .all(|&value| rules.iter().any(|rule| rule.is_valid_value(value)))
+                                .all(|value| rules.iter().any(|rule| rule.0.contains(value)))
                         })
                         .map(|(index, _)| index)
                         .collect::<Vec<_>>(),

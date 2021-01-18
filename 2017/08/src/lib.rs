@@ -1,8 +1,14 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-pub fn get_registers(input: &str) -> HashMap<&str, isize> {
+pub struct Cpu<'a> {
+    pub registers: HashMap<&'a str, isize>,
+    pub highest: isize,
+}
+
+pub fn get_cpu(input: &str) -> Cpu {
     let mut registers = HashMap::new();
+    let mut highest = 0;
 
     input.trim().lines().for_each(|line| {
         let (reg, inc_dec, amt, ca, op, cb) =
@@ -23,29 +29,33 @@ pub fn get_registers(input: &str) -> HashMap<&str, isize> {
                 "dec" => *reg -= amt.parse::<isize>().unwrap(),
                 _ => panic!(r#"¯\_(ツ)_/¯"#),
             }
+            highest = highest.max(*reg);
         }
     });
 
-    registers
-}
-
-pub fn get_highest_value(registers: &HashMap<&str, isize>) -> isize {
-    *registers.values().max().unwrap()
+    Cpu { registers, highest }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_part_one() {
-        let input = r#"b inc 5 if a > 1
+    static INPUT: &str = r#"b inc 5 if a > 1
 a inc 1 if b < 5
 c dec -10 if a >= 1
 c inc -20 if c == 10"#;
 
-        let registers = get_registers(&input);
+    #[test]
+    fn test_part_one() {
+        let cpu = get_cpu(&INPUT);
 
-        assert_eq!(1, get_highest_value(&registers));
+        assert_eq!(1, *cpu.registers.values().max().unwrap());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let cpu = get_cpu(&INPUT);
+
+        assert_eq!(10, cpu.highest);
     }
 }

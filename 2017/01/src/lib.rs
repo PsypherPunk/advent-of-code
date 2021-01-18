@@ -1,9 +1,13 @@
-pub fn get_sum_of_identical_digits(input: &str) -> u32 {
-    let mut digits = input
+fn get_digits(input: &str) -> Vec<u32> {
+    input
         .trim()
         .chars()
         .map(|char| char.to_digit(10).unwrap())
-        .collect::<Vec<u32>>();
+        .collect()
+}
+
+pub fn get_sum_of_identical_digits(input: &str) -> u32 {
+    let mut digits = get_digits(input);
 
     let mut sum = 0;
     let mut previous_digit = *digits.iter().take(1).next().unwrap();
@@ -20,11 +24,7 @@ pub fn get_sum_of_identical_digits(input: &str) -> u32 {
 }
 
 pub fn get_sum_of_halfway_digits(input: &str) -> u32 {
-    let digits = input
-        .trim()
-        .chars()
-        .map(|char| char.to_digit(10).unwrap())
-        .collect::<Vec<u32>>();
+    let digits = get_digits(input);
 
     let offset = digits.len() / 2;
 

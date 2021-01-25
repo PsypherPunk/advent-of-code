@@ -36,6 +36,24 @@ impl KnotHash {
         lengths.iter().for_each(|length| self.apply_length(*length));
     }
 
+    pub fn generate_sparse_hash(&mut self, lengths: &[usize]) {
+        (0..64).for_each(|_| self.apply_lengths(lengths));
+    }
+
+    pub fn get_dense_hash(&self) -> String {
+        let dense_hash = self
+            .list
+            .chunks(16)
+            .map(|chunk| chunk.iter().fold(0, |acc, number| acc ^ number))
+            .collect::<Vec<_>>();
+
+        dense_hash
+            .iter()
+            .map(|number| format!("{:02x}", number))
+            .collect::<Vec<_>>()
+            .join("")
+    }
+
     pub fn get_product_of_first_two_numbers(&self) -> usize {
         self.list[0] * self.list[1]
     }
@@ -47,6 +65,13 @@ pub fn get_lengths(input: &str) -> Vec<usize> {
         .split(',')
         .map(|number| number.parse().unwrap())
         .collect()
+}
+
+pub fn get_ascii_lengths(input: &str) -> Vec<usize> {
+    let mut ascii_codes = input.trim().chars().map(|c| c as usize).collect::<Vec<_>>();
+    ascii_codes.extend(vec![17, 31, 73, 47, 23]);
+
+    ascii_codes
 }
 
 #[cfg(test)]
@@ -88,5 +113,43 @@ mod tests {
         assert_eq!(vec![3, 4, 2, 1, 0], knot_hash.list,);
         assert_eq!(4, knot_hash.position);
         assert_eq!(4, knot_hash.skip_size);
+    }
+
+    #[test]
+    fn test_part_two_ascii_lengths() {
+        let input = "1,2,3";
+
+        assert_eq!(
+            vec![49, 44, 50, 44, 51, 17, 31, 73, 47, 23],
+            get_ascii_lengths(&input),
+        );
+    }
+
+    #[test]
+    fn test_part_two_empty_string() {
+        let input = "";
+
+        let mut knot_hash = KnotHash::new(0, 255);
+        knot_hash.generate_sparse_hash(&get_ascii_lengths(&input));
+        knot_hash.get_dense_hash();
+
+        assert_eq!(
+            "a2582a3a0e66e6e86e3812dcb672a272",
+            knot_hash.get_dense_hash(),
+        );
+    }
+
+    #[test]
+    fn test_part_two_aoc_2017() {
+        let input = "AoC 2017";
+
+        let mut knot_hash = KnotHash::new(0, 255);
+        knot_hash.generate_sparse_hash(&get_ascii_lengths(&input));
+        knot_hash.get_dense_hash();
+
+        assert_eq!(
+            "33efeb34ea91902bb2f59c9920caa6cd",
+            knot_hash.get_dense_hash(),
+        );
     }
 }

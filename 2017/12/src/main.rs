@@ -7,6 +7,11 @@ fn main() {
 
     println!(
         "How many programs are in the group that contains program ID 0? {}",
-        get_group_count_for("0", &input),
+        get_group_size_for("0", &input),
+    );
+
+    println!(
+        "How many groups are there in total? {}",
+        get_group_count(&input),
     );
 }

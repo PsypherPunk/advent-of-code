@@ -9,4 +9,9 @@ fn main() {
         "…what is the severity of your whole trip? {}",
         get_severity(&input),
     );
+
+    println!(
+        "What is the fewest number of picoseconds…? {}",
+        get_delay(&input),
+    );
 }

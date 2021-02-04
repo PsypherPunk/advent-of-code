@@ -1,13 +1,6 @@
-fn get_position_for_range_after(range: usize, picoseconds: usize) -> usize {
-    let offset = picoseconds % ((range - 1) * 2);
+use std::collections::HashMap;
 
-    match offset > range - 1 {
-        true => 2 * (range - 1) - offset,
-        false => offset,
-    }
-}
-
-pub fn get_severity(input: &str) -> usize {
+fn get_scanners(input: &str) -> HashMap<usize, usize> {
     input
         .trim()
         .lines()
@@ -22,9 +15,37 @@ pub fn get_severity(input: &str) -> usize {
                 range.trim().parse::<usize>().unwrap(),
             )
         })
-        .filter(|(depth, range)| get_position_for_range_after(*range, *depth) == 0)
+        .collect()
+}
+
+fn get_position_for_range_after(range: usize, picoseconds: usize) -> usize {
+    let offset = picoseconds % ((range - 1) * 2);
+
+    match offset > range - 1 {
+        true => 2 * (range - 1) - offset,
+        false => offset,
+    }
+}
+
+pub fn get_severity(input: &str) -> usize {
+    get_scanners(&input)
+        .iter()
+        .filter(|&(depth, range)| get_position_for_range_after(*range, *depth) == 0)
         .map(|(depth, range)| depth * range)
         .sum()
+}
+
+pub fn get_delay(input: &str) -> usize {
+    let scanners = get_scanners(&input);
+
+    (0..)
+        .find(|delay| {
+            scanners
+                .iter()
+                .find(|&(depth, range)| get_position_for_range_after(*range, depth + delay) == 0)
+                .is_none()
+        })
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -46,5 +67,15 @@ mod tests {
         assert_eq!(1, get_position_for_range_after(3, 5));
 
         assert_eq!(24, get_severity(&input));
+    }
+
+    #[test]
+    fn test_part_two() {
+        let input = r#"0: 3
+1: 2
+4: 4
+6: 4"#;
+
+        assert_eq!(10, get_delay(&input));
     }
 }

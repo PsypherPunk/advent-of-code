@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 mod knot;
 
 fn get_grid(key: &str) -> Vec<String> {
@@ -6,46 +8,60 @@ fn get_grid(key: &str) -> Vec<String> {
             let mut knot_hash = knot::KnotHash::new(0, 255);
             let input = format!("{}-{}", key, row);
 
-            knot_hash.hash(&input)
+            knot_hash.binary(&input)
         })
         .collect()
 }
 
-pub fn get_used_square_count(key: &str) -> usize {
-    get_grid(&key)
-        .iter()
-        .map(|row| {
-            let binary = row
-                .chars()
-                .map(|c| to_binary(c))
-                .collect::<Vec<_>>()
-                .join("");
+fn get_ones(key: &str) -> HashSet<(usize, usize)> {
+    let grid = get_grid(&key);
 
-            binary.chars().filter(|c| *c == '1').count()
+    grid.iter()
+        .enumerate()
+        .flat_map(|(y, binary)| {
+            binary
+                .chars()
+                .enumerate()
+                .filter(|(_, b)| *b == '1')
+                .map(move |(x, _)| (x, y))
         })
-        .sum()
+        .collect()
 }
 
-fn to_binary<'a>(c: char) -> &'a str {
-    match c {
-        '0' => "0000",
-        '1' => "0001",
-        '2' => "0010",
-        '3' => "0011",
-        '4' => "0100",
-        '5' => "0101",
-        '6' => "0110",
-        '7' => "0111",
-        '8' => "1000",
-        '9' => "1001",
-        'a' => "1010",
-        'b' => "1011",
-        'c' => "1100",
-        'd' => "1101",
-        'e' => "1110",
-        'f' => "1111",
-        _ => panic!(r#"¯\_(ツ)_/¯"#),
+fn get_neighbours((x, y): (usize, usize)) -> Vec<(usize, usize)> {
+    let x = x as isize;
+    let y = y as isize;
+
+    vec![(x, y - 1), (x + 1, y), (x, y + 1), (x - 1, y)]
+        .iter()
+        .filter(|(x, y)| *x >= 0 && *y >= 0)
+        .map(|&(x, y)| (x as usize, y as usize))
+        .collect()
+}
+
+fn depth_first_search(squares: &mut HashSet<(usize, usize)>, square: (usize, usize)) {
+    squares.remove(&square);
+    for neighbour in get_neighbours(square) {
+        if squares.contains(&neighbour) {
+            depth_first_search(squares, neighbour);
+        }
     }
+}
+
+pub fn get_used_square_count(key: &str) -> usize {
+    get_ones(&key).len()
+}
+
+pub fn get_region_count(key: &str) -> usize {
+    let mut ones = get_ones(&key);
+
+    let mut count = 0;
+    while let Some(&square) = ones.iter().next() {
+        depth_first_search(&mut ones, square);
+        count += 1;
+    }
+
+    count
 }
 
 #[cfg(test)]
@@ -55,5 +71,10 @@ mod tests {
     #[test]
     fn test_part_one() {
         assert_eq!(8108, get_used_square_count("flqrgnkx"));
+    }
+
+    #[test]
+    fn test_part_two() {
+        assert_eq!(1242, get_region_count("flqrgnkx"));
     }
 }

@@ -40,25 +40,35 @@ impl KnotHash {
         (0..64).for_each(|_| self.apply_lengths(lengths));
     }
 
-    fn get_dense_hash(&self) -> String {
-        let dense_hash = self
-            .list
+    fn get_dense_hash(&self) -> Vec<usize> {
+        self.list
             .chunks(16)
             .map(|chunk| chunk.iter().fold(0, |acc, number| acc ^ number))
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>()
+    }
 
-        dense_hash
+    pub fn hash(&mut self, input: &str) -> Vec<usize> {
+        let mut lengths = input.trim().chars().map(|c| c as usize).collect::<Vec<_>>();
+        lengths.extend(vec![17, 31, 73, 47, 23]);
+
+        self.generate_sparse_hash(&lengths);
+        self.get_dense_hash()
+    }
+
+    #[allow(dead_code)]
+    pub fn hex(&mut self, input: &str) -> String {
+        self.hash(&input)
             .iter()
             .map(|number| format!("{:02x}", number))
             .collect::<Vec<_>>()
             .join("")
     }
 
-    pub fn hash(&mut self, input: &str) -> String {
-        let mut lengths = input.trim().chars().map(|c| c as usize).collect::<Vec<_>>();
-        lengths.extend(vec![17, 31, 73, 47, 23]);
-
-        self.generate_sparse_hash(&lengths);
-        self.get_dense_hash()
+    pub fn binary(&mut self, input: &str) -> String {
+        self.hash(&input)
+            .iter()
+            .map(|number| format!("{:08b}", number))
+            .collect::<Vec<_>>()
+            .join("")
     }
 }

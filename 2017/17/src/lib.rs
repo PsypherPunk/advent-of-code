@@ -31,6 +31,16 @@ impl Spinlock {
         self.spin();
         self.buffer[self.position + 1]
     }
+
+    pub fn get_value_after_zero(&mut self) -> usize {
+        (1..self.repetitions)
+            .filter(|buffer_len| {
+                self.position = (self.position + self.steps) % buffer_len + 1;
+                self.position == 1
+            })
+            .last()
+            .unwrap()
+    }
 }
 
 #[cfg(test)]

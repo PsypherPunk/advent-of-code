@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 
 struct Particle {
@@ -82,6 +83,22 @@ impl Buffer {
         });
     }
 
+    fn resolve_collisions(&mut self) {
+        let mut counts = HashMap::new();
+        self.particles.iter().for_each(|particle| {
+            *counts.entry(&particle.position).or_insert(0) += 1;
+        });
+
+        let collisions = counts
+            .iter()
+            .filter(|(_, &count)| count > 1)
+            .map(|(&position, _)| *position)
+            .collect::<Vec<_>>();
+
+        self.particles
+            .retain(|particle| !collisions.contains(&particle.position));
+    }
+
     pub fn get_closest_to_zero(&mut self) -> usize {
         let mut manhattan_distances = vec![0; self.particles.len()];
 
@@ -90,7 +107,7 @@ impl Buffer {
                 .iter_mut()
                 .enumerate()
                 .for_each(|(n, particle)| {
-                    manhattan_distances[n] = particle.get_manhattan_distance();
+                    manhattan_distances[n] += particle.get_manhattan_distance();
                 });
             self.tick();
         }
@@ -102,6 +119,15 @@ impl Buffer {
             .unwrap();
 
         min.0
+    }
+
+    pub fn get_particle_count(&mut self) -> usize {
+        for _ in 0..5_000 {
+            self.resolve_collisions();
+            self.tick();
+        }
+
+        self.particles.len()
     }
 }
 
@@ -116,5 +142,16 @@ p=<4,0,0>, v=<0,0,0>, a=<-2,0,0>"#;
         let mut buffer = Buffer::from_str(&input).unwrap();
 
         assert_eq!(0, buffer.get_closest_to_zero());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let input = r#"p=<-6,0,0>, v=<3,0,0>, a=<0,0,0>
+p=<-4,0,0>, v=<2,0,0>, a=<0,0,0>
+p=<-2,0,0>, v=<1,0,0>, a=<0,0,0>
+p=<3,0,0>, v=<-1,0,0>, a=<0,0,0>"#;
+        let mut buffer = Buffer::from_str(&input).unwrap();
+
+        assert_eq!(1, buffer.get_particle_count());
     }
 }

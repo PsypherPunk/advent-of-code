@@ -7,9 +7,14 @@ fn main() {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
     let mut buffer = Buffer::from_str(&input).unwrap();
-
     println!(
         "Which particle will stay closest to position <0,0,0> …? {}",
         buffer.get_closest_to_zero(),
+    );
+
+    let mut buffer = Buffer::from_str(&input).unwrap();
+    println!(
+        "How many particles are left…? {}",
+        buffer.get_particle_count(),
     );
 }

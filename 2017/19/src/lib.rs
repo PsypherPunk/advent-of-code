@@ -5,6 +5,8 @@ use num::complex::Complex;
 
 pub struct RoutingDiagram {
     lines: HashMap<Complex<isize>, char>,
+    letters: Vec<char>,
+    steps: usize,
 }
 
 impl FromStr for RoutingDiagram {
@@ -22,7 +24,11 @@ impl FromStr for RoutingDiagram {
             .filter(|(_, c)| *c != ' ')
             .collect();
 
-        Ok(Self { lines })
+        Ok(Self {
+            lines,
+            letters: Vec::new(),
+            steps: 0,
+        })
     }
 }
 
@@ -37,17 +43,16 @@ impl RoutingDiagram {
         *start
     }
 
-    pub fn get_letters(&self) -> String {
+    pub fn follow_diagram(&mut self) {
         let mut current = self.get_start();
         let mut direction = Complex::new(0, 1);
-        let mut letters = Vec::new();
 
         let left = Complex::i().powi(-1);
         let right = Complex::i().powi(1);
 
         while let Some(c) = self.lines.get(&current) {
             match c {
-                'A'..='Z' => letters.push(c),
+                'A'..='Z' => self.letters.push(*c),
                 '+' => {
                     if self.lines.contains_key(&(current + (direction * right))) {
                         direction *= right;
@@ -58,9 +63,16 @@ impl RoutingDiagram {
                 _ => {}
             }
             current += direction;
+            self.steps += 1;
         }
+    }
 
-        letters.into_iter().collect()
+    pub fn get_letters(&mut self) -> String {
+        self.letters.iter().collect()
+    }
+
+    pub fn get_steps(&mut self) -> usize {
+        self.steps
     }
 }
 
@@ -84,7 +96,7 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let routing_diagram = RoutingDiagram::from_str(&INPUT).unwrap();
+        let mut routing_diagram = RoutingDiagram::from_str(&INPUT).unwrap();
 
         assert_eq!(String::from("ABCDEF"), routing_diagram.get_letters());
     }

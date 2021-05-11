@@ -59,21 +59,8 @@ impl Image {
     }
 
     fn as_string(&self) -> String {
-        let (max_x, max_y) = self.0.keys().max().unwrap();
-        (0..=*max_y)
-            .map(|y| {
-                (0..=*max_x)
-                    .map(move |x| match self.0.get(&(x, y)) {
-                        Some(pixel) => match pixel {
-                            PixelState::On => '#',
-                            PixelState::Off => '.',
-                        },
-                        None => panic!(r#"¯\_(ツ)_/¯"#),
-                    })
-                    .collect::<String>()
-            })
-            .collect::<Vec<String>>()
-            .join("\n")
+        let (max_x, _) = self.0.keys().max().unwrap();
+        self.get_square_at((0, 0), max_x + 1)
     }
 
     fn get_square_at(&self, corner: Pixel, square: usize) -> String {

@@ -54,12 +54,11 @@ impl RoutingDiagram {
             match c {
                 'A'..='Z' => self.letters.push(*c),
                 '+' => {
-                    if self.lines.contains_key(&(current + (direction * right))) {
-                        direction *= right;
-                    } else {
-                        direction *= left;
+                    direction *= match self.lines.contains_key(&(current + (direction * right))) {
+                        true => right,
+                        false => left,
                     }
-                }
+                },
                 _ => {}
             }
             current += direction;

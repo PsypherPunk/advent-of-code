@@ -1,10 +1,9 @@
 use std::collections::HashSet;
-use std::iter::FromIterator;
 
 fn is_valid(passphrase: &str) -> bool {
     let words = passphrase.trim().split_whitespace().collect::<Vec<_>>();
 
-    let distinct_words: HashSet<&str> = HashSet::from_iter(words.iter().cloned());
+    let distinct_words: HashSet<&str> = words.iter().cloned().collect();
 
     words.len() == distinct_words.len()
 }

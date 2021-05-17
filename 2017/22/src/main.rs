@@ -8,7 +8,13 @@ fn main() {
 
     let mut cluster = Cluster::from_str(&input).unwrap();
     cluster.bursts_of_activity(10_000);
+    println!(
+        "…how many bursts cause a node to become infected? {}",
+        cluster.get_infections(),
+    );
 
+    let mut cluster = Cluster::from_str(&input).unwrap();
+    cluster.evolved_bursts_of_activity(10_000_000);
     println!(
         "…how many bursts cause a node to become infected? {}",
         cluster.get_infections(),

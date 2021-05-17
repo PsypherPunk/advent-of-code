@@ -4,13 +4,20 @@ use std::str::FromStr;
 
 use num_complex::Complex;
 
+enum Node {
+    Clean,
+    Weakened,
+    Flagged,
+    Infected,
+}
+
 struct Virus {
     position: Complex<isize>,
     direction: Complex<isize>,
 }
 
 pub struct Cluster {
-    nodes: HashMap<Complex<isize>, bool>,
+    nodes: HashMap<Complex<isize>, Node>,
     virus: Virus,
     infections: usize,
 }
@@ -26,10 +33,14 @@ impl FromStr for Cluster {
             .lines()
             .enumerate()
             .flat_map(|(y, line)| {
-                line.chars().enumerate().map(move |(x, char)| {
+                line.chars().enumerate().map(move |(x, ch)| {
                     (
                         Complex::new((x as isize) - zero, zero - (y as isize)),
-                        char == '#',
+                        match ch {
+                            '.' => Node::Clean,
+                            '#' => Node::Infected,
+                            _ => panic!(r#"¯\_(ツ)_/¯"#),
+                        },
                     )
                 })
             })
@@ -51,23 +62,17 @@ impl Display for Cluster {
 
 impl Cluster {
     fn as_string(&self) -> String {
-        let min = self
-            .nodes
-            .keys()
-            .min_by(|a, b| (a.re, a.im).cmp(&(b.re, b.im)))
-            .unwrap();
-        let max = self
-            .nodes
-            .keys()
-            .max_by(|a, b| (a.re, a.im).cmp(&(b.re, b.im)))
-            .unwrap();
+        let min_x = self.nodes.keys().map(|node| node.re).min().unwrap();
+        let max_x = self.nodes.keys().map(|node| node.re).max().unwrap();
+        let min_y = self.nodes.keys().map(|node| node.im).min().unwrap();
+        let max_y = self.nodes.keys().map(|node| node.im).max().unwrap();
 
         let mut output = String::new();
-        let mut y = max.im;
+        let mut y = max_y;
 
-        while y >= min.im {
-            let mut x = min.re;
-            while x <= max.re {
+        while y >= min_y {
+            let mut x = min_x;
+            while x <= max_x {
                 let node = Complex::new(x, y);
                 if self.virus.position == node {
                     output.push('*');
@@ -76,8 +81,10 @@ impl Cluster {
                 }
                 let ch = match self.nodes.get(&node) {
                     Some(infected) => match *infected {
-                        true => '#',
-                        false => '.',
+                        Node::Infected => '#',
+                        Node::Clean => '.',
+                        Node::Weakened => 'W',
+                        Node::Flagged => 'F',
                     },
                     None => '.',
                 };
@@ -92,20 +99,21 @@ impl Cluster {
     }
 
     fn burst(&mut self) {
-        let right = Complex::i().powi(1);
-        let left = Complex::i().powi(-1);
+        let left = Complex::i().powi(1);
+        let right = Complex::i().powi(-1);
 
-        let current_is_infected = self.nodes.entry(self.virus.position).or_insert(false);
+        let current_is_infected = self.nodes.entry(self.virus.position).or_insert(Node::Clean);
         match *current_is_infected {
-            true => {
-                self.virus.direction *= left;
-                *current_is_infected = false;
-            }
-            false => {
+            Node::Infected => {
                 self.virus.direction *= right;
-                *current_is_infected = true;
+                *current_is_infected = Node::Clean;
+            }
+            Node::Clean => {
+                self.virus.direction *= left;
+                *current_is_infected = Node::Infected;
                 self.infections += 1;
             }
+            _ => panic!(r#"¯\_(ツ)_/¯"#),
         };
         self.virus.position += self.virus.direction;
     }
@@ -113,6 +121,39 @@ impl Cluster {
     pub fn bursts_of_activity(&mut self, bursts: usize) {
         for _ in 0..bursts {
             self.burst();
+        }
+    }
+
+    fn evolved_burst(&mut self) {
+        let left = Complex::i().powi(1);
+        let right = Complex::i().powi(-1);
+        let reverse = Complex::i().powi(-2);
+
+        let current_is_infected = self.nodes.entry(self.virus.position).or_insert(Node::Clean);
+        match *current_is_infected {
+            Node::Clean => {
+                self.virus.direction *= left;
+                *current_is_infected = Node::Weakened;
+            }
+            Node::Weakened => {
+                *current_is_infected = Node::Infected;
+                self.infections += 1;
+            }
+            Node::Infected => {
+                self.virus.direction *= right;
+                *current_is_infected = Node::Flagged;
+            }
+            Node::Flagged => {
+                *current_is_infected = Node::Clean;
+                self.virus.direction *= reverse;
+            }
+        };
+        self.virus.position += self.virus.direction;
+    }
+
+    pub fn evolved_bursts_of_activity(&mut self, bursts: usize) {
+        for _ in 0..bursts {
+            self.evolved_burst();
         }
     }
 
@@ -163,5 +204,23 @@ mod tests {
         cluster.bursts_of_activity(10_000);
 
         assert_eq!(5_587, cluster.infections);
+    }
+
+    #[test]
+    fn test_part_two_100() {
+        let mut cluster = Cluster::from_str(&INPUT).unwrap();
+
+        cluster.evolved_bursts_of_activity(100);
+
+        assert_eq!(26, cluster.infections);
+    }
+
+    #[test]
+    fn test_part_two_10000000() {
+        let mut cluster = Cluster::from_str(&INPUT).unwrap();
+
+        cluster.evolved_bursts_of_activity(10_000_000);
+
+        assert_eq!(2_511_944, cluster.infections);
     }
 }

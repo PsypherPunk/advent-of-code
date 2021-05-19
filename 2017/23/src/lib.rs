@@ -38,7 +38,7 @@ impl Program {
         }
     }
 
-    fn get_register(&mut self, register: &char) -> isize {
+    pub fn get_register(&mut self, register: &char) -> isize {
         let current = self.registers.entry(*register).or_insert(0);
         *current
     }
@@ -46,6 +46,16 @@ impl Program {
     fn update_register(&mut self, register: &char, value: isize) {
         let current = self.registers.entry(*register).or_insert(0);
         *current = value;
+    }
+
+    pub fn part_two() -> usize {
+        let b = (57 * 100) + 100_000;
+        let c = b + 17_000;
+
+        (b..=c)
+            .step_by(17)
+            .filter(|b| (2..*b).any(|d| b % d == 0))
+            .count()
     }
 }
 
@@ -78,10 +88,9 @@ impl FromStr for Value {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Value, String> {
-        if let Ok(n) = s.parse() {
-            Ok(Value::Number(n))
-        } else {
-            Ok(Value::Register(s.chars().next().unwrap()))
+        match s.parse() {
+            Ok(n) => Ok(Value::Number(n)),
+            Err(_) => Ok(Value::Register(s.chars().next().unwrap())),
         }
     }
 }

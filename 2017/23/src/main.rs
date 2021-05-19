@@ -7,9 +7,13 @@ fn main() {
 
     let mut program = Program::new(&input);
     program.run();
-
     println!(
         "…how many times is the mul instruction invoked? {}",
         program.mul_count,
+    );
+
+    println!(
+        "…what value would be left in register h? {}",
+        Program::part_two(),
     );
 }

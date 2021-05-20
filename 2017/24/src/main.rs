@@ -12,4 +12,9 @@ fn main() {
         "What is the strength of the strongest bridge you can make…? {}",
         get_strongest_bridge(&mut bridges),
     );
+
+    println!(
+        "What is the strength of the longest bridge you can make? {}",
+        get_strongest_longest_bridge(&mut bridges),
+    );
 }

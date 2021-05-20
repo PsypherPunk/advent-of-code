@@ -2,7 +2,7 @@ use std::collections::{HashSet, VecDeque};
 
 type Component = (usize, usize);
 
-pub fn get_strength(components: &Vec<Component>) -> usize {
+pub fn get_strength(components: &[Component]) -> usize {
     components.iter().fold(0, |acc, &(a, b)| acc + a + b)
 }
 
@@ -62,6 +62,16 @@ pub fn get_strongest_bridge(bridges: &mut Vec<Vec<Component>>) -> usize {
     get_strength(bridges.last().unwrap())
 }
 
+pub fn get_strongest_longest_bridge(bridges: &mut Vec<Vec<Component>>) -> usize {
+    bridges.sort_by(|a, b| {
+        a.len()
+            .cmp(&b.len())
+            .then(get_strength(a).cmp(&get_strength(b)))
+    });
+
+    get_strength(bridges.last().unwrap())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -82,5 +92,14 @@ mod tests {
         let mut bridges = get_bridges(&components);
 
         assert_eq!(31, get_strongest_bridge(&mut bridges));
+    }
+
+    #[test]
+    fn test_part_two() {
+        let components = get_components(&INPUT);
+
+        let mut bridges = get_bridges(&components);
+
+        assert_eq!(19, get_strongest_longest_bridge(&mut bridges));
     }
 }

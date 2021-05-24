@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -13,7 +14,7 @@ pub struct Sample {
     after: Vec<usize>,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Instruction {
     opcode: usize,
     input_a: usize,
@@ -21,7 +22,8 @@ pub struct Instruction {
     output: usize,
 }
 
-enum OpCode {
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum OpCode {
     Addr,
     Addi,
     Mulr,
@@ -104,36 +106,73 @@ impl Sample {
 }
 
 impl InputFile {
-    pub fn get_multiple_match_count(&self) -> usize {
-        let opcodes = [
-            OpCode::Addr,
-            OpCode::Addi,
-            OpCode::Mulr,
-            OpCode::Muli,
-            OpCode::Banr,
-            OpCode::Bani,
-            OpCode::Borr,
-            OpCode::Bori,
-            OpCode::Setr,
-            OpCode::Seti,
-            OpCode::Gtir,
-            OpCode::Gtri,
-            OpCode::Gtrr,
-            OpCode::Eqir,
-            OpCode::Eqri,
-            OpCode::Eqrr,
-        ];
+    const OPCODES: [OpCode; 16] = [
+        OpCode::Addr,
+        OpCode::Addi,
+        OpCode::Mulr,
+        OpCode::Muli,
+        OpCode::Banr,
+        OpCode::Bani,
+        OpCode::Borr,
+        OpCode::Bori,
+        OpCode::Setr,
+        OpCode::Seti,
+        OpCode::Gtir,
+        OpCode::Gtri,
+        OpCode::Gtrr,
+        OpCode::Eqir,
+        OpCode::Eqri,
+        OpCode::Eqrr,
+    ];
 
+    pub fn get_multiple_match_count(&self) -> usize {
         self.samples
             .iter()
             .map(|sample| {
-                opcodes
+                InputFile::OPCODES
                     .iter()
                     .filter(|opcode| sample.is_opcode(opcode))
                     .count()
             })
             .filter(|opcode_count| *opcode_count >= 3)
             .count()
+    }
+
+    pub fn get_opcodes(&self) -> Vec<OpCode> {
+        let mut todo = InputFile::OPCODES.iter().collect::<HashSet<_>>();
+        let mut done = [None; 16];
+
+        self.samples.iter().for_each(|sample| {
+            let matching_opcodes = InputFile::OPCODES
+                .iter()
+                .filter(|&opcode| !done.contains(&Some(opcode)))
+                .filter(|opcode| sample.is_opcode(opcode))
+                .collect::<Vec<_>>();
+            if matching_opcodes.len() == 1 {
+                let opcode = matching_opcodes.into_iter().next().unwrap();
+                todo.remove(opcode);
+                done[sample.opcodes.opcode] = Some(opcode);
+            }
+        });
+
+        done.iter().map(|opcode| *opcode.unwrap()).collect()
+    }
+
+    pub fn get_register_zero_after_execution(&self, opcodes: &[OpCode]) -> usize {
+        let mut registers = [0; 4];
+
+        self.test_program.iter().for_each(|instruction| {
+            let sample = Sample {
+                before: registers.to_vec(),
+                opcodes: *instruction,
+                after: Vec::new(),
+            };
+
+            let result = sample.get_result(&opcodes[instruction.opcode]);
+            registers[instruction.output] = result;
+        });
+
+        registers[0]
     }
 }
 

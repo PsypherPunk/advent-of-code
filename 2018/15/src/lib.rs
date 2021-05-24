@@ -34,6 +34,7 @@ impl Default for Creature {
     }
 }
 
+#[derive(Clone)]
 pub struct Cave {
     walls: HashSet<Point>,
     creatures: Vec<Creature>,
@@ -151,6 +152,13 @@ impl Cave {
             .count()
     }
 
+    fn get_elf_count(&self) -> usize {
+        self.creatures
+            .iter()
+            .filter(|creature| matches!(creature.species, Species::Elf))
+            .count()
+    }
+
     fn get_alive_elf_count(&self) -> usize {
         self.creatures
             .iter()
@@ -175,22 +183,16 @@ impl Cave {
             }
 
             if let Some(target) = self.get_attack(i) {
-                let power = self.creatures[i].attack_power;
+                let attack_power = self.creatures[i].attack_power;
                 let target = &mut self.creatures[target];
-                target.hit_points = target.hit_points.saturating_sub(power);
+                target.hit_points = target.hit_points.saturating_sub(attack_power);
             }
         }
 
         true
     }
 
-    pub fn get_score(&mut self) -> usize {
-        let mut rounds = 0;
-
-        while self.get_round() {
-            rounds += 1;
-        }
-
+    fn get_score(&self, rounds: usize) -> usize {
         rounds
             * self
                 .creatures
@@ -198,6 +200,48 @@ impl Cave {
                 .map(|creature| creature.hit_points as usize)
                 .sum::<usize>()
     }
+
+    pub fn get_outcome(&mut self) -> usize {
+        let mut rounds = 0;
+
+        while self.get_round() {
+            rounds += 1;
+        }
+
+        self.get_score(rounds)
+    }
+}
+
+pub fn get_outcome_no_losses(input: &str) -> usize {
+    let original = Cave::from_str(&input).unwrap();
+
+    let mut rounds;
+    let score;
+    let mut elf_attack_power = 4;
+    let elf_count = original.get_elf_count();
+
+    loop {
+        let mut cave = original.clone();
+        rounds = 0;
+
+        for i in 0..cave.creatures.len() {
+            if matches!(cave.creatures[i].species, Species::Elf) {
+                cave.creatures[i].attack_power = elf_attack_power;
+            }
+        }
+
+        while cave.get_round() {
+            rounds += 1;
+        }
+
+        if cave.get_alive_elf_count() == elf_count {
+            score = cave.get_score(rounds);
+            break;
+        }
+        elf_attack_power += 1;
+    }
+
+    score
 }
 
 #[cfg(test)]
@@ -216,6 +260,19 @@ mod tests {
 
         let mut cave = Cave::from_str(&input).unwrap();
 
-        assert_eq!(27_730, cave.get_score());
+        assert_eq!(27_730, cave.get_outcome());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let input = r#"#######
+#.G...#
+#...EG#
+#.#.#G#
+#..G#E#
+#.....#
+#######"#;
+
+        assert_eq!(4_988, get_outcome_no_losses(&input));
     }
 }

@@ -8,5 +8,7 @@ fn main() {
 
     let mut cave = Cave::from_str(&input).unwrap();
 
-    println!("What is the outcome…? {}", cave.get_score(),);
+    println!("What is the outcome…? {}", cave.get_outcome(),);
+
+    println!("…what is the outcome…? {}", get_outcome_no_losses(&input));
 }

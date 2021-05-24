@@ -8,5 +8,9 @@ fn main() {
 
     let mut grid = Grid::from_str(&input).unwrap();
 
-    dbg!(grid.get_square_metres_water());
+    let (total, rest) = grid.get_square_metres_water();
+
+    println!("How many tiles can the water reach…? {}", total,);
+
+    println!("How many water tiles are left…? {}", rest,);
 }

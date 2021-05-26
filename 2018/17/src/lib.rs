@@ -123,7 +123,7 @@ impl Grid {
                                     .tiles
                                     .keys()
                                     .filter(|(row, col)| {
-                                        *col == y && *row >= left + 1 && *row <= right - 1
+                                        *col == y && *row > left && *row < right
                                     })
                                     .map(|tile| (*tile, Tile::WaterRest))
                                     .collect::<HashMap<_, _>>();

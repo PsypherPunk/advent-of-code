@@ -123,6 +123,21 @@ impl Cpu {
             }
         }
     }
+
+    /// let mut a = 0;
+    /// let c = 10_551_418;
+    /// for b in 1..=c {
+    ///     for e in 1..=c {
+    ///         if b * e == c {
+    ///             a += b;
+    ///         }
+    ///     }
+    /// }
+    pub fn execute_part_two(&self) -> usize {
+        let c = 10_551_418;
+
+        (1..=c).filter(|divisor| c / *divisor * *divisor == c).sum()
+    }
 }
 
 peg::parser! {

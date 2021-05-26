@@ -8,6 +8,10 @@ fn main() {
 
     let mut cpu = Cpu::from_str(&input).unwrap();
     cpu.execute();
+    println!("What value is left in register 0…? {}", cpu.registers[0]);
 
-    println!("What value is left in register 0…? {}", cpu.registers[0],);
+    println!(
+        "What value is left in register 0…? {}",
+        cpu.execute_part_two()
+    );
 }

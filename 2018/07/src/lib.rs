@@ -4,6 +4,7 @@ use std::str::FromStr;
 #[derive(Debug)]
 pub struct Instructions {
     dependents: HashMap<char, Vec<char>>,
+    timings: HashMap<char, usize>,
 }
 
 impl FromStr for Instructions {
@@ -11,15 +12,26 @@ impl FromStr for Instructions {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut dependents = HashMap::new();
+        let mut timings = HashMap::new();
 
         s.trim().lines().for_each(|line| {
             let chars = line.chars().collect::<Vec<_>>();
 
             dependents.entry(chars[36]).or_insert_with(Vec::new);
             dependents.entry(chars[5]).or_default().push(chars[36]);
+
+            timings
+                .entry(chars[5])
+                .or_insert_with(|| chars[5] as usize - ('A' as usize) + 61);
+            timings
+                .entry(chars[36])
+                .or_insert_with(|| chars[36] as usize - ('A' as usize) + 61);
         });
 
-        Ok(Self { dependents })
+        Ok(Self {
+            dependents,
+            timings,
+        })
     }
 }
 
@@ -52,6 +64,49 @@ impl Instructions {
 
         output.into_iter().collect()
     }
+
+    /// Get the duration for all steps.
+    ///
+    /// Again, we first find the ``unblocked`` steps (i.e. those with
+    /// no preceding requirements), before ticking over each second and
+    /// reducing the relevant timings.
+    pub fn get_duration(&mut self, workers: usize) -> usize {
+        let mut seconds = 0;
+
+        while !self.timings.is_empty() {
+            let steps = self.dependents.clone();
+            let mut unblocked = steps
+                .iter()
+                .map(|(step, _)| {
+                    let count = steps
+                        .values()
+                        .filter(|dependents| dependents.contains(&step))
+                        .count();
+                    (step, count)
+                })
+                .collect::<Vec<_>>();
+            unblocked.sort_by(|a, b| b.1.cmp(&a.1));
+
+            let unblocked = unblocked
+                .into_iter()
+                .filter(|(_, count)| *count == 0)
+                .map(|(step, _)| step)
+                .collect::<Vec<_>>();
+
+            for step in unblocked.iter().take(workers) {
+                let count = self.timings.get_mut(&step).unwrap();
+                *count -= 1;
+                if *count == 0 {
+                    self.timings.remove(&step);
+                    self.dependents.remove(&step);
+                }
+            }
+
+            seconds += 1;
+        }
+
+        seconds
+    }
 }
 
 #[cfg(test)]
@@ -71,5 +126,17 @@ Step F must be finished before step E can begin."#;
         let instructions = Instructions::from_str(&INPUT).unwrap();
 
         assert_eq!("CABDFE", instructions.get_steps_order());
+    }
+
+    #[test]
+    fn test_part_two() {
+        let mut instructions = Instructions::from_str(&INPUT).unwrap();
+
+        instructions
+            .timings
+            .iter_mut()
+            .for_each(|(_, timing)| *timing -= 60);
+
+        assert_eq!(15, instructions.get_duration(2));
     }
 }

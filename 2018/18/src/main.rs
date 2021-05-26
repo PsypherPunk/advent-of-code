@@ -12,4 +12,9 @@ fn main() {
         "What will the total resource value of the lumber collection area be after 10 minutes? {}",
         area.get_resource_value_after_minutes(10),
     );
+
+    println!(
+        "What will the total resource value of the lumber collection area be after 1000000000 minutes? {}",
+        area.get_resource_value_after_minutes(1_000_000_000),
+    );
 }

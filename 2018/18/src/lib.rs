@@ -1,10 +1,9 @@
 use std::collections::HashMap;
-
 use std::str::FromStr;
 
 type Position = (isize, isize);
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum Acre {
     OpenGround,
     Trees,
@@ -40,6 +39,25 @@ impl FromStr for LumberCollectionArea {
             .collect();
 
         Ok(Self { acres })
+    }
+}
+
+impl ToString for LumberCollectionArea {
+    fn to_string(&self) -> String {
+        let max = self.acres.keys().max().unwrap();
+
+        (0..=max.1)
+            .map(|y| {
+                (0..=max.0)
+                    .map(|x| match self.acres.get(&(x, y)).unwrap() {
+                        Acre::OpenGround => '.',
+                        Acre::Trees => '|',
+                        Acre::Lumberyard => '#',
+                    })
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
@@ -127,12 +145,29 @@ impl LumberCollectionArea {
     }
 
     pub fn get_resource_value_after_minutes(&self, minutes: usize) -> usize {
-        let mut next = self.get_next_minute();
-        for _ in 1..minutes {
-            next = next.get_next_minute();
+        let mut last_seen_at = HashMap::new();
+        let mut resource_values = HashMap::new();
+        let mut area = self.get_next_minute();
+
+        last_seen_at.insert(area.to_string(), 0);
+        resource_values.insert(0, area.get_resource_value());
+
+        for minute in 1..minutes {
+            area = area.get_next_minute();
+
+            if last_seen_at.contains_key(&area.to_string()) {
+                let cycle_start = *last_seen_at.get(&area.to_string()).unwrap();
+                let cycle_length = minute - cycle_start;
+                let cycle_at_minutes = (cycle_start - 1) + (minutes - cycle_start) % cycle_length;
+
+                return *resource_values.get(&cycle_at_minutes).unwrap();
+            }
+
+            last_seen_at.insert(area.to_string(), minute);
+            resource_values.insert(minute, area.get_resource_value());
         }
 
-        next.get_resource_value()
+        area.get_resource_value()
     }
 }
 

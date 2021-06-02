@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::str::FromStr;
 
 pub struct Cpu {
@@ -50,18 +51,13 @@ impl Cpu {
         self.registers[self.instruction_pointer]
     }
 
-    fn set_register_zero(&mut self, value: usize) {
-        self.registers[0] = value;
-    }
-
     /// Execute instructions to completion.
     ///
     /// For *Part One*, the instructions make an `eqrr`, comparing the
     /// values of register `0` to that of register `5`, to determine
-    /// whether or not to continue: the latter is therefore our answer.
-    pub fn execute(&mut self) -> Result<usize, String> {
-        let mut count = 0;
-
+    /// whether or not to continue: the value in the latter is
+    /// therefore our answer.
+    pub fn get_register_zero_halt(&mut self) -> Result<usize, String> {
         while self.get_instruction_pointer() < self.instructions.len() {
             let instruction = self.instructions[self.get_instruction_pointer()];
 
@@ -72,11 +68,33 @@ impl Cpu {
             let output = self.get_output(&instruction);
             self.registers[instruction.output] = output;
             self.registers[self.instruction_pointer] += 1;
+        }
 
-            if count == 10_000 {
-                return Err("Infinite loop?".to_owned());
+        Err("".to_owned())
+    }
+
+    /// Execute instructions to completion.
+    ///
+    /// For *Part Two*, the pattern for *Part One* holds true. However,
+    /// this time we're interested not in that initial value for
+    /// register `5` but the value before it finally loops.
+    pub fn execute_part_two(&mut self) -> Result<usize, String> {
+        let mut seen = HashSet::new();
+        let mut previous = 0;
+
+        while self.get_instruction_pointer() < self.instructions.len() {
+            let instruction = self.instructions[self.get_instruction_pointer()];
+
+            if matches!(instruction.opcode, OpCode::Eqrr) {
+                if !seen.insert(self.registers[instruction.input_a]) {
+                    return Ok(previous);
+                }
+                previous = self.registers[instruction.input_a];
             }
-            count += 1;
+
+            let output = self.get_output(&instruction);
+            self.registers[instruction.output] = output;
+            self.registers[self.instruction_pointer] += 1;
         }
 
         Err("".to_owned())
@@ -138,8 +156,6 @@ impl Cpu {
                 }
             }
             OpCode::Eqrr => {
-                dbg!(self.registers[instruction.input_a]);
-                dbg!(self.registers[instruction.input_b]);
                 if self.registers[instruction.input_a] == self.registers[instruction.input_b] {
                     1
                 } else {
@@ -147,19 +163,6 @@ impl Cpu {
                 }
             }
         }
-    }
-
-    pub fn get_register_zero_halt(&mut self) -> usize {
-        for register_zero in 2.. {
-            self.registers = [0; 6];
-            self.set_register_zero(register_zero);
-
-            if let Ok(eqrr) = self.execute() {
-                return eqrr;
-            }
-        }
-
-        unreachable!()
     }
 }
 

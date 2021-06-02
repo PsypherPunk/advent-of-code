@@ -22,10 +22,10 @@ impl FromStr for Instructions {
 
             timings
                 .entry(chars[5])
-                .or_insert_with(|| chars[5] as usize - ('A' as usize) + 61);
+                .or_insert(chars[5] as usize - ('A' as usize) + 61);
             timings
                 .entry(chars[36])
-                .or_insert_with(|| chars[36] as usize - ('A' as usize) + 61);
+                .or_insert(chars[36] as usize - ('A' as usize) + 61);
         });
 
         Ok(Self {

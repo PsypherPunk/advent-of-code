@@ -94,17 +94,48 @@ impl Map {
         while !queue.is_empty() {
             let (current, doors) = queue.pop_front().unwrap();
 
-            if visited.contains(&current) {
-                continue;
-            }
             visited.insert(current);
             max_doors = max_doors.max(doors);
-            for neighbor in self.rooms.get(&current).unwrap() {
-                queue.push_back((*neighbor, doors + 1));
-            }
+
+            self.rooms
+                .get(&current)
+                .unwrap()
+                .iter()
+                .filter(|room| !visited.contains(room))
+                .for_each(|neighbour| {
+                    queue.push_back((*neighbour, doors + 1));
+                });
         }
 
         max_doors
+    }
+
+    pub fn get_rooms_over_1000_doors_away(&self) -> usize {
+        let mut visited = HashSet::new();
+        let mut queue = VecDeque::new();
+
+        let mut rooms = 0;
+        queue.push_back((Position::default(), 0));
+
+        while !queue.is_empty() {
+            let (current, doors) = queue.pop_front().unwrap();
+
+            visited.insert(current);
+            if doors >= 1000 {
+                rooms += 1;
+            }
+
+            self.rooms
+                .get(&current)
+                .unwrap()
+                .iter()
+                .filter(|room| !visited.contains(room))
+                .for_each(|neighbour| {
+                    queue.push_back((*neighbour, doors + 1));
+                });
+        }
+
+        rooms
     }
 }
 

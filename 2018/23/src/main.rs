@@ -12,4 +12,9 @@ fn main() {
         "How many nanobots are in range…? {}",
         get_nanobots_in_range(&strongest, &nanobots),
     );
+
+    println!(
+        "What is the shortest manhattan distance between any of those points and 0,0,0? {}",
+        get_teleportation_position_distance(&nanobots),
+    );
 }

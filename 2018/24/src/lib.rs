@@ -73,12 +73,21 @@ impl Reindeer {
         });
     }
 
-    pub fn fight(&mut self) -> usize {
+    fn get_state(&self) -> Vec<usize> {
+        self.groups
+            .iter()
+            .map(|group| group.units)
+            .collect::<Vec<_>>()
+    }
+
+    pub fn fight(&mut self) -> Result<usize, String> {
         while !self.has_winner() {
             let mut attacks = Vec::new();
             let mut targeted = BTreeSet::new();
 
             self.order_target_selection_phase();
+
+            let initial_state = self.get_state();
 
             let living_groups = self
                 .groups
@@ -126,9 +135,49 @@ impl Reindeer {
                 );
                 self.groups[*defender].set_units(units);
             }
+            if self.get_state() == initial_state {
+                return Err("Attack round had no effect; stalemate.".to_owned());
+            }
         }
-        self.groups.iter().map(|group| group.units).sum()
+        Ok(self.groups.iter().map(|group| group.units).sum())
     }
+
+    fn apply_boost(&mut self, boost: usize) {
+        self.groups
+            .iter_mut()
+            .filter(|group| matches!(group.type_, GroupType::ImmuneSystem))
+            .for_each(|group| {
+                group.attack_damage += boost;
+            });
+    }
+}
+
+pub fn get_immune_system_boost(input: &str) -> usize {
+    let mut boosted_result = 0;
+
+    for boost in 1.. {
+        let mut reindeer: Reindeer = reindeer::reindeer(&input).unwrap();
+        reindeer.apply_boost(boost);
+
+        if let Ok(result) = reindeer.fight() {
+            let types_still_alive = reindeer
+                .groups
+                .iter()
+                .filter(|group| group.units > 0)
+                .map(|group| group.type_)
+                .collect::<BTreeSet<_>>();
+
+            if matches!(
+                types_still_alive.iter().next().unwrap(),
+                GroupType::ImmuneSystem,
+            ) {
+                boosted_result = result;
+                break;
+            }
+        }
+    }
+
+    boosted_result
 }
 
 peg::parser! {
@@ -272,8 +321,15 @@ Infection:
     fn test_part_one() {
         let mut reindeer: Reindeer = reindeer::reindeer(&INPUT).unwrap();
 
-        let result = reindeer.fight();
+        let result = reindeer.fight().unwrap();
 
         assert_eq!(5_216, result);
+    }
+
+    #[test]
+    fn test_part_two() {
+        let result = get_immune_system_boost(&INPUT);
+
+        assert_eq!(51, result);
     }
 }

@@ -36,15 +36,13 @@ fn trace_wire(steps: Vec<&str>) -> Vec<(isize, isize)> {
                 }
             }
             step if step.starts_with('D') => {
-                for y in ((current.1 - step[1..].parse::<isize>().unwrap())..(current.1)).rev()
-                {
+                for y in ((current.1 - step[1..].parse::<isize>().unwrap())..(current.1)).rev() {
                     current = (current.0, y);
                     locations.push(current);
                 }
             }
             step if step.starts_with('L') => {
-                for x in ((current.0 - step[1..].parse::<isize>().unwrap())..(current.0)).rev()
-                {
+                for x in ((current.0 - step[1..].parse::<isize>().unwrap())..(current.0)).rev() {
                     current = (x, current.1);
                     locations.push(current);
                 }
@@ -94,10 +92,7 @@ fn get_fewest_steps(input: String) -> usize {
 fn main() {
     let input = read_input();
     let closest_intersection = find_closest_intersection(&input);
-    println!(
-        "What is the Manhattan distance…? {}",
-        closest_intersection,
-    );
+    println!("What is the Manhattan distance…? {}", closest_intersection,);
 
     let fewest_steps = get_fewest_steps(input);
     println!(

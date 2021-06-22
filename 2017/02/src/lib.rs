@@ -13,12 +13,7 @@ pub fn get_evenly_divisible_values(input: &str) -> usize {
             let (a, b) = numbers
                 .iter()
                 .enumerate()
-                .flat_map(|(i, a)| {
-                    numbers
-                        .iter()
-                        .skip(i + 1)
-                        .map(move |b| (*a, *b))
-                })
+                .flat_map(|(i, a)| numbers.iter().skip(i + 1).map(move |b| (*a, *b)))
                 .find(|(a, b)| *b % *a == 0)
                 .unwrap();
             b / a

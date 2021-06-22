@@ -58,7 +58,7 @@ impl RoutingDiagram {
                         true => right,
                         false => left,
                     }
-                },
+                }
                 _ => {}
             }
             current += direction;

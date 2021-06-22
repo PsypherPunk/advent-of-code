@@ -226,14 +226,10 @@ fn main() {
         }
         cabinet.screen.insert((tile[0], tile[1]), tile[2]);
     }
-    let blocks = cabinet
-        .screen
-        .values()
-        .filter(|tile| *tile == &2)
-        .collect::<Vec<&isize>>();
+    let blocks = cabinet.screen.values().filter(|tile| *tile == &2).count();
     println!(
         "How many block tiles are on the screen when the game exits? {}",
-        blocks.len(),
+        blocks,
     );
 
     let mut cabinet = Cabinet::new(&input);

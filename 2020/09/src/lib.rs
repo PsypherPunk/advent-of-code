@@ -14,11 +14,10 @@ pub fn get_first_invalid_number(numbers: &[usize], window_size: usize) -> usize 
         .skip(window_size)
         .zip(numbers.windows(window_size))
         .find(|&(candidate, window)| {
-            window
+            !window
                 .iter()
                 .tuple_combinations()
-                .find(|&(a, b)| a + b == *candidate)
-                .is_none()
+                .any(|(a, b)| a + b == *candidate)
         })
         .map(|(invalid, _)| *invalid)
         .unwrap()

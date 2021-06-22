@@ -26,10 +26,7 @@ impl Component {
     }
 
     fn is_generator(&self) -> bool {
-        match self {
-            Component::Generator(_) => true,
-            _ => false,
-        }
+        matches!(self, Component::Generator(_))
     }
 }
 
@@ -97,11 +94,7 @@ impl Floor {
             .filter(|component| !component.is_generator())
             .all(|microchip| {
                 self.has_generator_for(microchip.get_element())
-                    || self
-                        .0
-                        .iter()
-                        .find(|component| component.is_generator())
-                        .is_none()
+                    || !self.0.iter().any(|component| component.is_generator())
             })
     }
 
@@ -119,14 +112,12 @@ impl Floor {
             .flat_map(|count| self.0.iter().combinations(count).collect_vec())
             .filter(|combination| {
                 combination.len() == 1
-                    || combination.iter().all(|component| match component {
-                        Component::Microchip(_) => true,
-                        _ => false,
-                    })
-                    || combination.iter().all(|component| match component {
-                        Component::Generator(_) => true,
-                        _ => false,
-                    })
+                    || combination
+                        .iter()
+                        .all(|component| matches!(component, Component::Microchip(_)))
+                    || combination
+                        .iter()
+                        .all(|component| matches!(component, Component::Generator(_)))
                     || combination
                         .iter()
                         .map(|component| match component {
@@ -294,7 +285,7 @@ impl Facility {
                             None
                         }
                     })
-                    .filter_map(|facility| facility)
+                    .flatten()
                     .collect_vec()
             })
             .collect::<Vec<_>>()

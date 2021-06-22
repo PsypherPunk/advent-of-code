@@ -59,7 +59,7 @@ fn present_ribbon(input: &str) -> usize {
     let l = dimensions[0];
     let w = dimensions[1];
     let h = dimensions[2];
-    dimensions.sort();
+    dimensions.sort_unstable();
 
     (2 * dimensions[0]) + (2 * dimensions[1]) + l * w * h
 }

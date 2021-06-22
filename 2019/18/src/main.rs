@@ -172,7 +172,7 @@ fn get_step_count(vault: &Vault) -> Option<isize> {
                         queue.push_back(next);
                         step_count + 1
                     });
-               }
+                }
             }
             _ => break,
         }

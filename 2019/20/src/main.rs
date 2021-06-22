@@ -272,9 +272,7 @@ fn recursive_breadth_first_search(maze: &RecursiveMaze) -> usize {
                     }
                     level - 1
                 }
-                Edge::Outer => {
-                    level + 1
-                }
+                Edge::Outer => level + 1,
                 Edge::Normal => level,
             };
             if !discovered.contains(&(adjacent, new_level)) {

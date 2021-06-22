@@ -184,27 +184,27 @@ impl FromStr for Image {
 }
 
 impl Image {
+    #[allow(clippy::suspicious_operation_groupings)]
     pub fn get_corners(&mut self) -> Vec<usize> {
-        let corners = self
-            .tiles
-            .iter()
-            .filter(|tile| {
-                self.tiles
-                    .iter()
-                    .find(|other| tile.id != other.id && tile.border.top == other.border.bottom)
-                    .is_none()
-                    && self
+        let corners =
+            self.tiles
+                .iter()
+                .filter(|tile| {
+                    !self
                         .tiles
                         .iter()
-                        .find(|other| tile.id != other.id && tile.border.left == other.border.right)
-                        .is_none()
-            })
-            .map(|tile| tile.id)
-            .collect::<HashSet<_>>();
+                        .any(|other| tile.id != other.id && tile.border.top == other.border.bottom)
+                        && !self.tiles.iter().any(|other| {
+                            tile.id != other.id && tile.border.left == other.border.right
+                        })
+                })
+                .map(|tile| tile.id)
+                .collect::<HashSet<_>>();
 
         corners.into_iter().collect()
     }
 
+    #[allow(clippy::suspicious_operation_groupings)]
     pub fn get_final_image(&mut self) -> Tile {
         let size = self
             .tiles
@@ -223,20 +223,11 @@ impl Image {
                         .tiles
                         .iter()
                         .find(|tile| {
-                            self.tiles
-                                .iter()
-                                .find(|other| {
-                                    tile.id != other.id && tile.border.top == other.border.bottom
-                                })
-                                .is_none()
-                                && self
-                                    .tiles
-                                    .iter()
-                                    .find(|other| {
-                                        tile.id != other.id
-                                            && tile.border.left == other.border.right
-                                    })
-                                    .is_none()
+                            !self.tiles.iter().any(|other| {
+                                tile.id != other.id && tile.border.top == other.border.bottom
+                            }) && !self.tiles.iter().any(|other| {
+                                tile.id != other.id && tile.border.left == other.border.right
+                            })
                         })
                         .unwrap(),
                     (nx, 0) => {

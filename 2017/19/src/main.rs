@@ -14,8 +14,5 @@ fn main() {
         routing_diagram.get_letters(),
     );
 
-    println!(
-        "How many steps…? {}",
-        routing_diagram.get_steps(),
-    );
+    println!("How many steps…? {}", routing_diagram.get_steps(),);
 }

@@ -40,10 +40,9 @@ pub fn get_delay(input: &str) -> usize {
 
     (0..)
         .find(|delay| {
-            scanners
+            !scanners
                 .iter()
-                .find(|&(depth, range)| get_position_for_range_after(*range, depth + delay) == 0)
-                .is_none()
+                .any(|(depth, range)| get_position_for_range_after(*range, depth + delay) == 0)
         })
         .unwrap()
 }

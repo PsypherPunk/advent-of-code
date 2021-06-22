@@ -122,9 +122,7 @@ impl Grid {
                                 let water = self
                                     .tiles
                                     .keys()
-                                    .filter(|(row, col)| {
-                                        *col == y && *row > left && *row < right
-                                    })
+                                    .filter(|(row, col)| *col == y && *row > left && *row < right)
                                     .map(|tile| (*tile, Tile::WaterRest))
                                     .collect::<HashMap<_, _>>();
                                 self.tiles.extend(water);

@@ -62,20 +62,20 @@ impl Droid {
             let status = self.intcode.run().unwrap();
             let unvisited = section.insert(next_pos, status).is_none();
             match status {
-                0 => {},
+                0 => {}
                 1 => {
                     if unvisited {
                         backtrace.push(step_back(direction))
                     };
                     current = next_pos;
-                },
+                }
                 2 => {
                     self.oxygen = Some(next_pos);
                     if unvisited {
                         backtrace.push(step_back(direction))
                     };
                     current = next_pos;
-                },
+                }
                 _ => {
                     panic!("Well, that's weird.");
                 }

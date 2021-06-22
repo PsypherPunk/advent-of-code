@@ -32,7 +32,7 @@ impl FromStr for Food {
                 .for_each(|allergen| {
                     let allergen_ingredients = all_allergens
                         .entry(allergen.trim().to_string())
-                        .or_insert(ingredients.clone());
+                        .or_insert_with(|| ingredients.clone());
                     *allergen_ingredients = ingredients
                         .intersection(allergen_ingredients)
                         .cloned()

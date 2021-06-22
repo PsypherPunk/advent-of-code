@@ -74,9 +74,7 @@ pub fn read_initialization_program_v2(input: &str) -> usize {
                 match bit {
                     Some(true) => {
                         let bits = 1 << index;
-                        addresses
-                            .iter_mut()
-                            .for_each(|address| *address |= bits);
+                        addresses.iter_mut().for_each(|address| *address |= bits);
                     }
                     Some(false) => {}
                     None => {

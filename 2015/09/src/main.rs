@@ -78,14 +78,14 @@ fn get_route_distances(input: &str) -> Vec<usize> {
 
 fn get_longest_route(input: &str) -> usize {
     let mut distances = get_route_distances(input);
-    distances.sort();
+    distances.sort_unstable();
 
     *distances.iter().max().unwrap()
 }
 
 fn get_shortest_route(input: &str) -> usize {
     let mut distances = get_route_distances(input);
-    distances.sort();
+    distances.sort_unstable();
 
     *distances.iter().min().unwrap()
 }

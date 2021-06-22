@@ -96,7 +96,10 @@ fn main() {
 
     println!("What is the bathroom code? {}", get_code(&input),);
 
-    println!("…what is the correct bathroom code? {}", get_new_code(&input));
+    println!(
+        "…what is the correct bathroom code? {}",
+        get_new_code(&input)
+    );
 }
 
 #[cfg(test)]

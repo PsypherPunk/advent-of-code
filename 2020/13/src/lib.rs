@@ -44,6 +44,7 @@ impl Notes {
             .unwrap()
     }
 
+    #[allow(clippy::option_filter_map)]
     pub fn get_earliest_timestamp_with_offset(&self) -> isize {
         let bus_ids = self
             .bus_ids

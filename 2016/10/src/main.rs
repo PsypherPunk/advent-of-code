@@ -33,13 +33,9 @@ impl Bot {
     }
 
     fn receive_chip(&mut self, new_chip: usize) {
-        let mut chips = self
-            .chips
-            .iter()
-            .map(|(_, chip)| *chip)
-            .collect::<Vec<_>>();
+        let mut chips = self.chips.iter().map(|(_, chip)| *chip).collect::<Vec<_>>();
         chips.push(new_chip);
-        chips.sort();
+        chips.sort_unstable();
         if chips.len() == 2 && *chips.get(0).unwrap() == 17 && *chips.get(1).unwrap() == 61 {
             println!(
                 "what is the…bot that is…comparing value-61 microchips with value-17 microchips? {}",

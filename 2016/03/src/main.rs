@@ -25,7 +25,8 @@ fn get_valid_triangle_count(input: &str) -> usize {
 fn get_valid_triangle_count_columnar(input: &str) -> usize {
     (0..3)
         .map(|column| {
-            get_ints(&input).iter()
+            get_ints(&input)
+                .iter()
                 .map(|row| row[column])
                 .collect::<Vec<usize>>()
                 .chunks(3)

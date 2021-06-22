@@ -80,9 +80,9 @@ impl Robot {
 
     fn render(&self) {
         let mut y_coords = self.squares.keys().map(|(_, y)| *y).collect::<Vec<isize>>();
-        y_coords.sort();
+        y_coords.sort_unstable();
         let mut x_coords = self.squares.keys().map(|(x, _)| *x).collect::<Vec<isize>>();
-        x_coords.sort();
+        x_coords.sort_unstable();
         for y in *y_coords.first().unwrap()..=*y_coords.last().unwrap() {
             for x in *x_coords.first().unwrap()..=*x_coords.last().unwrap() {
                 let square = match self.squares.get(&(x, y)) {

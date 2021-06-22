@@ -89,7 +89,7 @@ impl Document {
             .filter(|&value| {
                 self.rules
                     .values()
-                    .map(|rules| rules.iter().find(|rule| rule.0.contains(value)).is_none())
+                    .map(|rules| !rules.iter().any(|rule| rule.0.contains(value)))
                     .all(|matches_rule| matches_rule)
             })
             .cloned()

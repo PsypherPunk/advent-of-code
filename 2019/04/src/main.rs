@@ -42,7 +42,7 @@ fn has_exactly_two_adjacent_digits_the_same(password: usize) -> bool {
 
 fn has_non_decreasing_digits(password: usize) -> bool {
     let mut password_string = password.to_string().chars().collect::<Vec<char>>();
-    password_string.sort();
+    password_string.sort_unstable();
 
     String::from_iter(password_string) == password.to_string()
 }
@@ -55,8 +55,7 @@ fn get_possible_password_count(input: &str) -> usize {
 
     let mut possibility_count = 0;
     for possibility in start..=end {
-        if has_non_decreasing_digits(possibility) && has_two_adjacent_digits_the_same(possibility)
-        {
+        if has_non_decreasing_digits(possibility) && has_two_adjacent_digits_the_same(possibility) {
             possibility_count += 1;
         }
     }

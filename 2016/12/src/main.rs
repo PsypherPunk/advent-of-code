@@ -22,26 +22,26 @@ impl Assembunny {
                 "cpy" => {
                     let x = match ops[1].parse::<isize>() {
                         Ok(x) => x,
-                        Err(_) => *registers.entry(ops[1].to_string()).or_insert(0 as isize),
+                        Err(_) => *registers.entry(ops[1].to_string()).or_insert(0),
                     };
-                    let y = registers.entry(ops[2].to_string()).or_insert(0 as isize);
+                    let y = registers.entry(ops[2].to_string()).or_insert(0);
                     *y = x;
                     offset += 1;
                 }
                 "inc" => {
-                    let a = registers.entry(ops[1].to_string()).or_insert(0 as isize);
+                    let a = registers.entry(ops[1].to_string()).or_insert(0);
                     *a += 1;
                     offset += 1;
                 }
                 "dec" => {
-                    let a = registers.entry(ops[1].to_string()).or_insert(0 as isize);
+                    let a = registers.entry(ops[1].to_string()).or_insert(0);
                     *a -= 1;
                     offset += 1;
                 }
                 "jnz" => {
                     let x = match ops[1].parse::<isize>() {
                         Ok(x) => x,
-                        Err(_) => *registers.entry(ops[1].to_string()).or_insert(0 as isize),
+                        Err(_) => *registers.entry(ops[1].to_string()).or_insert(0),
                     };
                     let y = ops[2].parse::<isize>().unwrap();
                     match 0.cmp(&x) {

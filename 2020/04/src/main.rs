@@ -44,17 +44,17 @@ impl ValidPassport for HashMap<&str, &str> {
 
     fn has_valid_byr(&self) -> bool {
         let byr = self.get("byr").unwrap().parse::<usize>().unwrap();
-        byr >= 1920 && byr <= 2002
+        (1920..=2002).contains(&byr)
     }
 
     fn has_valid_iyr(&self) -> bool {
         let iyr = self.get("iyr").unwrap().parse::<usize>().unwrap();
-        iyr >= 2010 && iyr <= 2020
+        (2010..=2020).contains(&iyr)
     }
 
     fn has_valid_eyr(&self) -> bool {
         let eyr = self.get("eyr").unwrap().parse::<usize>().unwrap();
-        eyr >= 2020 && eyr <= 2030
+        (2020..=2030).contains(&eyr)
     }
 
     fn has_valid_hgt(&self) -> bool {
@@ -63,13 +63,13 @@ impl ValidPassport for HashMap<&str, &str> {
 
         if hgt.ends_with("cm") {
             if let Ok(data) = num {
-                return data >= 150 && data <= 193;
+                return (150..=193).contains(&data);
             }
         }
 
         if hgt.ends_with("in") {
             if let Ok(data) = num {
-                return data >= 59 && data <= 76;
+                return (59..=76).contains(&data);
             }
         }
 

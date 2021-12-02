@@ -13,6 +13,12 @@ struct Position {
     depth: usize,
 }
 
+#[derive(Default)]
+struct Course {
+    position: Position,
+    aim: usize,
+}
+
 impl FromStr for Command {
     type Err = String;
 
@@ -33,7 +39,7 @@ impl FromStr for Command {
     }
 }
 
-pub fn get_final_horizontal_depth_product(input: &str) -> usize {
+pub fn get_part_one(input: &str) -> usize {
     let final_position = input
         .trim()
         .lines()
@@ -46,8 +52,28 @@ pub fn get_final_horizontal_depth_product(input: &str) -> usize {
             }
             acc
         });
-    
+
     final_position.horizontal * final_position.depth
+}
+
+pub fn get_part_two(input: &str) -> usize {
+    let final_course = input
+        .trim()
+        .lines()
+        .map(|line| line.parse::<Command>().unwrap())
+        .fold(Course::default(), |mut acc, command| {
+            match command {
+                Command::Forward(units) => {
+                    acc.position.horizontal += units;
+                    acc.position.depth += acc.aim * units;
+                }
+                Command::Down(units) => acc.aim += units,
+                Command::Up(units) => acc.aim -= units,
+            }
+            acc
+        });
+
+    final_course.position.horizontal * final_course.position.depth
 }
 
 #[cfg(test)]
@@ -64,11 +90,11 @@ forward 2
 
     #[test]
     fn test_part_one() {
-        assert_eq!(150, get_final_horizontal_depth_product(INPUT));
+        assert_eq!(150, get_part_one(INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(1, 2)
+        assert_eq!(900, get_part_two(INPUT));
     }
 }

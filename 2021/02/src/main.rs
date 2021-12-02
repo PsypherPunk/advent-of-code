@@ -7,6 +7,11 @@ fn main() {
 
     println!(
         "What do you get if you multiply your final horizontal position by your final depth? {}",
-        get_final_horizontal_depth_product(&input),
+        get_part_one(&input),
+    );
+
+    println!(
+        "What do you get if you multiply your final horizontal position by your final depth? {}",
+        get_part_two(&input),
     );
 }

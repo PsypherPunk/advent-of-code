@@ -1,25 +1,27 @@
-pub fn get_larger_measurements(input: &str) -> usize {
+fn get_parsed_input(input: &str) -> Vec<usize> {
     input
         .trim()
         .lines()
-        .map(|line| line.parse::<usize>().unwrap())
-        .collect::<Vec<_>>()
+        .flat_map(|line| line.parse::<usize>())
+        .collect()
+}
+
+pub fn get_larger_measurements(input: &str) -> usize {
+    get_parsed_input(input)
         .windows(2)
         .filter(|pair| pair[1] > pair[0])
         .count()
 }
 
+// We could compare these using `.windows(3)`. However, as we're
+// comparing `a + b + c < b + c + d` we can factor out `b + c` and
+// simply compare `a < d`.
 pub fn get_larger_sums(input: &str) -> usize {
-    input
-        .trim()
-        .lines()
-        .map(|line| line.parse::<usize>().unwrap())
-        .collect::<Vec<_>>()
-        .windows(3)
-        .map(|triple| triple.iter().sum::<usize>())
-        .collect::<Vec<_>>()
-        .windows(2)
-        .filter(|pair| pair[1] > pair[0])
+    let depths = get_parsed_input(input);
+    depths
+        .iter()
+        .zip(depths.iter().skip(3))
+        .filter(|(a, d)| d > a)
         .count()
 }
 

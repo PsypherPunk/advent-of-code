@@ -9,4 +9,9 @@ fn main() {
         "What is the power consumption of the submarine? {}",
         get_part_one(&input),
     );
+
+    println!(
+        "What is the life support rating of the submarine? {}",
+        get_part_two(&input),
+    );
 }

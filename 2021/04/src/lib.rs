@@ -1,7 +1,8 @@
-use std::borrow::BorrowMut;
-
 #[derive(Clone, Debug)]
-struct Board(Vec<Vec<Number>>);
+struct Board {
+    numbers: Vec<Vec<Number>>,
+    won: bool,
+}
 
 #[derive(Clone, Copy, Debug)]
 struct Number {
@@ -42,7 +43,12 @@ peg::parser! {
 
         rule board() -> Board
             = lines:line() **<5> _
-                { Board(lines) }
+                {
+                    Board {
+                        numbers: lines,
+                        won: false,
+                    }
+                }
 
         pub rule bingo() -> Bingo
             = numbers:numbers()
@@ -61,22 +67,21 @@ peg::parser! {
 
 impl Board {
     fn mark_draw(&mut self, draw: usize) {
-        let rows = &mut self.0;
-        for row in rows {
-            for number in row {
+        self.numbers.iter_mut().for_each(|row| {
+            row.iter_mut().for_each(|number| {
                 if number.number == draw {
                     number.marked = true;
                 }
-            }
-        }
+            })
+        });
     }
 
     fn is_winner(&self) -> bool {
-        (&self.0)
+        self.numbers
             .iter()
             .any(|row| row.iter().all(|number| number.marked))
             || (0..5).any(|column| {
-                (&self.0)
+                self.numbers
                     .iter()
                     .map(|row| row[column])
                     .all(|number| number.marked)
@@ -84,7 +89,7 @@ impl Board {
     }
 
     fn get_unmarked_numbers(&self) -> Vec<usize> {
-        self.0
+        self.numbers
             .iter()
             .flat_map(|row| {
                 row.iter()
@@ -98,13 +103,16 @@ impl Board {
 impl Bingo {
     fn play_game(&mut self) {
         for draw in &self.numbers {
-            for i in 0..self.boards.len() {
-                let board = self.boards[i].borrow_mut();
-                board.mark_draw(*draw);
-                if board.is_winner() {
-                    self.winners.push((*draw, board.clone()));
-                }
-            }
+            self.boards
+                .iter_mut()
+                .filter(|board| !board.won)
+                .for_each(|board| {
+                    board.mark_draw(*draw);
+                    if board.is_winner() {
+                        self.winners.push((*draw, board.clone()));
+                        board.won = true;
+                    }
+                });
         }
     }
 }
@@ -114,10 +122,21 @@ pub fn get_part_one(input: &str) -> usize {
 
     bingo.play_game();
 
-    let first_winner = &bingo.winners[0].1;
+    let (draw, first_winner) = &bingo.winners.first().unwrap();
     let unmarked_sum = first_winner.get_unmarked_numbers().iter().sum::<usize>();
 
-    bingo.winners[0].0 * unmarked_sum
+    draw * unmarked_sum
+}
+
+pub fn get_part_two(input: &str) -> usize {
+    let mut bingo = bingo::bingo(input).unwrap();
+
+    bingo.play_game();
+
+    let (draw, last_winner) = &bingo.winners.last().unwrap();
+    let unmarked_sum = last_winner.get_unmarked_numbers().iter().sum::<usize>();
+
+    draw * unmarked_sum
 }
 
 #[cfg(test)]
@@ -152,6 +171,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(1, 2)
+        assert_eq!(1924, get_part_two(INPUT));
     }
 }

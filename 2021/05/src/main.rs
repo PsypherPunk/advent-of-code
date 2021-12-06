@@ -9,4 +9,9 @@ fn main() {
         "At how many points do at least two lines overlap? {}",
         get_part_one(&input),
     );
+
+    println!(
+        "At how many points do at least two lines overlap? {}",
+        get_part_two(&input),
+    );
 }

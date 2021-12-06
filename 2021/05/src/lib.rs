@@ -14,12 +14,19 @@ pub struct LineSegment {
 }
 
 impl LineSegment {
-    pub fn is_horizontal(&self) -> bool {
+    fn is_horizontal(&self) -> bool {
         self.start.y == self.end.y
     }
 
-    pub fn is_vertical(&self) -> bool {
+    fn is_vertical(&self) -> bool {
         self.start.x == self.end.x
+    }
+
+    fn get_direction(&self) -> isize {
+        match (self.start.x < self.end.x).cmp(&(self.start.y < self.end.y)) {
+            Ordering::Equal => 1,
+            _ => -1,
+        }
     }
 }
 
@@ -61,9 +68,8 @@ peg::parser! {
 }
 
 pub fn get_part_one(input: &str) -> usize {
-    let line_segments = vents::vents(input).unwrap();
-
-    line_segments
+    vents::vents(input)
+        .unwrap()
         .iter()
         .flat_map(|segment| {
             if segment.is_horizontal() {
@@ -76,6 +82,42 @@ pub fn get_part_one(input: &str) -> usize {
                     .collect()
             } else {
                 vec![]
+            }
+        })
+        .fold(
+            HashMap::<(isize, isize), usize>::new(),
+            |mut counts, position| {
+                *counts.entry(position).or_default() += 1;
+                counts
+            },
+        )
+        .values()
+        .filter(|&count| *count > 1)
+        .count()
+}
+
+pub fn get_part_two(input: &str) -> usize {
+    vents::vents(input)
+        .unwrap()
+        .iter()
+        .flat_map(|segment| {
+            if segment.is_horizontal() {
+                (segment.start.x..=segment.end.x)
+                    .map(|x| (x, segment.start.y))
+                    .collect()
+            } else if segment.is_vertical() {
+                (segment.start.y..=segment.end.y)
+                    .map(|y| (segment.start.x, y))
+                    .collect()
+            } else {
+                (0.min(segment.end.x - segment.start.x)..=0.max(segment.end.x - segment.start.x))
+                    .map(|step| {
+                        (
+                            segment.start.x + step,
+                            segment.start.y + step * segment.get_direction(),
+                        )
+                    })
+                    .collect::<Vec<_>>()
             }
         })
         .fold(
@@ -113,6 +155,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(1, 2)
+        assert_eq!(12, get_part_two(INPUT));
     }
 }

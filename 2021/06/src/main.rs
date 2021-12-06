@@ -9,4 +9,9 @@ fn main() {
         "How many lanternfish would there be after 80 days? {}",
         get_part_one(&input),
     );
+
+    println!(
+        "How many lanternfish would there be after 256 days? {}",
+        get_part_two(&input),
+    );
 }

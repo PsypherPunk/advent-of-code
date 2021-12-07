@@ -9,4 +9,9 @@ fn main() {
         "How much fuel must they spend to align to that position? {}",
         get_part_one(&input),
     );
+
+    println!(
+        "How much fuel must they spend to align to that position? {}",
+        get_part_two(&input),
+    );
 }

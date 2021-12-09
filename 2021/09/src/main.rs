@@ -9,4 +9,9 @@ fn main() {
         "What is the sum of the risk levels of all low points on your heightmap? {}",
         get_part_one(&input),
     );
+
+    println!(
+        "What do you get if you multiply together the sizes of the three largest basins? {}",
+        get_part_two(&input),
+    );
 }

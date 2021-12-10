@@ -9,4 +9,6 @@ fn main() {
         "What is the total syntax error score for those errors? {}",
         get_part_one(&input),
     );
+
+    println!("What is the middle score? {}", get_part_two(&input),);
 }

@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "What is the first step during which all octopuses flash? {}",
+        get_part_two(&input),
+    );
 }

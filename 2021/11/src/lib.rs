@@ -30,15 +30,13 @@ fn get_neighbours(x: usize, y: usize, height: usize, width: usize) -> Vec<(usize
     .collect()
 }
 
-fn flash_ah_aaaaaah(x: usize, y: usize, octopodes: &mut Vec<Vec<i8>>) -> usize {
-    let height = octopodes.len();
-    let width = octopodes[0].len();
-
-    octopodes[y][x] = -1;
-
+fn flash_ah_aaaaaah(x: usize, y: usize, octopodes: &mut [Vec<i8>]) -> usize {
     let mut flashes = 1;
 
-    for (nx, ny) in get_neighbours(x, y, width, height) {
+    // TODO: ugly sentinel value; use Option<i8>?
+    octopodes[y][x] = -1;
+
+    for (nx, ny) in get_neighbours(x, y, octopodes[0].len(), octopodes.len()) {
         if octopodes[ny][nx] != -1 {
             octopodes[ny][nx] += 1;
             if octopodes[ny][nx] > 9 {
@@ -57,14 +55,10 @@ pub fn get_part_one(input: &str) -> usize {
     let height = octopodes.len();
     let width = octopodes[0].len();
 
-    for _ in 0..100 {
-        octopodes
-            .iter_mut()
-            .for_each(|row| {
-                row
-                    .iter_mut()
-                    .for_each(|octopus| *octopus += 1);
-            });
+    for _ in 1..=100 {
+        octopodes.iter_mut().for_each(|row| {
+            row.iter_mut().for_each(|octopus| *octopus += 1);
+        });
 
         for y in 0..height {
             for x in 0..width {
@@ -73,21 +67,48 @@ pub fn get_part_one(input: &str) -> usize {
                 }
             }
         }
-        octopodes
-            .iter_mut()
-            .for_each(|row| {
-                row
-                    .iter_mut()
-                    .filter(|octopus| *octopus == &-1)
-                    .for_each(|octopus| *octopus += 1);
-            });
+        octopodes.iter_mut().for_each(|row| {
+            row.iter_mut()
+                .filter(|octopus| *octopus == &-1)
+                .for_each(|octopus| *octopus += 1);
+        });
     }
 
     flash_count
 }
 
 pub fn get_part_two(input: &str) -> usize {
-    0
+    let mut octopodes = get_octopodes(input);
+    let mut sync_step = 0;
+
+    let height = octopodes.len();
+    let width = octopodes[0].len();
+
+    for step in 1.. {
+        let mut flash_count = 0;
+        octopodes.iter_mut().for_each(|row| {
+            row.iter_mut().for_each(|octopus| *octopus += 1);
+        });
+
+        for y in 0..height {
+            for x in 0..width {
+                if octopodes[y][x] > 9 {
+                    flash_count += flash_ah_aaaaaah(x, y, &mut octopodes);
+                }
+            }
+        }
+        if flash_count == width * height {
+            sync_step = step;
+            break;
+        }
+        octopodes.iter_mut().for_each(|row| {
+            row.iter_mut()
+                .filter(|octopus| *octopus == &-1)
+                .for_each(|octopus| *octopus += 1);
+        });
+    }
+
+    sync_step
 }
 
 #[cfg(test)]
@@ -113,6 +134,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(195, get_part_two(INPUT));
     }
 }

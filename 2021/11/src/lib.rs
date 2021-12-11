@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::{thread, time};
 
 fn get_octopodes(input: &str) -> Vec<Vec<i8>> {
     input
@@ -48,7 +49,24 @@ fn flash_ah_aaaaaah(x: usize, y: usize, octopodes: &mut [Vec<i8>]) -> usize {
     flashes
 }
 
-pub fn get_part_one(input: &str) -> usize {
+fn display_step(octopodes: &[Vec<i8>]) {
+    print!("{}[2J", 27 as char);
+    print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+    octopodes.iter().for_each(|row| {
+        row.iter().for_each(|octopus| {
+            let output = match octopus {
+                0 => '💥',
+                _ => '🐙',
+            };
+
+            print!("{}", output);
+        });
+        println!();
+    });
+    thread::sleep(time::Duration::from_millis(100));
+}
+
+pub fn get_part_one(input: &str, display: bool) -> usize {
     let mut octopodes = get_octopodes(input);
     let mut flash_count = 0;
 
@@ -70,14 +88,18 @@ pub fn get_part_one(input: &str) -> usize {
         octopodes.iter_mut().for_each(|row| {
             row.iter_mut()
                 .filter(|octopus| *octopus == &-1)
-                .for_each(|octopus| *octopus += 1);
+                .for_each(|octopus| *octopus = 0);
         });
+
+        if display {
+            display_step(&octopodes);
+        }
     }
 
     flash_count
 }
 
-pub fn get_part_two(input: &str) -> usize {
+pub fn get_part_two(input: &str, display: bool) -> usize {
     let mut octopodes = get_octopodes(input);
     let mut sync_step = 0;
 
@@ -104,8 +126,12 @@ pub fn get_part_two(input: &str) -> usize {
         octopodes.iter_mut().for_each(|row| {
             row.iter_mut()
                 .filter(|octopus| *octopus == &-1)
-                .for_each(|octopus| *octopus += 1);
+                .for_each(|octopus| *octopus = 0);
         });
+
+        if display {
+            display_step(&octopodes);
+        }
     }
 
     sync_step
@@ -129,11 +155,11 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        assert_eq!(1656, get_part_one(INPUT));
+        assert_eq!(1656, get_part_one(INPUT, false));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(195, get_part_two(INPUT));
+        assert_eq!(195, get_part_two(INPUT, false));
     }
 }

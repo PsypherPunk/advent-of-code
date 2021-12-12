@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "…how many paths through this cave system are there? {}",
+        get_part_two(&input),
+    );
 }

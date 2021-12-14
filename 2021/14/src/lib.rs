@@ -82,11 +82,10 @@ fn get_most_least_difference_after(input: &str, steps: usize) -> usize {
     let mut element_counts = get_element_counts(polymer);
 
     for _ in 0..steps {
-        let mut previous_pair_counts = pair_counts.clone();
         pair_counts = rules
             .iter()
             .flat_map(|(&(left, right), &insert)| {
-                let previous_pair_count = *previous_pair_counts.entry((left, right)).or_insert(0);
+                let previous_pair_count = *pair_counts.entry((left, right)).or_insert(0);
                 *element_counts.entry(insert).or_insert(0) += previous_pair_count;
 
                 [

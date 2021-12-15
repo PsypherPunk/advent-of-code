@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "…what is the lowest total risk of any path from the top left to the bottom right? {}",
+        get_part_two(&input),
+    );
 }

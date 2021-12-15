@@ -13,9 +13,14 @@ fn get_cavern(input: &str) -> Vec<Vec<usize>> {
         .collect()
 }
 
-pub fn get_part_one(input: &str) -> usize {
-    let cavern = get_cavern(input);
+fn get_risk_at((x, y): (usize, usize), cavern: &[Vec<usize>]) -> usize {
+    let (y_tile, y_original_tile) = (y / cavern.len(), y % cavern.len());
+    let (x_tile, x_original_tile) = (x / cavern[0].len(), x % cavern[0].len());
 
+    (((cavern[y_original_tile][x_original_tile] + y_tile + x_tile) - 1) % 9) + 1
+}
+
+fn get_lowest_risk(cavern: Vec<Vec<usize>>, tiles: usize) -> usize {
     let mut heap = BinaryHeap::new();
     let mut seen = HashSet::new();
     seen.insert((0, 0));
@@ -25,7 +30,7 @@ pub fn get_part_one(input: &str) -> usize {
     while !heap.is_empty() {
         let (risk, (x, y)) = heap.pop().unwrap().0;
 
-        if (x, y) == (cavern[0].len() - 1, cavern.len() - 1) {
+        if (x, y) == ((cavern[0].len() * tiles) - 1, (cavern.len() * tiles) - 1) {
             return risk;
         }
 
@@ -39,13 +44,14 @@ pub fn get_part_one(input: &str) -> usize {
         .filter(|&(px, py)| {
             !seen.contains(&(px, py))
                 && (px, py) != (x, y)
-                && px < cavern[0].len()
-                && py < cavern.len()
+                && px < cavern[0].len() * tiles
+                && py < cavern.len() * tiles
         })
         .collect::<HashSet<_>>();
 
         for (nx, ny) in positions {
-            heap.push(Reverse((cavern[ny][nx] + risk, (nx, ny))));
+            let next_risk = get_risk_at((nx, ny), &cavern);
+            heap.push(Reverse((next_risk + risk, (nx, ny))));
             seen.insert((nx, ny));
         }
     }
@@ -53,12 +59,22 @@ pub fn get_part_one(input: &str) -> usize {
     unreachable!();
 }
 
+pub fn get_part_one(input: &str) -> usize {
+    let cavern = get_cavern(input);
+
+    get_lowest_risk(cavern, 1)
+}
+
 pub fn get_part_two(input: &str) -> usize {
-    0
+    let cavern = get_cavern(input);
+
+    get_lowest_risk(cavern, 5)
 }
 
 #[cfg(test)]
 mod tests {
+    use parameterized::parameterized;
+
     use super::*;
 
     const INPUT: &str = r#"1163751742
@@ -78,8 +94,59 @@ mod tests {
         assert_eq!(40, get_part_one(INPUT));
     }
 
+    #[parameterized(position = {
+        (27, 2),
+        (24, 3),
+        (20, 4),
+        (38, 6),
+        (23, 7),
+        (35, 12),
+        (11, 16),
+        (32, 16),
+        (30, 17),
+        (17, 20),
+        (49, 20),
+        (48, 28),
+        (36, 34),
+        (42, 34),
+        (17, 35),
+        (20, 35),
+        (19, 39),
+        (47, 39),
+        (7, 45),
+        (2, 48),
+        (25, 48),
+    }, risk = {
+        5,
+        2,
+        9,
+        5,
+        7,
+        5,
+        5,
+        9,
+        7,
+        1,
+        8,
+        8,
+        4,
+        4,
+        5,
+        6,
+        5,
+        3,
+        5,
+        4,
+        9,
+    })]
+    fn test_tiling(position: (usize, usize), risk: usize) {
+        let cavern = get_cavern(INPUT);
+
+        assert_eq!(risk, get_risk_at(position, &cavern));
+    }
+
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(315, get_part_two(INPUT));
     }
 }

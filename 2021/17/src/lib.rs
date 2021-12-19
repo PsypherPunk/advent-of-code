@@ -23,40 +23,49 @@ peg::parser! {
     }
 }
 
+fn get_max_ys_on_target(target: Target) -> Vec<isize> {
+    (0..=target.x_max)
+        .flat_map(|x_velocity| {
+            (target.y_min..=1000)
+                .map(move |y_velocity| (x_velocity, y_velocity))
+                .filter_map(|(mut x_velocity, mut y_velocity)| {
+                    let (mut x, mut y, mut max_y) = (0, 0, 0);
+                    loop {
+                        x += x_velocity;
+                        y += y_velocity;
+                        x_velocity -= x_velocity.signum();
+                        y_velocity -= 1;
+                        max_y = max_y.max(y);
+
+                        match (
+                            target.x_min <= x && x <= target.x_max,
+                            target.y_min <= y && y <= target.y_max,
+                        ) {
+                            (true, true) => return Some(max_y),
+                            (false, _) if x_velocity == 0 => return None,
+                            (_, false) if y < target.y_min => return None,
+                            _ => {}
+                        }
+                    }
+                })
+        })
+        .collect()
+}
+
 pub fn get_part_one(input: &str) -> isize {
     let target = target::target(input.trim()).unwrap();
 
-    let (mut x, mut y, mut max_y) = (0, 0, 0);
+    let max_ys_on_target = get_max_ys_on_target(target);
 
-    let ys = (target.y_min..=1000)
-        .flat_map(|mut dy| {
-            (0..=target.x_max)
-                .map(move |mut dx| loop {
-                    x += dx;
-                    y += dy;
-                    dx -= dx.signum();
-                    dy -= 1;
-                    max_y = max_y.max(y);
-
-                    match (
-                        target.x_min <= x && x <= target.x_max,
-                        target.y_min <= y && y <= target.y_max,
-                    ) {
-                        (true, true) => return Some(max_y),
-                        (false, _) if dx == 0 => return None,
-                        (_, false) if y < target.y_min => return None,
-                        _ => {}
-                    }
-                })
-                .flatten()
-        })
-        .collect::<Vec<_>>();
-
-    *ys.iter().max().unwrap()
+    *max_ys_on_target.iter().max().unwrap()
 }
 
 pub fn get_part_two(input: &str) -> usize {
-    0
+    let target = target::target(input.trim()).unwrap();
+
+    let max_ys_on_target = get_max_ys_on_target(target);
+
+    max_ys_on_target.len()
 }
 
 #[cfg(test)]
@@ -72,6 +81,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(112, get_part_two(INPUT));
     }
 }

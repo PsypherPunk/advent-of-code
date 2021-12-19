@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "How many distinct initial velocity values cause the probe to be within the target area after any step? {}",
+        get_part_two(&input),
+    );
 }

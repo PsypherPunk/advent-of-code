@@ -24,7 +24,7 @@ peg::parser! {
     }
 }
 
-fn get_rotation([x, y, z]: [isize; 3], rotation: u8) -> [isize; 3] {
+fn get_rotation([x, y, z]: [isize; 3], rotation: usize) -> [isize; 3] {
     match rotation {
         0 => [x, y, z],
         1 => [x, z, -y],
@@ -54,7 +54,7 @@ fn get_rotation([x, y, z]: [isize; 3], rotation: u8) -> [isize; 3] {
     }
 }
 
-fn find_matching_beacons(beacons: &mut HashSet<[isize; 3]>, scan: &[[isize; 3]]) -> bool {
+fn get_distance(beacons: &mut HashSet<[isize; 3]>, scan: &[[isize; 3]]) -> Option<[isize; 3]> {
     for rotation in 0..24 {
         let scan_rotations = scan
             .iter()
@@ -79,11 +79,11 @@ fn find_matching_beacons(beacons: &mut HashSet<[isize; 3]>, scan: &[[isize; 3]])
                 .count();
             if matching_beacon_count >= 12 {
                 beacons.extend(shifted_scan_rotations);
-                return true;
+                return Some([dx, dy, dz]);
             }
         }
     }
-    false
+    None
 }
 
 pub fn get_part_one(input: &str) -> usize {
@@ -93,7 +93,7 @@ pub fn get_part_one(input: &str) -> usize {
 
     while !scans.is_empty() {
         for i in (0..scans.len()).rev() {
-            if find_matching_beacons(&mut beacons, &scans[i]) {
+            if get_distance(&mut beacons, &scans[i]).is_some() {
                 // https://doc.rust-lang.org/std/vec/struct.Vec.html#method.remove
                 scans.swap_remove(i);
             }
@@ -103,8 +103,35 @@ pub fn get_part_one(input: &str) -> usize {
     beacons.len()
 }
 
-pub fn get_part_two(input: &str) -> usize {
-    0
+pub fn get_part_two(input: &str) -> isize {
+    let mut scans = scanner::scanners(input.trim()).unwrap();
+
+    let mut beacons = scans.remove(0).into_iter().collect::<HashSet<_>>();
+    let mut distances = Vec::new();
+
+    while !scans.is_empty() {
+        for i in (0..scans.len()).rev() {
+            if let Some(distance) = get_distance(&mut beacons, &scans[i]) {
+                // https://doc.rust-lang.org/std/vec/struct.Vec.html#method.remove
+                scans.swap_remove(i);
+                distances.push(distance)
+            }
+        }
+    }
+    (0..distances.len())
+        .flat_map(|a| {
+            (0..distances.len())
+                .filter(move |b| a != *b)
+                .map(move |b| (a, b))
+        })
+        .map(|(a, b)| {
+            let [x1, y1, z1] = distances[a];
+            let [x2, y2, z2] = distances[b];
+
+            (x1 - x2).abs() + (y1 - y2).abs() + (z1 - z2).abs()
+        })
+        .max()
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -256,6 +283,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(3621, get_part_two(INPUT));
     }
 }

@@ -7,5 +7,8 @@ fn main() {
 
     println!("How many beacons are there? {}", get_part_one(&input));
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "What is the largest Manhattan distance between any two scanners? {}",
+        get_part_two(&input),
+    );
 }

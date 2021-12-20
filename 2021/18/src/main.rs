@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "What is the largest magnitude of any sum of two different snailfish numbers from the homework assignment? {}",
+        get_part_two(&input),
+    );
 }

@@ -110,8 +110,8 @@ impl SnailfishNumber {
         }
     }
 
-    fn add(&mut self, other: SnailfishNumber) {
-        self.values.extend(other.values);
+    fn add(&mut self, other: &SnailfishNumber) {
+        self.values.extend(other.values.clone());
         for i in 0..self.values.len() {
             self.values[i].depth += 1;
         }
@@ -147,7 +147,7 @@ pub fn get_part_one(input: &str) -> usize {
     lines
         .flat_map(SnailfishNumber::from_str)
         .fold(init, |mut acc, next| {
-            acc.add(next);
+            acc.add(&next);
             acc.reduce();
 
             acc
@@ -156,7 +156,33 @@ pub fn get_part_one(input: &str) -> usize {
 }
 
 pub fn get_part_two(input: &str) -> usize {
-    0
+    let snailfish_numbers = input
+        .trim()
+        .lines()
+        .flat_map(SnailfishNumber::from_str)
+        .collect::<Vec<_>>();
+
+    let mut magnitudes = Vec::new();
+    for a in 0..snailfish_numbers.len() {
+        for b in 0..snailfish_numbers.len() {
+            if a == b {
+                continue;
+            }
+
+            let mut left = snailfish_numbers[a].clone();
+            let mut right = snailfish_numbers[b].clone();
+
+            left.add(&snailfish_numbers[b]);
+            left.reduce();
+            right.add(&snailfish_numbers[a]);
+            right.reduce();
+
+            magnitudes.push(left.get_magnitude());
+            magnitudes.push(right.get_magnitude());
+        }
+    }
+
+    *magnitudes.iter().max().unwrap()
 }
 
 #[cfg(test)]
@@ -200,6 +226,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(3993, get_part_two(INPUT));
     }
 }

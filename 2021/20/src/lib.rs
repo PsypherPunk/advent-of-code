@@ -37,7 +37,7 @@ impl FromStr for Image {
 }
 
 impl Image {
-    fn get_enhanced_image(&self, enhancement: &[bool]) -> Self {
+    fn get_enhanced_image(&self, enhancement: &[bool], time: usize) -> Self {
         let min = (self.min.0 - 1, self.min.1 - 1);
         let max = (self.max.0 + 1, self.max.1 + 1);
 
@@ -67,7 +67,11 @@ impl Image {
             })
             .collect();
 
-        let default = !self.default;
+        let default = match enhancement[0] {
+            true => !self.default,
+            false => false,
+        };
+
         Image {
             min,
             max,
@@ -85,15 +89,25 @@ pub fn get_part_one(input: &str) -> usize {
 
     let mut image = Image::from_str(image).unwrap();
 
-    for _ in 0..2 {
-        image = image.get_enhanced_image(&enhancement);
+    for time in 0..2 {
+        image = image.get_enhanced_image(&enhancement, time);
     }
 
     image.pixels.values().filter(|&pixel| *pixel).count()
 }
 
 pub fn get_part_two(input: &str) -> usize {
-    0
+    let (enhancement, image) = input.trim().split_once("\n\n").unwrap();
+
+    let enhancement = enhancement.chars().map(|c| c == '#').collect::<Vec<_>>();
+
+    let mut image = Image::from_str(image).unwrap();
+
+    for time in 0..50 {
+        image = image.get_enhanced_image(&enhancement, time);
+    }
+
+    image.pixels.values().filter(|&pixel| *pixel).count()
 }
 
 #[cfg(test)]
@@ -116,6 +130,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(3351, get_part_two(INPUT));
     }
 }

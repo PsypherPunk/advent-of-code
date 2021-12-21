@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "How many pixels are lit in the resulting image? {}",
+        get_part_two(&input),
+    );
 }

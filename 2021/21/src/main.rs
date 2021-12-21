@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "…in how many universes does that player win? {}",
+        get_part_two(&input),
+    );
 }

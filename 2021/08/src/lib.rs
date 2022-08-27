@@ -47,7 +47,7 @@ impl SevenSegmentDisplay {
             .inputs
             .iter()
             .filter(|input| input.len() == 5)
-            .find(|&input| input.is_superset(&self.digits[1]) && input.is_superset(&self.digits[7]))
+            .find(|&input| input.is_superset(&self.digits[7]))
         {
             self.digits[3] = three.clone();
         }
@@ -116,27 +116,14 @@ pub fn get_part_one(input: &str) -> usize {
     input
         .trim()
         .lines()
-        .map(|line| {
+        .flat_map(|line| {
             let (_, outputs) = line.split_once(" | ").unwrap();
-            let outputs = outputs
+            outputs
                 .split_ascii_whitespace()
-                .map(|output| output.chars().collect())
-                .collect();
-
-            SevenSegmentDisplay {
-                inputs: Vec::new(),
-                outputs,
-                digits: Default::default(),
-            }
+                .map(|output| output.len())
         })
-        .map(|display| {
-            display
-                .outputs
-                .iter()
-                .filter(|output| matches!(output.len(), 2 | 3 | 4 | 7))
-                .count()
-        })
-        .sum()
+        .filter(|output| [2, 3, 4, 7].contains(output))
+        .count()
 }
 
 #[cfg(test)]

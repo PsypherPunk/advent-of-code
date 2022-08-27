@@ -9,29 +9,30 @@ fn get_positions(input: &str) -> Vec<isize> {
 pub fn get_part_one(input: &str) -> isize {
     let positions = get_positions(input);
 
-    (0..positions.len())
+    let min = positions.iter().min().unwrap();
+    let max = positions.iter().max().unwrap();
+    (*min..=*max)
         .map(|alignment| {
             positions
                 .iter()
-                .map(|position| (position - alignment as isize).abs())
+                .map(|position| (position - alignment).abs())
                 .sum()
         })
         .min()
         .unwrap()
 }
 
-/// Sum of an
-/// [arithmetic progression](https://en.wikipedia.org/wiki/Arithmetic_progression).
 pub fn get_part_two(input: &str) -> isize {
     let positions = get_positions(input);
 
-    (0..positions.len())
+    let min = positions.iter().min().unwrap();
+    let max = positions.iter().max().unwrap();
+    (*min..=*max)
         .map(|alignment| {
             positions
                 .iter()
-                .map(|position| {
-                    let diff = (position - alignment as isize).abs();
-                    (diff * (diff + 1)) / 2
+                .flat_map(|position| {
+                    0..=(position - alignment).abs()
                 })
                 .sum()
         })

@@ -10,7 +10,7 @@ fn get_closing_bracket(c: char) -> char {
     }
 }
 
-pub fn get_part_two(input: &str) -> usize {
+pub fn get_part_two(input: &str) -> Result<usize, String> {
     let mut scores = input
         .trim()
         .lines()
@@ -21,21 +21,24 @@ pub fn get_part_two(input: &str) -> usize {
                     stack.push_front(get_closing_bracket(c));
                     false
                 }
-                closing => {
-                    let expected = stack.pop_front().unwrap();
-                    closing != expected
-                }
+                closing => match stack.pop_front() {
+                    Some(expected) => closing != expected,
+                    None => true,
+                },
             })
         })
         .map(|line| {
             let mut stack = VecDeque::new();
-            line.chars().for_each(|c| match c {
-                '(' | '[' | '{' | '<' => stack.push_front(get_closing_bracket(c)),
-                _ => {
-                    stack.pop_front().unwrap();
-                }
-            });
-            stack.iter().fold(0, |acc, c| {
+            line.chars().try_for_each(|c| {
+                match c {
+                    '(' | '[' | '{' | '<' => stack.push_front(get_closing_bracket(c)),
+                    _ => {
+                        stack.pop_front().ok_or_else(|| "".to_owned())?;
+                    }
+                };
+                Ok::<(), String>(())
+            })?;
+            Ok(stack.iter().fold(0, |acc, c| {
                 (5 * acc)
                     + match c {
                         ')' => 1,
@@ -44,39 +47,43 @@ pub fn get_part_two(input: &str) -> usize {
                         '>' => 4,
                         _ => unreachable!(),
                     }
-            })
+            }))
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, String>>()?;
 
     scores.sort_unstable();
 
-    scores[scores.len() / 2]
+    Ok(scores[scores.len() / 2])
 }
 
-pub fn get_part_one(input: &str) -> usize {
+pub fn get_part_one(input: &str) -> Result<usize, String> {
     let mut score = 0;
 
-    input.trim().lines().for_each(|line| {
+    input.trim().lines().try_for_each(|line| {
         let mut stack = VecDeque::new();
-        line.chars().for_each(|c| match c {
-            '(' | '[' | '{' | '<' => stack.push_front(get_closing_bracket(c)),
-            closing => {
-                let expected = stack.pop_front().unwrap();
-                score += match closing == expected {
-                    false => match closing {
-                        ')' => 3,
-                        ']' => 57,
-                        '}' => 1197,
-                        '>' => 25137,
-                        _ => unreachable!(),
-                    },
-                    true => 0,
+        line.chars().try_for_each(|c| {
+            match c {
+                '(' | '[' | '{' | '<' => stack.push_front(get_closing_bracket(c)),
+                closing => {
+                    let expected = stack.pop_front().ok_or_else(|| "".to_owned())?;
+                    score += match closing == expected {
+                        false => match closing {
+                            ')' => 3,
+                            ']' => 57,
+                            '}' => 1197,
+                            '>' => 25137,
+                            _ => unreachable!(),
+                        },
+                        true => 0,
+                    }
                 }
-            }
-        });
-    });
+            };
+            Ok::<(), String>(())
+        })?;
+        Ok::<(), String>(())
+    })?;
 
-    score
+    Ok(score)
 }
 
 #[cfg(test)]
@@ -97,11 +104,11 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        assert_eq!(26397, get_part_one(INPUT));
+        assert_eq!(Ok(26397), get_part_one(INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(288957, get_part_two(INPUT));
+        assert_eq!(Ok(288957), get_part_two(INPUT));
     }
 }

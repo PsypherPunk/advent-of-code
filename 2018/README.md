@@ -1,8 +1,7 @@
-===================
-Advent of Code 2018
-===================
+# Advent of Code 2018
 
-My attempt at 2018's `Advent of Code <https://adventofcode.com/2018>`_.
+My attempt at 2018's
+[Advent of Code](https://adventofcode.com/2018).
 
 For some reason I decided to attempt this in a 25-languages-in-25-days fashion.
 For the record, *yes*, I am regretting this quite a bit.
@@ -22,8 +21,7 @@ For the record, *yes*, I am regretting this quite a bit.
 * Day 13: Mine Cart Madness [Lua]
 * Day 14: Chocolate Charts [Tcl]
 
-Addendum
-========
+## Addendum
 
 Having run out of steam around week two every year since, I think it's
 safe to say this was overly ambitious for my first year.

@@ -1,16 +1,17 @@
 use std::collections::HashSet;
 use std::{thread, time};
 
-fn get_octopodes(input: &str) -> Vec<Vec<i8>> {
+fn get_octopodes(input: &str) -> Result<Vec<Vec<i8>>, String> {
     input
         .trim()
         .lines()
         .map(|line| {
             line.chars()
-                .map(|c| c.to_digit(10).unwrap() as i8)
-                .collect()
+                .map(|c| c.to_digit(10).map(|digit| digit as i8))
+                .collect::<Option<Vec<_>>>()
         })
-        .collect()
+        .collect::<Option<Vec<Vec<_>>>>()
+        .ok_or_else(|| "invalid energy level".to_owned())
 }
 
 fn get_neighbours(x: usize, y: usize, height: usize, width: usize) -> Vec<(usize, usize)> {
@@ -66,8 +67,8 @@ fn display_step(octopodes: &[Vec<i8>]) {
     thread::sleep(time::Duration::from_millis(100));
 }
 
-pub fn get_part_one(input: &str, display: bool) -> usize {
-    let mut octopodes = get_octopodes(input);
+pub fn get_part_one(input: &str, display: bool) -> Result<usize, String> {
+    let mut octopodes = get_octopodes(input)?;
     let mut flash_count = 0;
 
     let height = octopodes.len();
@@ -96,11 +97,11 @@ pub fn get_part_one(input: &str, display: bool) -> usize {
         }
     }
 
-    flash_count
+    Ok(flash_count)
 }
 
-pub fn get_part_two(input: &str, display: bool) -> usize {
-    let mut octopodes = get_octopodes(input);
+pub fn get_part_two(input: &str, display: bool) -> Result<usize, String> {
+    let mut octopodes = get_octopodes(input)?;
     let mut sync_step = 0;
 
     let height = octopodes.len();
@@ -134,7 +135,7 @@ pub fn get_part_two(input: &str, display: bool) -> usize {
         }
     }
 
-    sync_step
+    Ok(sync_step)
 }
 
 #[cfg(test)]
@@ -155,11 +156,11 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        assert_eq!(1656, get_part_one(INPUT, false));
+        assert_eq!(Ok(1656), get_part_one(INPUT, false));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(195, get_part_two(INPUT, false));
+        assert_eq!(Ok(195), get_part_two(INPUT, false));
     }
 }

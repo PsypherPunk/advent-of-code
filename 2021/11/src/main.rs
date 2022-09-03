@@ -11,17 +11,19 @@ struct Args {
     display: bool,
 }
 
-fn main() {
+fn main() -> Result<(), String> {
     let args: Args = argh::from_env();
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
     println!(
         "How many total flashes are there after 100 steps? {}",
-        get_part_one(&input, args.display),
+        get_part_one(&input, args.display)?,
     );
 
     println!(
         "What is the first step during which all octopuses flash? {}",
-        get_part_two(&input, args.display),
+        get_part_two(&input, args.display)?,
     );
+
+    Ok(())
 }

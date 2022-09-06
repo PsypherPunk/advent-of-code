@@ -1,37 +1,45 @@
 use std::collections::{HashMap, HashSet};
 
-fn get_caves(input: &str) -> HashMap<&str, Vec<&str>> {
+fn get_caves(input: &str) -> Result<HashMap<&str, Vec<&str>>, String> {
     let mut paths = HashMap::new();
 
-    input.trim().lines().for_each(|line| {
-        let (a, b) = line.split_once('-').unwrap();
+    input.trim().lines().try_for_each(|line| {
+        let (a, b) = line
+            .split_once('-')
+            .ok_or_else(|| "invalid input".to_owned())?;
+
         paths.entry(a).or_insert_with(Vec::new).push(b);
         paths.entry(b).or_insert_with(Vec::new).push(a);
-    });
 
-    paths
+        Ok::<(), String>(())
+    })?;
+
+    Ok(paths)
 }
 
 fn get_path_count<'a>(
     current: &'a str,
     caves: &HashMap<&'a str, Vec<&'a str>>,
     seen: &mut HashSet<&'a str>,
-) -> usize {
-    match current {
+) -> Result<usize, String> {
+    let count = match current {
         "end" => 1,
         cave => {
             if cave.to_lowercase() == cave && seen.contains(cave) {
-                return 0;
+                return Ok(0);
             }
             seen.insert(cave);
-            caves
+            let count = caves
                 .get(cave)
-                .unwrap()
+                .ok_or_else(|| "invalid cave".to_owned())?
                 .iter()
                 .map(|&next| get_path_count(next, caves, &mut seen.clone()))
-                .sum()
+                .collect::<Result<Vec<_>, String>>()?;
+            count.iter().sum()
         }
-    }
+    };
+
+    Ok(count)
 }
 
 fn get_path_count_with_revisit<'a>(
@@ -39,40 +47,44 @@ fn get_path_count_with_revisit<'a>(
     caves: &HashMap<&'a str, Vec<&'a str>>,
     seen: &mut HashSet<&'a str>,
     mut revisit: Option<&'a str>,
-) -> usize {
-    match current {
+) -> Result<usize, String> {
+    let count = match current {
         "end" => 1,
         cave => {
             if cave.to_lowercase() == cave && seen.contains(cave) {
                 if revisit.is_none() {
                     revisit = Some(cave);
                 } else {
-                    return 0;
+                    return Ok(0);
                 }
             }
             if cave == "start" && !seen.is_empty() {
-                return 0;
+                return Ok(0);
             }
             seen.insert(cave);
-            caves
+            let count = caves
                 .get(cave)
-                .unwrap()
+                .ok_or_else(|| "invalid cave".to_owned())?
                 .iter()
                 .map(|&next| get_path_count_with_revisit(next, caves, &mut seen.clone(), revisit))
-                .sum()
+                .collect::<Result<Vec<_>, String>>()?;
+
+            count.iter().sum()
         }
-    }
+    };
+
+    Ok(count)
 }
 
-pub fn get_part_one(input: &str) -> usize {
-    let caves = get_caves(input);
+pub fn get_part_one(input: &str) -> Result<usize, String> {
+    let caves = get_caves(input)?;
     let mut seen = HashSet::new();
 
     get_path_count("start", &caves, &mut seen)
 }
 
-pub fn get_part_two(input: &str) -> usize {
-    let caves = get_caves(input);
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let caves = get_caves(input)?;
     let mut seen = HashSet::new();
 
     get_path_count_with_revisit("start", &caves, &mut seen, None)
@@ -123,7 +135,7 @@ start-RW"#,
         10, 19, 226,
     })]
     fn test_part_one(paths: usize, input: &str) {
-        assert_eq!(paths, get_part_one(input));
+        assert_eq!(Ok(paths), get_part_one(input));
     }
 
     #[parameterized(input = {
@@ -166,6 +178,6 @@ start-RW"#,
         36, 103, 3509,
     })]
     fn test_part_two(paths: usize, input: &str) {
-        assert_eq!(paths, get_part_two(input));
+        assert_eq!(Ok(paths), get_part_two(input));
     }
 }

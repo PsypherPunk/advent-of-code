@@ -1,26 +1,36 @@
-pub fn get_part_one(input: &str) -> usize {
+fn get_elf_loads(input: &str) -> Result<Vec<Vec<usize>>, String> {
     input
-        .trim()
-        .split("\n\n")
-        .map(|elf| elf.lines().map(|line| line.parse::<usize>().unwrap()).sum())
-        .max()
-        .unwrap()
-}
-
-pub fn get_part_two(input: &str) -> usize {
-    let mut elves = input
         .trim()
         .split("\n\n")
         .map(|elf| {
             elf.lines()
-                .map(|line| line.parse::<usize>().unwrap())
-                .sum::<usize>()
+                .map(|line| line.parse::<usize>().map_err(|e| e.to_string()))
+                .collect::<Result<Vec<usize>, _>>()
         })
+        .collect::<Result<Vec<Vec<usize>>, _>>()
+}
+
+pub fn get_part_one(input: &str) -> Result<usize, String> {
+    let elves = get_elf_loads(input)?;
+
+    elves
+        .iter()
+        .map(|elf| elf.iter().sum::<usize>())
+        .max()
+        .ok_or_else(|| "could not find maximum".to_string())
+}
+
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let elves = get_elf_loads(input)?;
+
+    let mut elves = elves
+        .iter()
+        .map(|elf| elf.iter().sum::<usize>())
         .collect::<Vec<_>>();
 
     elves.sort();
 
-    elves.iter().rev().take(3).sum()
+    Ok(elves.iter().rev().take(3).sum())
 }
 
 #[cfg(test)]
@@ -45,11 +55,11 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        assert_eq!(24_000, get_part_one(INPUT));
+        assert_eq!(Ok(24_000), get_part_one(INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(45_000, get_part_two(INPUT));
+        assert_eq!(Ok(45_000), get_part_two(INPUT));
     }
 }

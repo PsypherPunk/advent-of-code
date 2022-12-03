@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 pub fn get_part_one(input: &str) -> Result<usize, String> {
     let priorities = input
         .trim()
@@ -30,13 +32,12 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
     let priorities = input
         .trim()
         .lines()
-        .collect::<Vec<_>>()
-        .chunks_exact(3)
-        .map(|group| {
-            let common = group[0]
+        .tuples::<(_, _, _)>()
+        .map(|(one, two, three)| {
+            let common = one
                 .chars()
-                .find(|c| group[1].contains(|a| a == *c) && group[2].contains(|b| b == *c))
-                .ok_or_else(|| format!("no matching characters: {:?}", group))?;
+                .find(|c| two.contains(|a| a == *c) && three.contains(|b| b == *c))
+                .ok_or_else(|| format!("no matching characters: {}, {}, {}", one, two, three))?;
 
             let priority = match common.is_ascii_lowercase() {
                 true => common as usize - 96,

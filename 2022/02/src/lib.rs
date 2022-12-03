@@ -127,9 +127,7 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
 
             Ok::<usize, String>(round.get_score())
         })
-        .collect::<Result<Vec<usize>, _>>()?
-        .iter()
-        .sum();
+        .sum::<Result<usize, _>>()?;
 
     Ok(score)
 }
@@ -152,9 +150,7 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
 
             Ok::<usize, String>(round.get_score())
         })
-        .collect::<Result<Vec<usize>, _>>()?
-        .iter()
-        .sum();
+        .sum::<Result<usize, String>>()?;
 
     Ok(score)
 }

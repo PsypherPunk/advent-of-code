@@ -1,3 +1,5 @@
+use std::cmp::Reverse;
+
 fn get_elf_loads(input: &str) -> Result<Vec<Vec<usize>>, String> {
     input
         .trim()
@@ -28,9 +30,9 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
         .map(|elf| elf.iter().sum::<usize>())
         .collect::<Vec<_>>();
 
-    elves.sort();
+    elves.sort_by_key(|&e| Reverse(e));
 
-    Ok(elves.iter().rev().take(3).sum())
+    Ok(elves.iter().take(3).sum())
 }
 
 #[cfg(test)]

@@ -5,9 +5,7 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
         .trim()
         .lines()
         .map(|line| {
-            let length = line.len();
-            let first = &line[..(length / 2)];
-            let second = &line[(length / 2)..];
+            let (first, second) = line.split_at(line.len() / 2);
 
             let common = first
                 .chars()
@@ -21,9 +19,7 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
 
             Ok::<usize, String>(priority)
         })
-        .collect::<Result<Vec<_>, _>>()?
-        .iter()
-        .sum();
+        .sum::<Result<usize, String>>()?;
 
     Ok(priorities)
 }
@@ -46,9 +42,7 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
 
             Ok::<usize, String>(priority)
         })
-        .collect::<Result<Vec<_>, _>>()?
-        .iter()
-        .sum();
+        .sum::<Result<usize, String>>()?;
 
     Ok(priorities)
 }

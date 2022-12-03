@@ -1,5 +1,5 @@
-pub fn get_part_one(input: &str) -> usize {
-    input
+pub fn get_part_one(input: &str) -> Result<usize, String> {
+    let priorities = input
         .trim()
         .lines()
         .map(|line| {
@@ -10,18 +10,24 @@ pub fn get_part_one(input: &str) -> usize {
             let common = first
                 .chars()
                 .find(|c| second.contains(|a| a == *c))
-                .unwrap();
+                .ok_or_else(|| format!("no matching characters: {}, {}", first, second))?;
 
-            match common.is_ascii_lowercase() {
+            let priority = match common.is_ascii_lowercase() {
                 true => common as usize - 96,
                 false => (common as usize - 64) + 26,
-            }
+            };
+
+            Ok::<usize, String>(priority)
         })
-        .sum()
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
+        .sum();
+
+    Ok(priorities)
 }
 
-pub fn get_part_two(input: &str) -> usize {
-    input
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let priorities = input
         .trim()
         .lines()
         .collect::<Vec<_>>()
@@ -30,14 +36,20 @@ pub fn get_part_two(input: &str) -> usize {
             let common = group[0]
                 .chars()
                 .find(|c| group[1].contains(|a| a == *c) && group[2].contains(|b| b == *c))
-                .unwrap();
+                .ok_or_else(|| format!("no matching characters: {:?}", group))?;
 
-            match common.is_ascii_lowercase() {
+            let priority = match common.is_ascii_lowercase() {
                 true => common as usize - 96,
                 false => (common as usize - 64) + 26,
-            }
+            };
+
+            Ok::<usize, String>(priority)
         })
-        .sum()
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
+        .sum();
+
+    Ok(priorities)
 }
 
 #[cfg(test)]
@@ -54,11 +66,11 @@ CrZsJsPPZsGzwwsLwLmpwMDw
 
     #[test]
     fn test_part_one() {
-        assert_eq!(157, get_part_one(INPUT));
+        assert_eq!(Ok(157), get_part_one(INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(70, get_part_two(INPUT));
+        assert_eq!(Ok(70), get_part_two(INPUT));
     }
 }

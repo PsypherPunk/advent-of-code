@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::str::FromStr;
 
 struct Round {
@@ -23,18 +22,28 @@ impl FromStr for Round {
 
 impl Round {
     fn get_score(self) -> usize {
-        let outcome = match &self.you.partial_cmp(&self.opponent) {
-            Some(Ordering::Equal) => Outcome::Draw as usize,
-            Some(Ordering::Less) => Outcome::Lose as usize,
-            Some(Ordering::Greater) => Outcome::Win as usize,
-            None => unreachable!(),
+        let outcome = match self.you {
+            Shape::Rock => match self.opponent {
+                Shape::Rock => Outcome::Draw as usize,
+                Shape::Paper => Outcome::Lose as usize,
+                Shape::Scissors => Outcome::Win as usize,
+            },
+            Shape::Paper => match self.opponent {
+                Shape::Rock => Outcome::Win as usize,
+                Shape::Paper => Outcome::Draw as usize,
+                Shape::Scissors => Outcome::Lose as usize,
+            },
+            Shape::Scissors => match self.opponent {
+                Shape::Rock => Outcome::Lose as usize,
+                Shape::Paper => Outcome::Win as usize,
+                Shape::Scissors => Outcome::Draw as usize,
+            },
         };
 
         outcome + self.you as usize
     }
 }
 
-#[derive(PartialEq)]
 enum Shape {
     Rock = 1,
     Paper = 2,
@@ -50,28 +59,6 @@ impl FromStr for Shape {
             "B" | "Y" => Ok(Shape::Paper),
             "C" | "Z" => Ok(Shape::Scissors),
             _ => Err(format!("invalid shape: {}", s)),
-        }
-    }
-}
-
-impl PartialOrd for Shape {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self {
-            Shape::Rock => match other {
-                Shape::Rock => Some(Ordering::Equal),
-                Shape::Paper => Some(Ordering::Less),
-                Shape::Scissors => Some(Ordering::Greater),
-            },
-            Shape::Paper => match other {
-                Shape::Rock => Some(Ordering::Greater),
-                Shape::Paper => Some(Ordering::Equal),
-                Shape::Scissors => Some(Ordering::Less),
-            },
-            Shape::Scissors => match other {
-                Shape::Rock => Some(Ordering::Less),
-                Shape::Paper => Some(Ordering::Greater),
-                Shape::Scissors => Some(Ordering::Equal),
-            },
         }
     }
 }

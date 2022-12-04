@@ -1,51 +1,87 @@
-pub fn get_part_one(input: &str) -> usize {
-    input
-        .trim()
-        .lines()
-        .filter(|line| {
-            let (first, second) = line.split_once(',').unwrap();
+use std::str::FromStr;
 
-            let (first_start, first_end) = first.split_once('-').unwrap();
-            let (second_start, second_end) = second.split_once('-').unwrap();
-
-            let (first_start, first_end) = (
-                first_start.parse::<usize>().unwrap(),
-                first_end.parse::<usize>().unwrap(),
-            );
-            let (second_start, second_end) = (
-                second_start.parse::<usize>().unwrap(),
-                second_end.parse::<usize>().unwrap(),
-            );
-
-            first_start <= second_start && first_end >= second_end
-                || second_start <= first_start && second_end >= first_end
-        })
-        .count()
+struct Assignment {
+    start: usize,
+    end: usize,
 }
 
-pub fn get_part_two(input: &str) -> usize {
+impl FromStr for Assignment {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (start, end) = s
+            .split_once('-')
+            .ok_or_else(|| format!("could not split on hyphen: {}", s))?;
+
+        Ok(Self {
+            start: start
+                .parse()
+                .map_err(|e| format!("invalid number: {}", e))?,
+            end: end.parse().map_err(|e| format!("invalid number: {}", e))?,
+        })
+    }
+}
+
+struct Pair {
+    first: Assignment,
+    second: Assignment,
+}
+
+impl FromStr for Pair {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (first, second) = s
+            .split_once(',')
+            .ok_or_else(|| format!("could not split on comma: {}", s))?;
+
+        Ok(Self {
+            first: Assignment::from_str(first)?,
+            second: Assignment::from_str(second)?,
+        })
+    }
+}
+
+impl Pair {
+    fn contains(&self) -> bool {
+        self.first.start <= self.second.start && self.first.end >= self.second.end
+            || self.second.start <= self.first.start && self.second.end >= self.first.end
+    }
+
+    fn overlaps(&self) -> bool {
+        (self.first.start <= self.second.start && self.second.start <= self.first.end)
+            || (self.second.start <= self.first.start && self.first.start <= self.second.end)
+    }
+}
+
+pub fn get_part_one(input: &str) -> Result<usize, String> {
     input
         .trim()
         .lines()
-        .filter(|line| {
-            let (first, second) = line.split_once(',').unwrap();
+        .map(Pair::from_str)
+        .try_fold(0, |mut acc, pair| {
+            acc += match pair?.contains() {
+                true => 1,
+                false => 0,
+            };
 
-            let (first_start, first_end) = first.split_once('-').unwrap();
-            let (second_start, second_end) = second.split_once('-').unwrap();
-
-            let (first_start, first_end) = (
-                first_start.parse::<usize>().unwrap(),
-                first_end.parse::<usize>().unwrap(),
-            );
-            let (second_start, second_end) = (
-                second_start.parse::<usize>().unwrap(),
-                second_end.parse::<usize>().unwrap(),
-            );
-
-            (first_start <= second_start && second_start <= first_end)
-                || (second_start <= first_start && first_start <= second_end)
+            Ok(acc)
         })
-        .count()
+}
+
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    input
+        .trim()
+        .lines()
+        .map(Pair::from_str)
+        .try_fold(0, |mut acc, pair| {
+            acc += match pair?.overlaps() {
+                true => 1,
+                false => 0,
+            };
+
+            Ok(acc)
+        })
 }
 
 #[cfg(test)]
@@ -62,11 +98,11 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        assert_eq!(2, get_part_one(INPUT));
+        assert_eq!(Ok(2), get_part_one(INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(4, get_part_two(INPUT));
+        assert_eq!(Ok(4), get_part_two(INPUT));
     }
 }

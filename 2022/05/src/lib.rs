@@ -92,15 +92,13 @@ pub fn get_part_one(input: &str) -> Result<String, AdventOfCodeError> {
     let mut cargo = get_cargo(cargo)?;
 
     for move_ in moves {
-        for _ in 0..move_.count {
-            let from_stack = &mut cargo[move_.from - 1];
-            let crate_ = from_stack
-                .pop_back()
-                .ok_or(AdventOfCodeError::EmptyStackError(move_.from))?;
+        let from_stack = &mut cargo[move_.from - 1];
 
-            let to_stack = &mut cargo[move_.to - 1];
-            to_stack.push_back(crate_);
-        }
+        let mut crates = from_stack.split_off(from_stack.len() - move_.count);
+        crates.make_contiguous().reverse();
+
+        let to_stack = &mut cargo[move_.to - 1];
+        to_stack.append(&mut crates);
     }
 
     let top = cargo
@@ -128,18 +126,12 @@ pub fn get_part_two(input: &str) -> Result<String, AdventOfCodeError> {
     let mut cargo = get_cargo(cargo)?;
 
     for move_ in moves {
-        let mut crate_mover = Vec::new();
         let from_stack = &mut cargo[move_.from - 1];
 
-        for _ in 0..move_.count {
-            let crate_ = from_stack
-                .pop_back()
-                .ok_or(AdventOfCodeError::EmptyStackError(move_.from))?;
+        let mut crates = from_stack.split_off(from_stack.len() - move_.count);
 
-            crate_mover.push(crate_);
-        }
         let to_stack = &mut cargo[move_.to - 1];
-        to_stack.extend(crate_mover.iter().rev());
+        to_stack.append(&mut crates);
     }
 
     let top = cargo

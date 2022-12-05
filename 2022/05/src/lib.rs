@@ -1,6 +1,6 @@
 #![deny(clippy::expect_used, clippy::unwrap_used)]
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
@@ -8,8 +8,8 @@ use std::str::FromStr;
 pub enum AdventOfCodeError {
     InvalidInputError,
     ParseIntError(ParseIntError),
-    UnexpectedStackError(char),
-    EmptyStackError(char),
+    UnexpectedStackError(usize),
+    EmptyStackError(usize),
 }
 
 impl From<ParseIntError> for AdventOfCodeError {
@@ -21,8 +21,8 @@ impl From<ParseIntError> for AdventOfCodeError {
 #[derive(Debug)]
 struct Move {
     count: usize,
-    from: char,
-    to: char,
+    from: usize,
+    to: usize,
 }
 
 impl FromStr for Move {
@@ -36,11 +36,15 @@ impl FromStr for Move {
             from: parts[3]
                 .chars()
                 .next()
-                .ok_or(AdventOfCodeError::InvalidInputError)?,
+                .ok_or(AdventOfCodeError::InvalidInputError)?
+                .to_digit(10)
+                .ok_or(AdventOfCodeError::InvalidInputError)? as usize,
             to: parts[5]
                 .chars()
                 .next()
-                .ok_or(AdventOfCodeError::InvalidInputError)?,
+                .ok_or(AdventOfCodeError::InvalidInputError)?
+                .to_digit(10)
+                .ok_or(AdventOfCodeError::InvalidInputError)? as usize,
         })
     }
 }
@@ -49,37 +53,31 @@ fn get_moves(input: &str) -> Result<Vec<Move>, AdventOfCodeError> {
     input.lines().map(Move::from_str).collect()
 }
 
-fn get_cargo(input: &str) -> Result<HashMap<char, VecDeque<char>>, AdventOfCodeError> {
-    let stacks = input
+fn transpose<T: Clone + Copy>(original: Vec<Vec<T>>) -> Vec<Vec<T>> {
+    let mut transposed = vec![Vec::with_capacity(original.len()); original[0].len()];
+    for row in original {
+        for i in 0..row.len() {
+            transposed[i].push(row[i]);
+        }
+    }
+
+    transposed
+}
+
+fn get_cargo(input: &str) -> Result<Vec<VecDeque<char>>, AdventOfCodeError> {
+    let rows = input
         .lines()
-        .last()
-        .ok_or(AdventOfCodeError::InvalidInputError)?;
+        .rev()
+        .map(|line| line.chars().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
 
-    let cargo = input.lines().rev().skip(1).collect::<Vec<_>>();
+    let rows = transpose(rows);
 
-    let cargo = stacks
-        .chars()
-        .enumerate()
-        .filter_map(|(position, c)| match c {
-            ' ' => None,
-            _ => Some((position, c)),
-        })
-        .map(|(position, c)| {
-            let stacked = cargo
-                .iter()
-                .map(move |line| match line.chars().nth(position) {
-                    None => Err(AdventOfCodeError::InvalidInputError),
-                    Some(c) => Ok(c),
-                })
-                .filter(|c| *c != Ok(' '))
-                .collect::<Result<VecDeque<_>, _>>();
-
-            match stacked {
-                Ok(s) => Ok((c, s)),
-                _ => Err(AdventOfCodeError::InvalidInputError),
-            }
-        })
-        .collect::<Result<HashMap<char, _>, _>>()?;
+    let cargo = rows
+        .into_iter()
+        .filter(|row| row[0] != ' ')
+        .map(|row| row.into_iter().skip(1).filter(|c| *c != ' ').collect())
+        .collect();
 
     Ok(cargo)
 }
@@ -95,28 +93,23 @@ pub fn get_part_one(input: &str) -> Result<String, AdventOfCodeError> {
 
     for move_ in moves {
         for _ in 0..move_.count {
-            let from_stack = cargo
-                .get_mut(&move_.from)
-                .ok_or(AdventOfCodeError::UnexpectedStackError(move_.from))?;
+            let from_stack = &mut cargo[move_.from - 1];
             let crate_ = from_stack
                 .pop_back()
                 .ok_or(AdventOfCodeError::EmptyStackError(move_.from))?;
 
-            let to_stack = cargo
-                .get_mut(&move_.to)
-                .ok_or(AdventOfCodeError::UnexpectedStackError(move_.to))?;
+            let to_stack = &mut cargo[move_.to - 1];
             to_stack.push_back(crate_);
         }
     }
 
-    let mut stacks = cargo.keys().collect::<Vec<_>>();
-    stacks.sort();
-
-    let top = stacks
+    let top = cargo
         .iter()
-        .map(|stack| match cargo.get(stack) {
-            Some(stacked) => stacked.back().ok_or(AdventOfCodeError::InvalidInputError),
-            None => Err(AdventOfCodeError::InvalidInputError),
+        .enumerate()
+        .map(|(i, stack)| {
+            stack
+                .back()
+                .ok_or(AdventOfCodeError::EmptyStackError(i + 1))
         })
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
@@ -136,9 +129,7 @@ pub fn get_part_two(input: &str) -> Result<String, AdventOfCodeError> {
 
     for move_ in moves {
         let mut crate_mover = Vec::new();
-        let from_stack = cargo
-            .get_mut(&move_.from)
-            .ok_or(AdventOfCodeError::UnexpectedStackError(move_.from))?;
+        let from_stack = &mut cargo[move_.from - 1];
 
         for _ in 0..move_.count {
             let crate_ = from_stack
@@ -147,20 +138,17 @@ pub fn get_part_two(input: &str) -> Result<String, AdventOfCodeError> {
 
             crate_mover.push(crate_);
         }
-        let to_stack = cargo
-            .get_mut(&move_.to)
-            .ok_or(AdventOfCodeError::UnexpectedStackError(move_.to))?;
+        let to_stack = &mut cargo[move_.to - 1];
         to_stack.extend(crate_mover.iter().rev());
     }
 
-    let mut stacks = cargo.keys().collect::<Vec<_>>();
-    stacks.sort();
-
-    let top = stacks
+    let top = cargo
         .iter()
-        .map(|stack| match cargo.get(stack) {
-            Some(stacked) => stacked.back().ok_or(AdventOfCodeError::InvalidInputError),
-            None => Err(AdventOfCodeError::InvalidInputError),
+        .enumerate()
+        .map(|(i, stack)| {
+            stack
+                .back()
+                .ok_or(AdventOfCodeError::EmptyStackError(i + 1))
         })
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()

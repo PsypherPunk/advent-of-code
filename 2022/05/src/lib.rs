@@ -76,7 +76,7 @@ pub fn get_part_one(input: &str) -> String {
     stacks.sort();
 
     stacks
-        .into_iter()
+        .iter()
         .map(|stack| {
             let stacked = cargo.get(stack).unwrap();
             stacked.back().unwrap()
@@ -84,8 +84,35 @@ pub fn get_part_one(input: &str) -> String {
         .collect::<String>()
 }
 
-pub fn get_part_two(input: &str) -> usize {
-    0
+pub fn get_part_two(input: &str) -> String {
+    let (cargo, moves) = input.trim_end().split_once("\n\n").unwrap();
+
+    let moves = get_moves(moves);
+    let mut cargo = get_cargo(cargo);
+
+    for move_ in moves {
+        let mut crate_mover = Vec::new();
+        let from_stack = cargo.get_mut(&move_.from).unwrap();
+
+        for _ in 0..move_.count {
+            let crate_ = from_stack.pop_back().unwrap();
+
+            crate_mover.push(crate_);
+        }
+        let to_stack = cargo.get_mut(&move_.to).unwrap();
+        to_stack.extend(crate_mover.iter().rev());
+    }
+
+    let mut stacks = cargo.keys().collect::<Vec<_>>();
+    stacks.sort();
+
+    stacks
+        .iter()
+        .map(|stack| {
+            let stacked = cargo.get(stack).unwrap();
+            stacked.back().unwrap()
+        })
+        .collect::<String>()
 }
 
 #[cfg(test)]
@@ -110,6 +137,6 @@ move 1 from 1 to 2
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!("MCD", get_part_two(INPUT));
     }
 }

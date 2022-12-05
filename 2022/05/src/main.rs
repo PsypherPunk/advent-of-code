@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "After the rearrangement procedure completes, what crate ends up on top of each stack? {}",
+        get_part_two(&input),
+    );
 }

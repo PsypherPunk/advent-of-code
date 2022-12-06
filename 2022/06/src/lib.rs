@@ -6,9 +6,8 @@ pub enum AdventOfCodeError {
 }
 
 fn find_marker(input: &str, length: usize) -> Result<usize, AdventOfCodeError> {
-    let stream = input.trim().chars().collect::<Vec<_>>();
-
-    let (offset, _) = stream
+    let (offset, _) = input
+        .as_bytes()
         .windows(length)
         .enumerate()
         .find(|(_, marker)| marker.iter().collect::<HashSet<_>>().len() == length)

@@ -9,4 +9,9 @@ edition = "2021"
 [dependencies]
 
 [dev-dependencies]
+criterion = "0.4.0"
 parameterized = "1.0.1"
+
+[[bench]]
+name = "day06"
+harness = false

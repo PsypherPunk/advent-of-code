@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum AdventOfCodeError {
     InvalidStreamError(String),
@@ -10,7 +8,13 @@ fn find_marker(input: &str, length: usize) -> Result<usize, AdventOfCodeError> {
         .as_bytes()
         .windows(length)
         .enumerate()
-        .find(|(_, marker)| marker.iter().collect::<HashSet<_>>().len() == length)
+        .find(|(_, marker)| {
+            let mut chars = marker.iter().collect::<Vec<_>>();
+            chars.sort();
+            chars.dedup();
+
+            chars.len() == length
+        })
         .ok_or_else(|| AdventOfCodeError::InvalidStreamError(input.to_owned()))?;
 
     Ok(offset + length)

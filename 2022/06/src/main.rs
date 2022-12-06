@@ -11,7 +11,7 @@ fn main() {
     );
 
     println!(
-        "{}",
+        "How many characters need to be processed before the first start-of-message marker is detected? {}",
         get_part_two(&input),
     );
 }

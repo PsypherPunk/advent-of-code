@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "What is the total size of that directory? {}",
+        get_part_two(&input),
+    );
 }

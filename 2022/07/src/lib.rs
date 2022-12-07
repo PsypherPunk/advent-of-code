@@ -1,9 +1,9 @@
 use std::{collections::HashMap, path::PathBuf};
 
-pub fn get_part_one(input: &str) -> usize {
+fn get_sizes(input: &str) -> HashMap<PathBuf, usize> {
     let mut cwd = PathBuf::new();
 
-    let sizes = input
+    input
         .trim()
         .lines()
         .filter_map(|line| {
@@ -39,16 +39,28 @@ pub fn get_part_one(input: &str) -> usize {
             }
 
             acc
-        });
+        })
+}
 
-    sizes
-        .values()
-        .filter(|&size| *size <= 100_000)
-        .sum()
+pub fn get_part_one(input: &str) -> usize {
+    let sizes = get_sizes(input);
+
+    sizes.values().filter(|&size| *size <= 100_000).sum()
 }
 
 pub fn get_part_two(input: &str) -> usize {
-    0
+    let total_disk_space = 70_000_000;
+    let required_disk_space = 30_000_000;
+
+    let sizes = get_sizes(input);
+
+    let unused_disk_space = total_disk_space - sizes.get(&PathBuf::from("/")).unwrap();
+
+    *sizes
+        .values()
+        .filter(|&size| unused_disk_space + *size >= required_disk_space)
+        .min()
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -87,6 +99,6 @@ $ ls
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(24_933_642, get_part_two(INPUT));
     }
 }

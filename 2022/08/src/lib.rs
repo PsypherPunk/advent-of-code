@@ -7,6 +7,7 @@ use std::str::FromStr;
 pub enum AdventOfCodeError {
     InvalidDigitError(char),
     LackOfTreesError,
+    NotSoScenicError,
 }
 
 struct TallTrees {
@@ -46,7 +47,6 @@ impl FromStr for TallTrees {
     }
 }
 
-#[allow(unused)]
 impl TallTrees {
     fn get_visible_count(&self) -> usize {
         (0..self.height)
@@ -76,6 +76,62 @@ impl TallTrees {
             .collect::<HashSet<_>>()
             .len()
     }
+
+    fn get_best_scenic_score(&self) -> Result<usize, AdventOfCodeError> {
+        (1..self.height - 1)
+            .flat_map(|y| {
+                (1..self.width - 1)
+                    .map(move |x| {
+                        let up = {
+                            let stop = (0..y)
+                                .rev()
+                                .map(|dy| self.trees[dy][x])
+                                .enumerate()
+                                .find(|(_, tree)| *tree >= self.trees[y][x]);
+                            match stop {
+                                Some((distance, _)) => distance + 1,
+                                _ => y,
+                            }
+                        };
+                        let down = {
+                            let stop = (y + 1..self.height)
+                                .map(|dy| self.trees[dy][x])
+                                .enumerate()
+                                .find(|(_, tree)| *tree >= self.trees[y][x]);
+                            match stop {
+                                Some((distance, _)) => distance + 1,
+                                _ => (self.height - 1) - y,
+                            }
+                        };
+                        let right = {
+                            let stop = (x + 1..self.width)
+                                .map(|dx| self.trees[y][dx])
+                                .enumerate()
+                                .find(|(_, tree)| *tree >= self.trees[y][x]);
+                            match stop {
+                                Some((distance, _)) => distance + 1,
+                                _ => (self.width - 1) - x,
+                            }
+                        };
+                        let left = {
+                            let stop = (0..x)
+                                .rev()
+                                .map(|dx| self.trees[y][dx])
+                                .enumerate()
+                                .find(|(_, tree)| *tree >= self.trees[y][x]);
+                            match stop {
+                                Some((distance, _)) => distance + 1,
+                                _ => x,
+                            }
+                        };
+
+                        up * down * left * right
+                    })
+                    .max()
+            })
+            .max()
+            .ok_or(AdventOfCodeError::LackOfTreesError)
+    }
 }
 
 pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
@@ -85,7 +141,9 @@ pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
 }
 
 pub fn get_part_two(input: &str) -> Result<usize, AdventOfCodeError> {
-    Ok(0)
+    let trees = TallTrees::from_str(input)?;
+
+    trees.get_best_scenic_score()
 }
 
 #[cfg(test)]
@@ -106,6 +164,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(8), get_part_two(INPUT));
     }
 }

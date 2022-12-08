@@ -10,7 +10,10 @@ fn main() -> Result<(), AdventOfCodeError> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "What is the highest scenic score possible for any tree? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

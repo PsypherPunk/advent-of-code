@@ -10,7 +10,7 @@ pub enum AdventOfCodeError {
     NotSoScenicError,
 }
 
-struct TallTrees {
+pub struct TallTrees {
     height: usize,
     width: usize,
     trees: Vec<Vec<u32>>,
@@ -48,6 +48,26 @@ impl FromStr for TallTrees {
 }
 
 impl TallTrees {
+    fn is_visible_from_left(&self, (x, y): (usize, usize)) -> bool {
+        (0..x).all(|left| self.trees[y][left] < self.trees[y][x])
+    }
+
+    fn is_visible_from_right(&self, (x, y): (usize, usize)) -> bool {
+        (x + 1..self.width)
+            .rev()
+            .all(|right| self.trees[y][right] < self.trees[y][x])
+    }
+
+    fn is_visible_from_top(&self, (x, y): (usize, usize)) -> bool {
+        (0..y).all(|top| self.trees[top][x] < self.trees[y][x])
+    }
+
+    fn is_visible_from_bottom(&self, (x, y): (usize, usize)) -> bool {
+        (y + 1..self.height)
+            .rev()
+            .all(|bottom| self.trees[bottom][x] < self.trees[y][x])
+    }
+
     fn get_visible_count(&self) -> usize {
         (0..self.height)
             .flat_map(|y| {
@@ -57,16 +77,11 @@ impl TallTrees {
                     (right, _) if right == self.width - 1 => Some((x, y)),
                     (_, bottom) if bottom == self.height - 1 => Some((x, y)),
                     (x, y) => {
-                        let from_left = (0..x).all(|left| self.trees[y][left] < self.trees[y][x]);
-                        let from_right = (x + 1..self.width)
-                            .rev()
-                            .all(|right| self.trees[y][right] < self.trees[y][x]);
-                        let from_top = (0..y).all(|top| self.trees[top][x] < self.trees[y][x]);
-                        let from_bottom = (y + 1..self.height)
-                            .rev()
-                            .all(|bottom| self.trees[bottom][x] < self.trees[y][x]);
-
-                        match from_left || from_right || from_top || from_bottom {
+                        match self.is_visible_from_top((x, y))
+                            || self.is_visible_from_left((x, y))
+                            || self.is_visible_from_right((x, y))
+                            || self.is_visible_from_bottom((x, y))
+                        {
                             true => Some((x, y)),
                             false => None,
                         }

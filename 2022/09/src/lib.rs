@@ -1,106 +1,98 @@
 use std::collections::HashSet;
+use std::num::ParseIntError;
+use std::str::FromStr;
 
 use num_complex::Complex;
 
-#[allow(unused)]
-pub fn get_part_one(input: &str) -> usize {
-    let up = Complex::new(0, -1);
-    let down = Complex::new(0, 1);
-    let right = Complex::new(1, 0);
-    let left = Complex::new(-1, 0);
-
-    // [(current, previous)]
-    let mut rope = vec![
-        (Complex::new(0, 0), Complex::new(0, 0)),
-        (Complex::new(0, 0), Complex::new(0, 0)),
-    ];
-
-    let mut seen = HashSet::new();
-    seen.insert(Complex::new(0, 0));
-
-    input.trim().lines().for_each(|line| {
-        let (direction, distance) = line.split_once(' ').unwrap();
-        let direction = match direction {
-            "U" => up,
-            "L" => left,
-            "D" => down,
-            "R" => right,
-            _ => unreachable!(),
-        };
-        let distance = distance.parse::<i32>().unwrap();
-
-        for _ in 0..distance {
-            rope[0] = (rope[0].0 + direction, rope[0].0);
-
-            let tug: Complex<i32> = rope[1].0 - rope[0].0;
-            if tug.re.abs() > 1 || tug.im.abs() > 1 {
-                rope[1] = (rope[0].1, rope[1].0);
-                seen.insert(rope[1].0);
-            }
-        }
-    });
-
-    seen.len()
+#[derive(Debug, PartialEq, Eq)]
+pub enum AdventOfCodeError {
+    ParseIntError(ParseIntError),
+    InvalidInputError(String),
 }
 
-fn get_sign(i: i32) -> i32 {
-    match i {
-        0 => 0,
-        i if i > 0 => 1,
-        _ => -1,
+impl From<ParseIntError> for AdventOfCodeError {
+    fn from(error: ParseIntError) -> Self {
+        AdventOfCodeError::ParseIntError(error)
     }
 }
 
-#[allow(unused)]
-pub fn get_part_two(input: &str) -> usize {
-    let up = Complex::new(0, -1);
-    let down = Complex::new(0, 1);
-    let right = Complex::new(1, 0);
-    let left = Complex::new(-1, 0);
+struct Motion {
+    direction: Complex<i32>,
+    distance: i32,
+}
 
-    // [(current, previous)]
-    let mut rope = vec![
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-        Complex::new(0, 0),
-    ];
+struct Rope {
+    knots: Vec<Complex<i32>>,
+    seen: HashSet<Complex<i32>>,
+}
 
-    let mut seen = HashSet::new();
-    seen.insert(Complex::new(0, 0));
+impl Rope {
+    fn from_knots(knots: usize) -> Self {
+        Self {
+            knots: vec![Complex::new(0, 0); knots],
+            seen: HashSet::new(),
+        }
+    }
 
-    input.trim().lines().for_each(|line| {
-        let (direction, distance) = line.split_once(' ').unwrap();
-        let direction = match direction {
-            "U" => up,
-            "L" => left,
-            "D" => down,
-            "R" => right,
-            _ => unreachable!(),
-        };
-        let distance = distance.parse::<i32>().unwrap();
+    fn move_knots(&mut self, motion: Motion) {
+        for _ in 0..motion.distance {
+            self.knots[0] += motion.direction;
 
-        for _ in 0..distance {
-            rope[0] += direction;
-
-            for i in 1..10 {
-                let tug: Complex<i32> = rope[i - 1] - rope[i];
+            for knot in 1..self.knots.len() {
+                let tug = self.knots[knot - 1] - self.knots[knot];
 
                 if tug.re.abs() > 1 || tug.im.abs() > 1 {
-                    rope[i] += Complex::new(get_sign(tug.re), get_sign(tug.im));
+                    self.knots[knot] += Complex::new(tug.re.signum(), tug.im.signum());
                 }
             }
-            seen.insert(rope[9]);
+            self.seen.insert(self.knots[self.knots.len() - 1]);
         }
-    });
+    }
+}
 
-    seen.len()
+impl FromStr for Motion {
+    type Err = AdventOfCodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (direction, distance) = s.split_once(' ').unwrap();
+        let direction = match direction {
+            "U" => Some(Complex::new(0, -1)),
+            "L" => Some(Complex::new(-1, 0)),
+            "D" => Some(Complex::new(0, 1)),
+            "R" => Some(Complex::new(1, 0)),
+            _ => None,
+        }
+        .ok_or_else(|| AdventOfCodeError::InvalidInputError(direction.to_owned()))?;
+        let distance = distance.parse::<i32>()?;
+
+        Ok(Self {
+            direction,
+            distance,
+        })
+    }
+}
+
+fn get_tail_visits(input: &str, knots: usize) -> Result<usize, AdventOfCodeError> {
+    let rope = input
+        .trim()
+        .lines()
+        .try_fold(Rope::from_knots(knots), |mut rope, line| {
+            let motion = Motion::from_str(line)?;
+
+            rope.move_knots(motion);
+
+            Ok::<Rope, AdventOfCodeError>(rope)
+        })?;
+
+    Ok(rope.seen.len())
+}
+
+pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
+    get_tail_visits(input, 2)
+}
+
+pub fn get_part_two(input: &str) -> Result<usize, AdventOfCodeError> {
+    get_tail_visits(input, 10)
 }
 
 #[cfg(test)]
@@ -128,16 +120,16 @@ U 20
 
     #[test]
     fn test_part_one() {
-        assert_eq!(13, get_part_one(INPUT));
+        assert_eq!(Ok(13), get_part_one(INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(1, get_part_two(INPUT));
+        assert_eq!(Ok(1), get_part_two(INPUT));
     }
 
     #[test]
     fn test_part_two_larger() {
-        assert_eq!(36, get_part_two(LARGER_INPUT));
+        assert_eq!(Ok(36), get_part_two(LARGER_INPUT));
     }
 }

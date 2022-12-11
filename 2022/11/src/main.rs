@@ -10,5 +10,8 @@ fn main() {
         get_part_one(&input),
     );
 
-    println!("{}", get_part_two(&input),);
+    println!(
+        "…what is the level of monkey business after 10000 rounds? {}",
+        get_part_two(&input),
+    );
 }

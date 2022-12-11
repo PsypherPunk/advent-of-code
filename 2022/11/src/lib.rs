@@ -28,44 +28,36 @@ impl Monkey {
 
         let worry = self.items.pop_front().unwrap();
         self.inspected_count += 1;
-        println!("  Monkey inspects an item with a worry level of {}.", worry);
 
         let worry = match self.operation {
-            Operation::Multiply(n) => {
-                println!("    Worry level is multiplied by {} to {}.", n, worry * n);
-                worry * n
-            }
-            Operation::Add(n) => {
-                println!("    Worry level increases by {} to {}.", n, worry + n);
-                worry + n
-            }
-            Operation::Squared => {
-                println!(
-                    "    Worry level is multiplied by itself to {}.",
-                    worry * worry
-                );
-                worry * worry
-            }
+            Operation::Multiply(n) => worry * n,
+            Operation::Add(n) => worry + n,
+            Operation::Squared => worry * worry,
         } / 3;
-        println!(
-            "    Monkey gets bored with item. Worry level is divided by 3 to {}.",
-            worry
-        );
         let target = match worry % self.test_divisible_by {
-            0 => {
-                println!(
-                    "    Current worry level is divisible by {}.",
-                    self.test_divisible_by
-                );
-                self.true_target
-            }
-            _ => {
-                println!(
-                    "    Current worry level is not divisible by {}.",
-                    self.test_divisible_by
-                );
-                self.false_target
-            }
+            0 => self.true_target,
+            _ => self.false_target,
+        };
+
+        Some((worry, target))
+    }
+
+    fn get_worrisome_target(&mut self, least_common_multiple: usize) -> Option<(usize, usize)> {
+        if self.items.is_empty() {
+            return None;
+        }
+
+        let worry = self.items.pop_front().unwrap();
+        self.inspected_count += 1;
+
+        let worry = match self.operation {
+            Operation::Multiply(n) => worry * n,
+            Operation::Add(n) => worry + n,
+            Operation::Squared => worry * worry,
+        } % least_common_multiple;
+        let target = match worry % self.test_divisible_by {
+            0 => self.true_target,
+            _ => self.false_target,
         };
 
         Some((worry, target))
@@ -130,8 +122,6 @@ pub fn get_part_one(input: &str) -> usize {
 
     for _ in 0..20 {
         for i in 0..monkeys.len() {
-            println!("Monkey {}:", i);
-
             loop {
                 let monkey = monkeys.get_mut(i).unwrap();
                 if monkey.items.is_empty() {
@@ -141,10 +131,6 @@ pub fn get_part_one(input: &str) -> usize {
                 if let Some((worry, target)) = monkey.get_target() {
                     let target_monkey = monkeys.get_mut(target).unwrap();
                     target_monkey.items.push_back(worry);
-                    println!(
-                        "    Item with worry level {} is thrown to monkey {}.",
-                        worry, target
-                    );
                 }
             }
         }
@@ -160,7 +146,33 @@ pub fn get_part_one(input: &str) -> usize {
 }
 
 pub fn get_part_two(input: &str) -> usize {
-    0
+    let mut monkeys = monkeys::monkeys(input.trim()).unwrap();
+
+    let least_common_multiple: usize = monkeys.iter().map(|m| m.test_divisible_by).product();
+
+    for _ in 0..10_000 {
+        for i in 0..monkeys.len() {
+            loop {
+                let monkey = monkeys.get_mut(i).unwrap();
+                if monkey.items.is_empty() {
+                    break;
+                }
+
+                if let Some((worry, target)) = monkey.get_worrisome_target(least_common_multiple) {
+                    let target_monkey = monkeys.get_mut(target).unwrap();
+                    target_monkey.items.push_back(worry);
+                }
+            }
+        }
+    }
+
+    monkeys.sort_by(|a, b| b.inspected_count.cmp(&a.inspected_count));
+
+    monkeys
+        .iter()
+        .map(|monkey| monkey.inspected_count)
+        .take(2)
+        .product()
 }
 
 #[cfg(test)]

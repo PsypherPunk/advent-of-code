@@ -1,7 +1,23 @@
+#![deny(clippy::expect_used, clippy::unwrap_used)]
+
+use std::num::ParseIntError;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum AdventOfCodeError {
+    ParseIntError(ParseIntError),
+}
+
+impl From<ParseIntError> for AdventOfCodeError {
+    fn from(error: ParseIntError) -> Self {
+        AdventOfCodeError::ParseIntError(error)
+    }
+}
+
 struct Cpu {
     x_register: isize,
     cycle: isize,
     signal_strengths: isize,
+    screen: [bool; 40 * 6],
 }
 
 impl Cpu {
@@ -10,46 +26,72 @@ impl Cpu {
             x_register: 1,
             cycle: 1,
             signal_strengths: 0,
+            screen: [false; 40 * 6],
         }
+    }
+
+    fn set_pixel(&mut self) {
+        let column = (self.cycle - 1) % 40;
+        self.screen[self.cycle as usize - 1] =
+            (self.x_register - 1..=self.x_register + 1).contains(&column);
     }
 }
 
-pub fn get_part_one(input: &str) -> isize {
-    input
-        .trim()
-        .lines()
-        .fold(Cpu::new(), |mut cpu, line| {
+pub fn get_part_one(input: &str) -> Result<isize, AdventOfCodeError> {
+    let cpu = input.trim().lines().try_fold(Cpu::new(), |mut cpu, line| {
+        if cpu.cycle % 40 == 20 {
+            cpu.signal_strengths += cpu.cycle * cpu.x_register;
+        }
+        cpu.cycle += 1;
+
+        if let Some(("addx", value)) = line.split_once(' ') {
             if cpu.cycle % 40 == 20 {
                 cpu.signal_strengths += cpu.cycle * cpu.x_register;
             }
+
+            cpu.x_register += value.parse::<isize>()?;
             cpu.cycle += 1;
+        }
 
-            if let Some(("addx", value)) = line.split_once(' ') {
-                if cpu.cycle % 40 == 20 {
-                    cpu.signal_strengths += cpu.cycle * cpu.x_register;
-                }
+        Ok::<Cpu, AdventOfCodeError>(cpu)
+    })?;
 
-                cpu.x_register += value.parse::<isize>().unwrap();
-                cpu.cycle += 1;
-            }
-
-            cpu
-        })
-        .signal_strengths
+    Ok(cpu.signal_strengths)
 }
 
-pub fn get_part_two(input: &str) -> usize {
-    0
+pub fn get_part_two(input: &str) -> Result<String, AdventOfCodeError> {
+    let cpu = input.trim().lines().try_fold(Cpu::new(), |mut cpu, line| {
+        cpu.set_pixel();
+        cpu.cycle += 1;
+
+        if let Some(("addx", value)) = line.split_once(' ') {
+            cpu.set_pixel();
+
+            cpu.x_register += value.parse::<isize>()?;
+            cpu.cycle += 1;
+        }
+
+        Ok::<Cpu, AdventOfCodeError>(cpu)
+    })?;
+
+    let display = cpu
+        .screen
+        .map(|pixel| match pixel {
+            true => '#',
+            false => '.',
+        })
+        .chunks(40)
+        .map(|row| row.iter().collect::<String>())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    Ok(display)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const SMALL_INPUT: &str = r#"noop
-addx 3
-addx -5
-"#;
     const LARGER_INPUT: &str = r#"addx 15
 addx -11
 addx 6
@@ -197,14 +239,20 @@ noop
 noop
 noop
 "#;
+    const IMAGE: &str = r#"##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######....."#;
 
     #[test]
     fn test_part_one() {
-        assert_eq!(13_140, get_part_one(LARGER_INPUT));
+        assert_eq!(Ok(13_140), get_part_one(LARGER_INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(LARGER_INPUT));
+        assert_eq!(Ok(IMAGE.to_owned()), get_part_two(LARGER_INPUT));
     }
 }

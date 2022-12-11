@@ -1,0 +1,210 @@
+struct Cpu {
+    x_register: isize,
+    cycle: isize,
+    signal_strengths: isize,
+}
+
+impl Cpu {
+    fn new() -> Self {
+        Self {
+            x_register: 1,
+            cycle: 1,
+            signal_strengths: 0,
+        }
+    }
+}
+
+pub fn get_part_one(input: &str) -> isize {
+    input
+        .trim()
+        .lines()
+        .fold(Cpu::new(), |mut cpu, line| {
+            if cpu.cycle % 40 == 20 {
+                cpu.signal_strengths += cpu.cycle * cpu.x_register;
+            }
+            cpu.cycle += 1;
+
+            if let Some(("addx", value)) = line.split_once(' ') {
+                if cpu.cycle % 40 == 20 {
+                    cpu.signal_strengths += cpu.cycle * cpu.x_register;
+                }
+
+                cpu.x_register += value.parse::<isize>().unwrap();
+                cpu.cycle += 1;
+            }
+
+            cpu
+        })
+        .signal_strengths
+}
+
+pub fn get_part_two(input: &str) -> usize {
+    0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SMALL_INPUT: &str = r#"noop
+addx 3
+addx -5
+"#;
+    const LARGER_INPUT: &str = r#"addx 15
+addx -11
+addx 6
+addx -3
+addx 5
+addx -1
+addx -8
+addx 13
+addx 4
+noop
+addx -1
+addx 5
+addx -1
+addx 5
+addx -1
+addx 5
+addx -1
+addx 5
+addx -1
+addx -35
+addx 1
+addx 24
+addx -19
+addx 1
+addx 16
+addx -11
+noop
+noop
+addx 21
+addx -15
+noop
+noop
+addx -3
+addx 9
+addx 1
+addx -3
+addx 8
+addx 1
+addx 5
+noop
+noop
+noop
+noop
+noop
+addx -36
+noop
+addx 1
+addx 7
+noop
+noop
+noop
+addx 2
+addx 6
+noop
+noop
+noop
+noop
+noop
+addx 1
+noop
+noop
+addx 7
+addx 1
+noop
+addx -13
+addx 13
+addx 7
+noop
+addx 1
+addx -33
+noop
+noop
+noop
+addx 2
+noop
+noop
+noop
+addx 8
+noop
+addx -1
+addx 2
+addx 1
+noop
+addx 17
+addx -9
+addx 1
+addx 1
+addx -3
+addx 11
+noop
+noop
+addx 1
+noop
+addx 1
+noop
+noop
+addx -13
+addx -19
+addx 1
+addx 3
+addx 26
+addx -30
+addx 12
+addx -1
+addx 3
+addx 1
+noop
+noop
+noop
+addx -9
+addx 18
+addx 1
+addx 2
+noop
+noop
+addx 9
+noop
+noop
+noop
+addx -1
+addx 2
+addx -37
+addx 1
+addx 3
+noop
+addx 15
+addx -21
+addx 22
+addx -6
+addx 1
+noop
+addx 2
+addx 1
+noop
+addx -10
+noop
+noop
+addx 20
+addx 1
+addx 2
+addx 2
+addx -6
+addx -11
+noop
+noop
+noop
+"#;
+
+    #[test]
+    fn test_part_one() {
+        assert_eq!(13_140, get_part_one(LARGER_INPUT));
+    }
+
+    #[test]
+    fn test_part_two() {
+        assert_eq!(2, get_part_two(LARGER_INPUT));
+    }
+}

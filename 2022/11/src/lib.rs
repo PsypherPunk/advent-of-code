@@ -79,7 +79,7 @@ impl Monkey {
 }
 
 peg::parser! {
-    grammar monkeys() for str {
+    pub grammar monkeys() for str {
         rule _() = [' ' | '\n']*
 
         rule number() -> usize

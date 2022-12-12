@@ -1,8 +1,11 @@
+#![deny(clippy::expect_used, clippy::unwrap_used)]
+
 use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AdventOfCodeError {
     InvalidHeightMapError,
+    TotallyLostError,
 }
 
 struct HeightMap {
@@ -84,6 +87,7 @@ pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
     while let Some((current, distance)) = queue.pop_front() {
         if current == heightmap.end {
             fewest_steps = Some(distance);
+            break;
         }
 
         for step in heightmap.get_steps(current) {
@@ -94,11 +98,53 @@ pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
         }
     }
 
-    fewest_steps.ok_or(AdventOfCodeError::InvalidHeightMapError)
+    fewest_steps.ok_or(AdventOfCodeError::TotallyLostError)
 }
 
-pub fn get_part_two(input: &str) -> usize {
-    0
+pub fn get_part_two(input: &str) -> Result<usize, AdventOfCodeError> {
+    let heightmap = get_heightmap(input)?;
+
+    let mut fewest_steps = Vec::new();
+
+    let starts = heightmap
+        .elevations
+        .iter()
+        .enumerate()
+        .flat_map(|(y, row)| {
+            row.iter().enumerate().filter_map(move |(x, c)| match *c {
+                'a' => Some((x, y)),
+                _ => None,
+            })
+        });
+
+    for start in starts {
+        let mut queue = VecDeque::new();
+        let mut seen = HashSet::new();
+
+        queue.push_back((start, 0));
+        seen.insert(start);
+
+        while let Some((current, distance)) = queue.pop_front() {
+            if current == heightmap.end {
+                fewest_steps.push(distance);
+                break;
+            }
+
+            for step in heightmap.get_steps(current) {
+                if !seen.contains(&step) {
+                    queue.push_back((step, distance + 1));
+                    seen.insert(step);
+                }
+            }
+        }
+    }
+
+    fewest_steps.sort();
+
+    fewest_steps
+        .into_iter()
+        .next()
+        .ok_or(AdventOfCodeError::TotallyLostError)
 }
 
 #[cfg(test)]
@@ -119,6 +165,6 @@ abdefghi
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(Ok(29), get_part_two(INPUT));
     }
 }

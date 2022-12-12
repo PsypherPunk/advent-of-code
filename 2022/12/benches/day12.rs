@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, str::FromStr};
 
 use day12::*;
 
@@ -6,6 +6,10 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
+
+    c.bench_function("parse input", |b| {
+        b.iter(|| HeightMap::from_str(black_box(&input)))
+    });
 
     c.bench_function("part_one input", |b| {
         b.iter(|| get_part_one(black_box(&input)))

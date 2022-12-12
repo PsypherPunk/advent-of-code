@@ -1,6 +1,10 @@
 #![deny(clippy::expect_used, clippy::unwrap_used)]
 
-use std::collections::{HashSet, VecDeque};
+use std::{
+    cmp::Ordering,
+    collections::{HashSet, VecDeque},
+    str::FromStr,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AdventOfCodeError {
@@ -8,8 +12,8 @@ pub enum AdventOfCodeError {
     TotallyLostError,
 }
 
-struct HeightMap {
-    elevations: Vec<Vec<char>>,
+pub struct HeightMap {
+    elevations: Vec<Vec<usize>>,
     width: usize,
     height: usize,
     start: (usize, usize),
@@ -17,7 +21,7 @@ struct HeightMap {
 }
 
 impl HeightMap {
-    fn get_steps(&self, (x, y): (usize, usize)) -> Vec<(usize, usize)> {
+    fn get_steps(&self, (x, y): (usize, usize), cmp: Ordering) -> Vec<(usize, usize)> {
         [
             (x, y.saturating_sub(1)),
             ((x + 1).min(self.width - 1), y),
@@ -27,10 +31,8 @@ impl HeightMap {
         .into_iter()
         .filter(|(dx, dy)| {
             (dx, dy) != (&x, &y)
-                && ((self.elevations[*dy][*dx] as usize) < (self.elevations[y][x] as usize)
-                    || (self.elevations[*dy][*dx] as usize)
-                        .abs_diff(self.elevations[y][x] as usize)
-                        <= 1)
+                && (self.elevations[*dy][*dx].cmp(&self.elevations[y][x]) == cmp
+                    || self.elevations[*dy][*dx].abs_diff(self.elevations[y][x]) <= 1)
         })
         .collect::<HashSet<_>>()
         .into_iter()
@@ -38,44 +40,48 @@ impl HeightMap {
     }
 }
 
-fn get_heightmap(input: &str) -> Result<HeightMap, AdventOfCodeError> {
-    let mut start = None;
-    let mut end = None;
-    let mut width = None;
-    let elevations: Vec<Vec<_>> = input
-        .lines()
-        .enumerate()
-        .map(|(y, line)| {
-            width = Some(line.len());
-            line.chars()
-                .enumerate()
-                .map(|(x, c)| match c {
-                    'S' => {
-                        start = Some((x, y));
-                        'a'
-                    }
-                    'E' => {
-                        end = Some((x, y));
-                        'z'
-                    }
-                    elevation => elevation,
-                })
-                .collect()
-        })
-        .collect();
-    let height = elevations.len();
+impl FromStr for HeightMap {
+    type Err = AdventOfCodeError;
 
-    Ok(HeightMap {
-        elevations,
-        width: width.ok_or(AdventOfCodeError::InvalidHeightMapError)?,
-        height,
-        start: start.ok_or(AdventOfCodeError::InvalidHeightMapError)?,
-        end: end.ok_or(AdventOfCodeError::InvalidHeightMapError)?,
-    })
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut start = None;
+        let mut end = None;
+        let mut width = None;
+        let elevations: Vec<Vec<_>> = s
+            .lines()
+            .enumerate()
+            .map(|(y, line)| {
+                width = Some(line.len());
+                line.chars()
+                    .enumerate()
+                    .map(|(x, c)| match c {
+                        'S' => {
+                            start = Some((x, y));
+                            0
+                        }
+                        'E' => {
+                            end = Some((x, y));
+                            26
+                        }
+                        elevation => (elevation as usize) - 97,
+                    })
+                    .collect()
+            })
+            .collect();
+        let height = elevations.len();
+
+        Ok(HeightMap {
+            elevations,
+            width: width.ok_or(AdventOfCodeError::InvalidHeightMapError)?,
+            height,
+            start: start.ok_or(AdventOfCodeError::InvalidHeightMapError)?,
+            end: end.ok_or(AdventOfCodeError::InvalidHeightMapError)?,
+        })
+    }
 }
 
 pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
-    let heightmap = get_heightmap(input)?;
+    let heightmap = HeightMap::from_str(input)?;
 
     let mut queue = VecDeque::new();
     let mut seen = HashSet::new();
@@ -90,7 +96,7 @@ pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
             break;
         }
 
-        for step in heightmap.get_steps(current) {
+        for step in heightmap.get_steps(current, Ordering::Less) {
             if !seen.contains(&step) {
                 queue.push_back((step, distance + 1));
                 seen.insert(step);
@@ -102,49 +108,31 @@ pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
 }
 
 pub fn get_part_two(input: &str) -> Result<usize, AdventOfCodeError> {
-    let heightmap = get_heightmap(input)?;
+    let heightmap = HeightMap::from_str(input)?;
 
-    let mut fewest_steps = Vec::new();
+    let mut fewest_steps = None;
 
-    let starts = heightmap
-        .elevations
-        .iter()
-        .enumerate()
-        .flat_map(|(y, row)| {
-            row.iter().enumerate().filter_map(move |(x, c)| match *c {
-                'a' => Some((x, y)),
-                _ => None,
-            })
-        });
+    let mut queue = VecDeque::new();
+    let mut seen = HashSet::new();
 
-    for start in starts {
-        let mut queue = VecDeque::new();
-        let mut seen = HashSet::new();
+    queue.push_back((heightmap.end, 0));
+    seen.insert(heightmap.end);
 
-        queue.push_back((start, 0));
-        seen.insert(start);
+    while let Some(((x, y), distance)) = queue.pop_front() {
+        if heightmap.elevations[y][x] == 0 {
+            fewest_steps = Some(distance);
+            break;
+        }
 
-        while let Some((current, distance)) = queue.pop_front() {
-            if current == heightmap.end {
-                fewest_steps.push(distance);
-                break;
-            }
-
-            for step in heightmap.get_steps(current) {
-                if !seen.contains(&step) {
-                    queue.push_back((step, distance + 1));
-                    seen.insert(step);
-                }
+        for step in heightmap.get_steps((x, y), Ordering::Greater) {
+            if !seen.contains(&step) {
+                queue.push_back((step, distance + 1));
+                seen.insert(step);
             }
         }
     }
 
-    fewest_steps.sort();
-
-    fewest_steps
-        .into_iter()
-        .next()
-        .ok_or(AdventOfCodeError::TotallyLostError)
+    fewest_steps.ok_or(AdventOfCodeError::TotallyLostError)
 }
 
 #[cfg(test)]

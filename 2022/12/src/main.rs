@@ -11,8 +11,8 @@ fn main() -> Result<(), AdventOfCodeError> {
     );
 
     println!(
-        "{}",
-        get_part_two(&input),
+        "What is the fewest steps required to move starting from any square with elevation a to the location that should get the best signal? {}",
+        get_part_two(&input)?,
     );
 
     Ok(())

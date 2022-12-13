@@ -1,29 +1,47 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use serde::Deserialize;
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum AdventOfCodeError {}
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[serde(untagged)]
-enum Value {
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Value {
     Integer(usize),
     List(Vec<Value>),
 }
 
-pub fn get_part_one(input: &str) -> usize {
-    input
-        .trim()
-        .split("\n\n")
-        .map(|pair| {
-            let (left, right) = pair.split_once('\n').unwrap();
-            let left: Value = serde_json::from_str(left).unwrap();
-            let right: Value = serde_json::from_str(right).unwrap();
+peg::parser! {
+    pub grammar packets() for str {
 
-            is_ordered(&left, &right)
-        })
+        rule _() = [' ' | '\n']*
+
+        rule value() -> Value
+            = n:number() { n } / a:array() { a }
+
+        rule number() -> Value
+            = n:int()
+                { Value::Integer(n) }
+
+        rule array() -> Value
+            = "[" a:value() ** "," "]"
+                { Value::List(a) }
+
+        rule int() -> usize
+            = n:$(['0'] / ['1'..='9']['0'..='9']*)
+                {? n.parse().or(Err("int()"))}
+
+        pub rule packets() -> Vec<Value>
+            = _ p:array() ++ _
+                { p }
+    }
+}
+
+pub fn get_part_one(input: &str) -> usize {
+    let packets = packets::packets(input.trim()).unwrap();
+
+    packets
+        .chunks_exact(2)
+        .map(|pair| is_ordered(&pair[0], &pair[1]))
         .enumerate()
         .filter(|(_, result)| matches!(*result, Some(true)))
         .map(|(index, _)| index + 1)
@@ -66,21 +84,12 @@ fn is_ordered(left: &Value, right: &Value) -> Option<bool> {
 }
 
 pub fn get_part_two(input: &str) -> usize {
-    let divider_packets = [
-        serde_json::from_str::<Value>("[[2]]").unwrap(),
-        serde_json::from_str::<Value>("[[6]]").unwrap(),
-    ]
-    .into_iter()
-    .collect::<HashSet<_>>();
+    let mut packets = packets::packets(input.trim()).unwrap();
 
-    let mut packets = input
-        .trim()
-        .lines()
-        .filter_map(|line| match line {
-            "" => None,
-            line => Some(serde_json::from_str::<Value>(line).unwrap()),
-        })
-        .collect::<Vec<_>>();
+    let divider_packets = packets::packets("[[2]]\n[[6]]")
+        .unwrap()
+        .into_iter()
+        .collect::<HashSet<_>>();
 
     packets.extend(divider_packets.clone());
 
@@ -137,5 +146,21 @@ mod tests {
     #[test]
     fn test_part_two() {
         assert_eq!(140, get_part_two(INPUT));
+    }
+
+    #[test]
+    fn test_parser() {
+        let packets = packets::packets("[[1],[2,3,4]]").unwrap();
+
+        let expected = vec![Value::List(vec![
+            Value::List(vec![Value::Integer(1)]),
+            Value::List(vec![
+                Value::Integer(2),
+                Value::Integer(3),
+                Value::Integer(4),
+            ]),
+        ])];
+
+        assert_eq!(packets, expected);
     }
 }

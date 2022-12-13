@@ -1,11 +1,12 @@
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 use serde::Deserialize;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AdventOfCodeError {}
 
-#[derive(Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[serde(untagged)]
 enum Value {
     Integer(usize),
@@ -54,6 +55,7 @@ fn is_ordered(left: &Value, right: &Value) -> Option<bool> {
                 },
             }
         }
+        // "If exactly one value is an integer, convert the integer to a list…"
         (left @ Value::List(_), _right @ Value::Integer(r)) => {
             is_ordered(left, &Value::List(vec![Value::Integer(*r)]))
         }
@@ -63,8 +65,39 @@ fn is_ordered(left: &Value, right: &Value) -> Option<bool> {
     }
 }
 
-pub fn get_part_two(_input: &str) -> usize {
-    0
+pub fn get_part_two(input: &str) -> usize {
+    let divider_packets = [
+        serde_json::from_str::<Value>("[[2]]").unwrap(),
+        serde_json::from_str::<Value>("[[6]]").unwrap(),
+    ]
+    .into_iter()
+    .collect::<HashSet<_>>();
+
+    let mut packets = input
+        .trim()
+        .lines()
+        .filter_map(|line| match line {
+            "" => None,
+            line => Some(serde_json::from_str::<Value>(line).unwrap()),
+        })
+        .collect::<Vec<_>>();
+
+    packets.extend(divider_packets.clone());
+
+    packets.sort_by(|left, right| match is_ordered(left, right) {
+        Some(true) => Ordering::Less,
+        Some(false) => Ordering::Greater,
+        None => Ordering::Equal,
+    });
+
+    packets
+        .iter()
+        .enumerate()
+        .filter_map(|(index, packet)| match divider_packets.contains(packet) {
+            true => Some(index + 1),
+            false => None,
+        })
+        .product()
 }
 
 #[cfg(test)]
@@ -103,6 +136,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(140, get_part_two(INPUT));
     }
 }

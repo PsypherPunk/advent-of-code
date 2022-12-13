@@ -1,8 +1,21 @@
+#![deny(clippy::expect_used, clippy::unwrap_used)]
+
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
+use peg::error::ParseError;
+use peg::str::LineCol;
+
 #[derive(Debug, PartialEq, Eq)]
-pub enum AdventOfCodeError {}
+pub enum AdventOfCodeError {
+    InvalidPacketsError(ParseError<LineCol>),
+}
+
+impl From<ParseError<LineCol>> for AdventOfCodeError {
+    fn from(error: ParseError<LineCol>) -> Self {
+        AdventOfCodeError::InvalidPacketsError(error)
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Value {
@@ -16,17 +29,13 @@ peg::parser! {
         rule _() = [' ' | '\n']*
 
         rule value() -> Value
-            = n:number() { n } / a:array() { a }
-
-        rule number() -> Value
-            = n:int()
-                { Value::Integer(n) }
+            = n:number() { Value::Integer(n) } / a:array() { a }
 
         rule array() -> Value
             = "[" a:value() ** "," "]"
                 { Value::List(a) }
 
-        rule int() -> usize
+        rule number() -> usize
             = n:$(['0'] / ['1'..='9']['0'..='9']*)
                 {? n.parse().or(Err("int()"))}
 
@@ -36,16 +45,18 @@ peg::parser! {
     }
 }
 
-pub fn get_part_one(input: &str) -> usize {
-    let packets = packets::packets(input.trim()).unwrap();
+pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
+    let packets = packets::packets(input.trim())?;
 
-    packets
+    let sum = packets
         .chunks_exact(2)
         .map(|pair| is_ordered(&pair[0], &pair[1]))
         .enumerate()
         .filter(|(_, result)| matches!(*result, Some(true)))
         .map(|(index, _)| index + 1)
-        .sum()
+        .sum();
+
+    Ok(sum)
 }
 
 fn is_ordered(left: &Value, right: &Value) -> Option<bool> {
@@ -83,11 +94,10 @@ fn is_ordered(left: &Value, right: &Value) -> Option<bool> {
     }
 }
 
-pub fn get_part_two(input: &str) -> usize {
-    let mut packets = packets::packets(input.trim()).unwrap();
+pub fn get_part_two(input: &str) -> Result<usize, AdventOfCodeError> {
+    let mut packets = packets::packets(input.trim())?;
 
-    let divider_packets = packets::packets("[[2]]\n[[6]]")
-        .unwrap()
+    let divider_packets = packets::packets("[[2]]\n[[6]]")?
         .into_iter()
         .collect::<HashSet<_>>();
 
@@ -99,14 +109,16 @@ pub fn get_part_two(input: &str) -> usize {
         None => Ordering::Equal,
     });
 
-    packets
+    let product = packets
         .iter()
         .enumerate()
         .filter_map(|(index, packet)| match divider_packets.contains(packet) {
             true => Some(index + 1),
             false => None,
         })
-        .product()
+        .product();
+
+    Ok(product)
 }
 
 #[cfg(test)]
@@ -140,12 +152,12 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        assert_eq!(13, get_part_one(INPUT));
+        assert_eq!(Ok(13), get_part_one(INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(140, get_part_two(INPUT));
+        assert_eq!(Ok(140), get_part_two(INPUT));
     }
 
     #[test]

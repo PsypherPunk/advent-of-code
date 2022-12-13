@@ -11,7 +11,7 @@ fn main() {
     );
 
     println!(
-        "{}",
+        "What is the decoder key for the distress signal? {}",
         get_part_two(&input),
     );
 }

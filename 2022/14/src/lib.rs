@@ -1,10 +1,12 @@
 use std::collections::HashSet;
 
+use itertools::Itertools;
+
 pub fn get_scan(input: &str) -> HashSet<(usize, usize)> {
     input
         .trim()
         .lines()
-        .map(|line| {
+        .flat_map(|line| {
             line.split(" -> ")
                 .map(|coordinate| {
                     let (x, y) = coordinate.split_once(',').unwrap();
@@ -13,31 +15,17 @@ pub fn get_scan(input: &str) -> HashSet<(usize, usize)> {
 
                     (x, y)
                 })
-                .fold(
-                    (HashSet::new(), None::<(usize, usize)>),
-                    |(mut rocks, last), (x, y)| {
-                        match last {
-                            None => {
-                                rocks.insert((x, y));
-                            }
-                            Some(rock) => {
-                                let structure = (rock.0.min(x)..=rock.0.max(x)).flat_map(|dx| {
-                                    (rock.1.min(y)..=rock.1.max(y)).map(move |dy| (dx, dy))
-                                });
-                                rocks.extend(structure);
-                            }
-                        };
+                .tuple_windows()
+                .flat_map(|(start, end)| {
+                    (start.0.min(end.0)..=start.0.max(end.0))
+                        .flat_map(move |x| {
+                            (start.1.min(end.1)..=start.1.max(end.1))
+                                .map(move |y| (x, y))
+                        })
 
-                        (rocks, Some((x, y)))
-                    },
-                )
-                .0
+                })
         })
-        .fold(HashSet::new(), |mut acc, coordinates| {
-            acc.extend(coordinates);
-
-            acc
-        })
+        .collect()
 }
 
 pub fn get_part_one(input: &str) -> usize {

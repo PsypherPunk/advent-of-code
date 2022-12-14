@@ -1,5 +1,11 @@
 use std::collections::HashSet;
 use std::str::FromStr;
+#[cfg(feature = "display")]
+use std::{
+    fmt::{Display, Error as FmtError, Formatter, Result as FmtResult},
+    thread,
+    time::Duration,
+};
 
 use itertools::Itertools;
 
@@ -10,6 +16,37 @@ pub enum AdventOfCodeError {
 
 pub struct Scan {
     rocks: HashSet<(usize, usize)>,
+    sand: HashSet<(usize, usize)>,
+    falling: (usize, usize),
+}
+
+#[cfg(feature = "display")]
+impl Display for Scan {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        let height = self.rocks.iter().max_by_key(|r| r.1).ok_or(FmtError)?.1;
+        let left = self.rocks.iter().min_by_key(|r| r.0).ok_or(FmtError)?.0;
+        let width = self.rocks.iter().max_by_key(|r| r.0).ok_or(FmtError)?.0;
+
+        let output = (0..=height + 2)
+            .map(|y| {
+                (left - 2..=width + 2)
+                    .map(|x| match self.rocks.get(&(x, y)) {
+                        Some(_) => '#',
+                        None => match self.sand.get(&(x, y)) {
+                            Some(_) => 'o',
+                            None => match self.falling == (x, y) {
+                                true => 'o',
+                                false => '.',
+                            },
+                        },
+                    })
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        write!(f, "{}", output)
+    }
 }
 
 impl FromStr for Scan {
@@ -37,12 +74,28 @@ impl FromStr for Scan {
             })
             .collect();
 
-        Ok(Self { rocks })
+        Ok(Self {
+            rocks,
+            sand: HashSet::new(),
+            falling: (500, 0),
+        })
+    }
+}
+
+impl Scan {
+    fn is_blocked(&self, coordinate: &(usize, usize)) -> bool {
+        self.rocks.contains(coordinate) || self.sand.contains(coordinate)
     }
 }
 
 pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
     let mut scan = Scan::from_str(input)?;
+    #[cfg(feature = "display")]
+    {
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        println!("{}\n", &scan);
+        thread::sleep(Duration::from_millis(5_000));
+    }
 
     let void = scan
         .rocks
@@ -53,20 +106,27 @@ pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
     let mut units = 0;
 
     'outer: loop {
-        let mut sand = (500, 0);
+        scan.falling = (500, 0);
         loop {
-            if sand.1 > void {
+            #[cfg(feature = "display")]
+            {
+                print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+                println!("{}\n", &scan);
+                thread::sleep(Duration::from_millis(50));
+            }
+
+            if scan.falling.1 > void {
                 break 'outer;
             }
 
-            if !scan.rocks.contains(&(sand.0, sand.1 + 1)) {
-                sand.1 += 1;
-            } else if !scan.rocks.contains(&(sand.0 - 1, sand.1 + 1)) {
-                sand = (sand.0 - 1, sand.1 + 1);
-            } else if !scan.rocks.contains(&(sand.0 + 1, sand.1 + 1)) {
-                sand = (sand.0 + 1, sand.1 + 1);
+            if !scan.is_blocked(&(scan.falling.0, scan.falling.1 + 1)) {
+                scan.falling.1 += 1;
+            } else if !scan.is_blocked(&(scan.falling.0 - 1, scan.falling.1 + 1)) {
+                scan.falling = (scan.falling.0 - 1, scan.falling.1 + 1);
+            } else if !scan.is_blocked(&(scan.falling.0 + 1, scan.falling.1 + 1)) {
+                scan.falling = (scan.falling.0 + 1, scan.falling.1 + 1);
             } else {
-                scan.rocks.insert(sand);
+                scan.sand.insert(scan.falling);
                 break;
             }
         }
@@ -90,24 +150,31 @@ pub fn get_part_two(input: &str) -> Result<usize, AdventOfCodeError> {
     let mut units = 0;
 
     loop {
-        if scan.rocks.contains(&(500, 0)) {
+        if scan.sand.contains(&(500, 0)) {
             break;
         }
 
-        let mut sand = (500, 0);
+        scan.falling = (500, 0);
 
         loop {
-            if sand.1 + 1 == floor {
-                scan.rocks.insert(sand);
+            #[cfg(feature = "display")]
+            {
+                print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+                println!("{}\n", &scan);
+                thread::sleep(Duration::from_millis(100));
+            }
+
+            if scan.falling.1 + 1 == floor {
+                scan.rocks.insert(scan.falling);
                 break;
-            } else if !scan.rocks.contains(&(sand.0, sand.1 + 1)) {
-                sand.1 += 1;
-            } else if !scan.rocks.contains(&(sand.0 - 1, sand.1 + 1)) {
-                sand = (sand.0 - 1, sand.1 + 1);
-            } else if !scan.rocks.contains(&(sand.0 + 1, sand.1 + 1)) {
-                sand = (sand.0 + 1, sand.1 + 1);
+            } else if !scan.is_blocked(&(scan.falling.0, scan.falling.1 + 1)) {
+                scan.falling.1 += 1;
+            } else if !scan.is_blocked(&(scan.falling.0 - 1, scan.falling.1 + 1)) {
+                scan.falling = (scan.falling.0 - 1, scan.falling.1 + 1);
+            } else if !scan.is_blocked(&(scan.falling.0 + 1, scan.falling.1 + 1)) {
+                scan.falling = (scan.falling.0 + 1, scan.falling.1 + 1);
             } else {
-                scan.rocks.insert(sand);
+                scan.sand.insert(scan.falling);
                 break;
             }
         }

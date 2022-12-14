@@ -8,7 +8,7 @@ pub enum AdventOfCodeError {
     LackOfAbyssError,
 }
 
-struct Scan {
+pub struct Scan {
     rocks: HashSet<(usize, usize)>,
 }
 

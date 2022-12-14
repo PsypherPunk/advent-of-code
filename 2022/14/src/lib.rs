@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-fn get_scan(input: &str) -> HashSet<(usize, usize)> {
+pub fn get_scan(input: &str) -> HashSet<(usize, usize)> {
     input
         .trim()
         .lines()
@@ -72,7 +72,38 @@ pub fn get_part_one(input: &str) -> usize {
 }
 
 pub fn get_part_two(input: &str) -> usize {
-    0
+    let mut scan = get_scan(input);
+
+    let floor = scan.iter().map(|(_, y)| *y).max().unwrap() + 2;
+    let mut units = 0;
+
+    loop {
+        if scan.contains(&(500, 0)) {
+            break;
+        }
+
+        let mut sand = (500, 0);
+
+        loop {
+            if sand.1 + 1 == floor {
+                scan.insert(sand);
+                break;
+            } else if !scan.contains(&(sand.0, sand.1 + 1)) {
+                sand.1 += 1;
+            } else if !scan.contains(&(sand.0 - 1, sand.1 + 1)) {
+                sand = (sand.0 - 1, sand.1 + 1);
+            } else if !scan.contains(&(sand.0 + 1, sand.1 + 1)) {
+                sand = (sand.0 + 1, sand.1 + 1);
+            } else {
+                scan.insert(sand);
+                break;
+            }
+        }
+
+        units += 1;
+    }
+
+    units
 }
 
 #[cfg(test)]
@@ -90,6 +121,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(93, get_part_two(INPUT));
     }
 }

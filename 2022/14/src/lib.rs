@@ -1,37 +1,55 @@
 use std::collections::HashSet;
+use std::str::FromStr;
 
 use itertools::Itertools;
 
-pub fn get_scan(input: &str) -> HashSet<(usize, usize)> {
-    input
-        .trim()
-        .lines()
-        .flat_map(|line| {
-            line.split(" -> ")
-                .map(|coordinate| {
-                    let (x, y) = coordinate.split_once(',').unwrap();
-                    let x = x.parse::<usize>().unwrap();
-                    let y = y.parse::<usize>().unwrap();
-
-                    (x, y)
-                })
-                .tuple_windows()
-                .flat_map(|(start, end)| {
-                    (start.0.min(end.0)..=start.0.max(end.0))
-                        .flat_map(move |x| {
-                            (start.1.min(end.1)..=start.1.max(end.1))
-                                .map(move |y| (x, y))
-                        })
-
-                })
-        })
-        .collect()
+#[derive(Debug, PartialEq, Eq)]
+pub enum AdventOfCodeError {
+    LackOfAbyssError,
 }
 
-pub fn get_part_one(input: &str) -> usize {
-    let mut scan = get_scan(input);
+struct Scan {
+    rocks: HashSet<(usize, usize)>,
+}
 
-    let void = scan.iter().map(|(_, y)| *y).max().unwrap();
+impl FromStr for Scan {
+    type Err = AdventOfCodeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let rocks = s
+            .trim()
+            .lines()
+            .flat_map(|line| {
+                line.split(" -> ")
+                    .map(|coordinate| {
+                        let (x, y) = coordinate.split_once(',').unwrap();
+                        let x = x.parse::<usize>().unwrap();
+                        let y = y.parse::<usize>().unwrap();
+
+                        (x, y)
+                    })
+                    .tuple_windows()
+                    .flat_map(|(start, end)| {
+                        (start.0.min(end.0)..=start.0.max(end.0)).flat_map(move |x| {
+                            (start.1.min(end.1)..=start.1.max(end.1)).map(move |y| (x, y))
+                        })
+                    })
+            })
+            .collect();
+
+        Ok(Self { rocks })
+    }
+}
+
+pub fn get_part_one(input: &str) -> Result<usize, AdventOfCodeError> {
+    let mut scan = Scan::from_str(input)?;
+
+    let void = scan
+        .rocks
+        .iter()
+        .map(|(_, y)| *y)
+        .max()
+        .ok_or(AdventOfCodeError::LackOfAbyssError)?;
     let mut units = 0;
 
     'outer: loop {
@@ -41,14 +59,14 @@ pub fn get_part_one(input: &str) -> usize {
                 break 'outer;
             }
 
-            if !scan.contains(&(sand.0, sand.1 + 1)) {
+            if !scan.rocks.contains(&(sand.0, sand.1 + 1)) {
                 sand.1 += 1;
-            } else if !scan.contains(&(sand.0 - 1, sand.1 + 1)) {
+            } else if !scan.rocks.contains(&(sand.0 - 1, sand.1 + 1)) {
                 sand = (sand.0 - 1, sand.1 + 1);
-            } else if !scan.contains(&(sand.0 + 1, sand.1 + 1)) {
+            } else if !scan.rocks.contains(&(sand.0 + 1, sand.1 + 1)) {
                 sand = (sand.0 + 1, sand.1 + 1);
             } else {
-                scan.insert(sand);
+                scan.rocks.insert(sand);
                 break;
             }
         }
@@ -56,17 +74,23 @@ pub fn get_part_one(input: &str) -> usize {
         units += 1;
     }
 
-    units
+    Ok(units)
 }
 
-pub fn get_part_two(input: &str) -> usize {
-    let mut scan = get_scan(input);
+pub fn get_part_two(input: &str) -> Result<usize, AdventOfCodeError> {
+    let mut scan = Scan::from_str(input)?;
 
-    let floor = scan.iter().map(|(_, y)| *y).max().unwrap() + 2;
+    let floor = scan
+        .rocks
+        .iter()
+        .map(|(_, y)| *y)
+        .max()
+        .ok_or(AdventOfCodeError::LackOfAbyssError)?
+        + 2;
     let mut units = 0;
 
     loop {
-        if scan.contains(&(500, 0)) {
+        if scan.rocks.contains(&(500, 0)) {
             break;
         }
 
@@ -74,16 +98,16 @@ pub fn get_part_two(input: &str) -> usize {
 
         loop {
             if sand.1 + 1 == floor {
-                scan.insert(sand);
+                scan.rocks.insert(sand);
                 break;
-            } else if !scan.contains(&(sand.0, sand.1 + 1)) {
+            } else if !scan.rocks.contains(&(sand.0, sand.1 + 1)) {
                 sand.1 += 1;
-            } else if !scan.contains(&(sand.0 - 1, sand.1 + 1)) {
+            } else if !scan.rocks.contains(&(sand.0 - 1, sand.1 + 1)) {
                 sand = (sand.0 - 1, sand.1 + 1);
-            } else if !scan.contains(&(sand.0 + 1, sand.1 + 1)) {
+            } else if !scan.rocks.contains(&(sand.0 + 1, sand.1 + 1)) {
                 sand = (sand.0 + 1, sand.1 + 1);
             } else {
-                scan.insert(sand);
+                scan.rocks.insert(sand);
                 break;
             }
         }
@@ -91,7 +115,7 @@ pub fn get_part_two(input: &str) -> usize {
         units += 1;
     }
 
-    units
+    Ok(units)
 }
 
 #[cfg(test)]
@@ -104,11 +128,11 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        assert_eq!(24, get_part_one(INPUT));
+        assert_eq!(Ok(24), get_part_one(INPUT));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(93, get_part_two(INPUT));
+        assert_eq!(Ok(93), get_part_two(INPUT));
     }
 }

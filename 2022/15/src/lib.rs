@@ -1,3 +1,19 @@
+use peg::error::ParseError;
+use peg::str::LineCol;
+use rayon::prelude::*;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum AdventOfCodeError {
+    InvalidSensorsError(ParseError<LineCol>),
+    PleaseMindTheGapError,
+}
+
+impl From<ParseError<LineCol>> for AdventOfCodeError {
+    fn from(error: ParseError<LineCol>) -> Self {
+        AdventOfCodeError::InvalidSensorsError(error)
+    }
+}
+
 #[derive(Debug)]
 struct Point {
     x: isize,
@@ -62,8 +78,8 @@ peg::parser! {
     }
 }
 
-pub fn get_part_one(input: &str, y: isize) -> isize {
-    let sensors = sensors::sensors(input.trim()).unwrap();
+pub fn get_part_one(input: &str, y: isize) -> Result<isize, AdventOfCodeError> {
+    let sensors = sensors::sensors(input.trim())?;
 
     let mut ranges = sensors
         .iter()
@@ -98,14 +114,15 @@ pub fn get_part_one(input: &str, y: isize) -> isize {
     }
     overlapped.push(current);
 
-    overlapped.iter().map(|range| range.end - range.start).sum()
+    Ok(overlapped.iter().map(|range| range.end - range.start).sum())
 }
 
-pub fn get_part_two(input: &str) -> isize {
-    let sensors = sensors::sensors(input.trim()).unwrap();
+pub fn get_part_two(input: &str) -> Result<isize, AdventOfCodeError> {
+    let sensors = sensors::sensors(input.trim())?;
 
-    let (y, gap) = (0..=4000000)
-        .find_map(|y| {
+    let (y, gap) = (0..=4_000_000)
+        .into_par_iter()
+        .find_map_any(|y| {
             let mut ranges = sensors
                 .iter()
                 .filter(|sensor| {
@@ -140,9 +157,9 @@ pub fn get_part_two(input: &str) -> isize {
 
             None
         })
-        .unwrap();
+        .ok_or(AdventOfCodeError::PleaseMindTheGapError)?;
 
-    (gap * 4000000) + y
+    Ok((gap * 4000000) + y)
 }
 
 #[cfg(test)]
@@ -167,11 +184,11 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3
 
     #[test]
     fn test_part_one() {
-        assert_eq!(26, get_part_one(INPUT, 10));
+        assert_eq!(Ok(26), get_part_one(INPUT, 10));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(56_000_011, get_part_two(INPUT));
+        assert_eq!(Ok(56_000_011), get_part_two(INPUT));
     }
 }

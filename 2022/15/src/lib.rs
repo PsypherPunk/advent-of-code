@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 #[derive(Debug)]
 struct Point {
     x: isize,
@@ -16,6 +14,12 @@ impl Point {
 pub struct Sensor {
     position: Point,
     beacon: Point,
+}
+
+#[derive(Clone, Debug)]
+struct Range {
+    start: isize,
+    end: isize,
 }
 
 peg::parser! {
@@ -58,40 +62,43 @@ peg::parser! {
     }
 }
 
-pub fn get_part_one(input: &str, y: isize) -> usize {
+pub fn get_part_one(input: &str, y: isize) -> isize {
     let sensors = sensors::sensors(input.trim()).unwrap();
 
-    let beacons_x = sensors
-        .iter()
-        .filter(|sensor| sensor.beacon.y == y)
-        .map(|sensor| sensor.beacon.x)
-        .collect::<HashSet<_>>()
-        .len();
-
-    sensors
+    let mut ranges = sensors
         .iter()
         .filter(|sensor| {
             let distance_to_beacon = sensor.position.manhanttan_distance(&sensor.beacon);
 
             sensor.position.y.abs_diff(y) <= distance_to_beacon
         })
-        .flat_map(|sensor| {
+        .map(|sensor| {
             let distance_to_beacon = sensor.position.manhanttan_distance(&sensor.beacon);
             let distance_to_y = sensor.position.y.abs_diff(y);
 
             let diff = distance_to_beacon.abs_diff(distance_to_y) as isize;
 
-            sensor.position.x - diff..=sensor.position.x + diff
+            Range {
+                start: sensor.position.x - diff,
+                end: sensor.position.x + diff,
+            }
         })
-        .collect::<HashSet<_>>()
-        .len()
-        - beacons_x
-}
+        .collect::<Vec<_>>();
 
-#[derive(Debug)]
-struct Range {
-    start: isize,
-    end: isize,
+    ranges.sort_unstable_by_key(|range| range.start);
+
+    let mut overlapped = Vec::new();
+    let mut current = ranges[0].clone();
+    for next in ranges[1..].iter() {
+        if next.start > current.end {
+            overlapped.push(current.clone());
+        } else if current.end < next.end {
+            current.end = next.end;
+        }
+    }
+    overlapped.push(current);
+
+    overlapped.iter().map(|range| range.end - range.start).sum()
 }
 
 pub fn get_part_two(input: &str) -> isize {

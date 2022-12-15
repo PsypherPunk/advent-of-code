@@ -25,7 +25,7 @@ peg::parser! {
 
         rule number() -> isize
             = n:$("-"?['0'..='9']+) {? n.parse().or(Err("number()")) }
-        
+
         rule point() -> Point
             = "x="
             x:number()
@@ -67,7 +67,7 @@ pub fn get_part_one(input: &str, y: isize) -> usize {
         .map(|sensor| sensor.beacon.x)
         .collect::<HashSet<_>>()
         .len();
-    
+
     sensors
         .iter()
         .filter(|sensor| {
@@ -84,12 +84,58 @@ pub fn get_part_one(input: &str, y: isize) -> usize {
             sensor.position.x - diff..=sensor.position.x + diff
         })
         .collect::<HashSet<_>>()
-        .len() - beacons_x
+        .len()
+        - beacons_x
 }
 
-pub fn get_part_two(input: &str) -> usize {
+#[derive(Debug)]
+struct Range {
+    start: isize,
+    end: isize,
+}
 
-    0
+pub fn get_part_two(input: &str) -> isize {
+    let sensors = sensors::sensors(input.trim()).unwrap();
+
+    let (y, gap) = (0..=4000000)
+        .find_map(|y| {
+            let mut ranges = sensors
+                .iter()
+                .filter(|sensor| {
+                    let distance_to_beacon = sensor.position.manhanttan_distance(&sensor.beacon);
+
+                    sensor.position.y.abs_diff(y) <= distance_to_beacon
+                })
+                .map(|sensor| {
+                    let distance_to_beacon = sensor.position.manhanttan_distance(&sensor.beacon);
+                    let distance_to_y = sensor.position.y.abs_diff(y);
+
+                    let diff = distance_to_beacon.abs_diff(distance_to_y) as isize;
+
+                    Range {
+                        start: sensor.position.x - diff,
+                        end: sensor.position.x + diff,
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            ranges.sort_unstable_by_key(|range| range.start);
+
+            let mut current_end = ranges[0].end;
+            for next in ranges[1..].iter() {
+                if next.start > current_end {
+                    return Some((y, current_end + 1));
+                }
+                if current_end < next.end {
+                    current_end = next.end;
+                }
+            }
+
+            None
+        })
+        .unwrap();
+
+    (gap * 4000000) + y
 }
 
 #[cfg(test)]
@@ -119,6 +165,6 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(56_000_011, get_part_two(INPUT));
     }
 }

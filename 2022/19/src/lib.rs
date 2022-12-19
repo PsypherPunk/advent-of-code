@@ -1,108 +1,21 @@
 use std::collections::{HashSet, VecDeque};
 
-use peg::error::ParseError;
-use peg::str::LineCol;
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum AdventOfCodeError {
-    InvalidBlueprintError(ParseError<LineCol>),
-}
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Cost {
     ore: usize,
-    clay: Option<usize>,
-    obsidian: Option<usize>,
+    clay: usize,
+    obsidian: usize,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Blueprint {
     number: usize,
     ore: Cost,
     clay: Cost,
     obsidian: Cost,
     geode: Cost,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-struct RobotFactory {
-    blueprint: Blueprint,
-    ore: usize,
-    ore_robots: usize,
-    clay: usize,
-    clay_robots: usize,
-    obsidian: usize,
-    obsidian_robots: usize,
-    geode: usize,
-    geode_robots: usize,
-}
-
-impl RobotFactory {
-    fn mine(factory: Self) -> Self {
-        Self {
-            ore: factory.ore + factory.ore_robots,
-            clay: factory.clay + factory.clay_robots,
-            obsidian: factory.obsidian + factory.obsidian_robots,
-            geode: factory.geode + factory.geode_robots,
-            ..factory
-        }
-    }
-
-    fn can_build_geode_robot(&self) -> bool {
-        self.ore >= self.blueprint.geode.ore
-            && self.obsidian >= self.blueprint.geode.obsidian.unwrap()
-    }
-
-    fn build_geode_robot(&mut self) {
-        self.ore -= self.blueprint.geode.ore;
-        self.obsidian -= self.blueprint.geode.obsidian.unwrap();
-
-        self.geode_robots += 1;
-    }
-
-    fn can_build_obsidian_robot(&self) -> bool {
-        self.obsidian_robots < self.blueprint.geode.obsidian.unwrap()
-            && self.ore >= self.blueprint.obsidian.ore
-            && self.clay >= self.blueprint.obsidian.clay.unwrap()
-    }
-
-    fn build_obsidian_robot(&mut self) {
-        self.ore -= self.blueprint.obsidian.ore;
-        self.clay -= self.blueprint.obsidian.clay.unwrap();
-
-        self.obsidian_robots += 1;
-    }
-
-    fn can_build_ore_robot(&self) -> bool {
-        let max_ore = [
-            self.blueprint.ore.ore,
-            self.blueprint.clay.ore,
-            self.blueprint.obsidian.ore,
-            self.blueprint.geode.ore,
-        ]
-        .into_iter()
-        .max()
-        .unwrap();
-
-        self.ore_robots < max_ore && self.ore >= self.blueprint.ore.ore
-    }
-
-    fn build_ore_robot(&mut self) {
-        self.ore -= self.blueprint.ore.ore;
-
-        self.ore_robots += 1;
-    }
-
-    fn can_build_clay_robot(&self) -> bool {
-        self.clay_robots < self.blueprint.obsidian.clay.unwrap()
-            && self.ore >= self.blueprint.clay.ore
-    }
-
-    fn build_clay_robot(&mut self) {
-        self.ore -= self.blueprint.clay.ore;
-
-        self.clay_robots += 1;
-    }
 }
 
 peg::parser! {
@@ -127,11 +40,10 @@ peg::parser! {
                 {
                     Cost {
                         ore,
-                        clay,
-                        obsidian,
+                        clay: clay.unwrap_or(0),
+                        obsidian: obsidian.unwrap_or(0),
                     }
                 }
-
 
         rule blueprint() -> Blueprint
             = "Blueprint" _ number:number() ":" _
@@ -149,62 +61,150 @@ peg::parser! {
     }
 }
 
-impl From<ParseError<LineCol>> for AdventOfCodeError {
-    fn from(error: ParseError<LineCol>) -> Self {
-        AdventOfCodeError::InvalidBlueprintError(error)
+#[derive(PartialEq, Debug, Copy, Clone, Eq, Hash)]
+struct RobotFactory {
+    ore: usize,
+    ore_robots: usize,
+    clay: usize,
+    clay_robots: usize,
+    obsidian: usize,
+    obsidian_robots: usize,
+    geode: usize,
+    geode_robots: usize,
+    time: usize,
+}
+
+impl RobotFactory {
+    fn new() -> Self {
+        Self {
+            ore: 0,
+            ore_robots: 1,
+            clay: 0,
+            clay_robots: 0,
+            obsidian: 0,
+            obsidian_robots: 0,
+            geode: 0,
+            geode_robots: 0,
+            time: 0,
+        }
+    }
+
+    fn mine(factory: Self) -> Self {
+        Self {
+            ore: factory.ore + factory.ore_robots,
+            clay: factory.clay + factory.clay_robots,
+            obsidian: factory.obsidian + factory.obsidian_robots,
+            geode: factory.geode + factory.geode_robots,
+            time: factory.time + 1,
+            ..factory
+        }
+    }
+
+    fn can_build_geode_robot(&self, blueprint: &Blueprint) -> bool {
+        self.ore >= blueprint.geode.ore && self.obsidian >= blueprint.geode.obsidian
+    }
+
+    fn build_geode_robot(&mut self, blueprint: &Blueprint) {
+        self.ore -= blueprint.geode.ore;
+        self.obsidian -= blueprint.geode.obsidian;
+
+        self.geode_robots += 1;
+    }
+
+    fn can_build_ore_robot(&self, blueprint: &Blueprint, max_ore_cost: usize) -> bool {
+        self.ore >= blueprint.ore.ore && self.ore_robots < max_ore_cost
+    }
+
+    fn build_ore_robot(&mut self, blueprint: &Blueprint) {
+        self.ore -= blueprint.ore.ore;
+        self.ore_robots += 1;
+    }
+
+    fn can_build_clay_robot(&self, blueprint: &Blueprint) -> bool {
+        self.ore >= blueprint.clay.ore && self.clay_robots < blueprint.obsidian.clay
+    }
+
+    fn build_clay_robot(&mut self, blueprint: &Blueprint) {
+        self.ore -= blueprint.clay.ore;
+        self.clay_robots += 1;
+    }
+
+    fn can_build_obsidian_robot(&self, blueprint: &Blueprint) -> bool {
+        self.ore >= blueprint.obsidian.ore
+            && self.clay >= blueprint.obsidian.clay
+            && self.obsidian_robots < blueprint.geode.obsidian
+    }
+
+    fn build_obsidian_robot(&mut self, blueprint: &Blueprint) {
+        self.ore -= blueprint.obsidian.ore;
+        self.clay -= blueprint.obsidian.clay;
+        self.obsidian_robots += 1;
     }
 }
 
-fn bfs(factory: RobotFactory) -> usize {
+fn bfs(blueprint: Blueprint, time: usize) -> usize {
     let mut queue = VecDeque::new();
-    let mut seen = HashSet::new();
-
-    queue.push_back((factory, 24));
-
+    let factory = RobotFactory::new();
     let mut geodes = 0;
 
-    while let Some((factory, time)) = queue.pop_front() {
-        if time == 0 {
-            geodes = geodes.max(factory.geode);
+    queue.push_back(factory);
+
+    let mut seen = HashSet::new();
+
+    let max_ore_cost = blueprint
+        .clay
+        .ore
+        .max(blueprint.obsidian.ore)
+        .max(blueprint.geode.ore);
+
+    while let Some(factory) = queue.pop_front() {
+        geodes = geodes.max(factory.geode);
+
+        if factory.geode < geodes.saturating_sub(1) {
             continue;
-        }
+        };
 
         if seen.contains(&factory) {
             continue;
         }
+
+        if factory.time == time {
+            continue;
+        }
+
         seen.insert(factory);
 
-        if factory.can_build_geode_robot() {
+        if factory.can_build_geode_robot(&blueprint) {
             let mut factory = RobotFactory::mine(factory);
-            factory.build_geode_robot();
+            factory.build_geode_robot(&blueprint);
 
-            queue.push_back((factory, time - 1));
+            queue.push_back(factory);
             continue;
         }
 
-        if factory.can_build_obsidian_robot() {
+        if factory.can_build_ore_robot(&blueprint, max_ore_cost) {
             let mut factory = RobotFactory::mine(factory);
-            factory.build_obsidian_robot();
+            factory.build_ore_robot(&blueprint);
 
-            queue.push_back((factory, time - 1));
+            queue.push_back(factory);
+        }
+
+        if factory.can_build_clay_robot(&blueprint) {
+            let mut factory = RobotFactory::mine(factory);
+            factory.build_clay_robot(&blueprint);
+
+            queue.push_back(factory);
+        }
+
+        if factory.can_build_obsidian_robot(&blueprint) {
+            let mut factory = RobotFactory::mine(factory);
+            factory.build_obsidian_robot(&blueprint);
+
+            queue.push_back(factory);
             continue;
         }
 
-        if factory.can_build_ore_robot() {
-            let mut factory = RobotFactory::mine(factory);
-            factory.build_ore_robot();
-
-            queue.push_back((factory, time - 1));
-        }
-
-        if factory.can_build_clay_robot() {
-            let mut factory = RobotFactory::mine(factory);
-            factory.build_clay_robot();
-
-            queue.push_back((factory, time - 1));
-        }
-
-        queue.push_back((RobotFactory::mine(factory), time - 1));
+        queue.push_back(RobotFactory::mine(factory));
     }
 
     geodes
@@ -214,24 +214,18 @@ pub fn get_part_one(input: &str) -> usize {
     let blueprints = robot_factory::blueprints(input.trim()).unwrap();
 
     blueprints
-        .into_iter()
-        .map(|blueprint| RobotFactory {
-            blueprint,
-            ore: 0,
-            ore_robots: 1,
-            clay: 0,
-            clay_robots: 0,
-            obsidian: 0,
-            obsidian_robots: 0,
-            geode: 0,
-            geode_robots: 0,
-        })
-        .map(|factory| factory.blueprint.number * bfs(factory))
+        .into_par_iter()
+        .map(|blueprint| blueprint.number * bfs(blueprint, 24))
         .sum()
 }
 
-pub fn get_part_two(_input: &str) -> usize {
-    0
+pub fn get_part_two(input: &str) -> usize {
+    let blueprints = robot_factory::blueprints(input.trim()).unwrap();
+
+    blueprints[..3.min(blueprints.len())]
+        .into_par_iter()
+        .map(|blueprint| bfs(*blueprint, 32))
+        .product()
 }
 
 #[cfg(test)]
@@ -256,8 +250,9 @@ Blueprint 2:
         assert_eq!(33, get_part_one(INPUT));
     }
 
+    // not passing but gets the right answer for Part 2…?!
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(56 * 62, get_part_two(INPUT));
     }
 }

@@ -11,7 +11,7 @@ fn main() {
     );
 
     println!(
-        "{}",
+        "What do you get if you multiply these numbers together? {}",
         get_part_two(&input),
     );
 }

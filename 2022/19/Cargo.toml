@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 peg = "0.8.1"
+rayon = "1.6.1"
 
 [dev-dependencies]
 criterion = "0.4.0"

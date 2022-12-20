@@ -12,9 +12,12 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| get_part_one(black_box(&input)))
     });
 
-    c.bench_function("part_two input", |b| {
+    let mut group = c.benchmark_group("part_two group");
+    group.sample_size(10);
+    group.bench_function("part_two input", |b| {
         b.iter(|| get_part_two(black_box(&input)))
     });
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);

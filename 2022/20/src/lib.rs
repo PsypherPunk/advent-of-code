@@ -59,8 +59,43 @@ pub fn get_part_one(input: &str) -> Result<isize, AdventOfCodeError> {
     Ok(coordinates)
 }
 
-pub fn get_part_two(_input: &str) -> usize {
-    0
+pub fn get_part_two(input: &str) -> Result<isize, AdventOfCodeError> {
+    let (mut indices, numbers) = get_numbers(input)?;
+
+    let numbers = numbers.iter().map(|n| n * 811_589_153).collect::<Vec<_>>();
+
+    for _ in 0..10 {
+        for i in 0..indices.len() {
+            let index = indices
+                .iter()
+                .position(|p| *p == i)
+                .ok_or(AdventOfCodeError::InvalidIndexError(i))?;
+
+            let number = numbers[i];
+
+            _ = indices.remove(index);
+
+            let new_index = (index as isize + number).rem_euclid(numbers.len() as isize - 1);
+            indices.insert(new_index as usize, i);
+        }
+    }
+
+    let numbers = indices
+        .iter()
+        .map(|index| numbers[*index])
+        .collect::<Vec<_>>();
+
+    let zero = numbers
+        .iter()
+        .position(|n| *n == 0)
+        .ok_or(AdventOfCodeError::MisplacedZeroError)?;
+
+    let coordinates = [1_000, 2_000, 3_000]
+        .iter()
+        .map(|position| numbers[(zero + *position) % numbers.len()])
+        .sum::<isize>();
+
+    Ok(coordinates)
 }
 
 #[cfg(test)]
@@ -83,6 +118,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(Ok(1_623_178_306), get_part_two(INPUT));
     }
 }

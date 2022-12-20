@@ -11,8 +11,8 @@ fn main() -> Result<(), AdventOfCodeError> {
     );
 
     println!(
-        "{}",
-        get_part_two(&input),
+        "What is the sum of the three numbers that form the grove coordinates? {}",
+        get_part_two(&input)?,
     );
 
     Ok(())

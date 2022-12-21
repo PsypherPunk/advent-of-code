@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Operation<'a> {
     Value(usize),
     Plus((&'a str, &'a str)),
@@ -51,10 +51,59 @@ fn solve_riddle(monkey: &str, steps: &HashMap<&str, Operation>) -> usize {
 
     match operation {
         Operation::Value(number) => *number,
-        Operation::Plus((a, b)) => solve_riddle(a, &steps) + solve_riddle(b, &steps),
-        Operation::Minus((a, b)) => solve_riddle(a, &steps) - solve_riddle(b, &steps),
-        Operation::Multiply((a, b)) => solve_riddle(a, &steps) * solve_riddle(b, &steps),
-        Operation::Divide((a, b)) => solve_riddle(a, &steps) / solve_riddle(b, &steps),
+        Operation::Plus((a, b)) => solve_riddle(a, steps) + solve_riddle(b, steps),
+        Operation::Minus((a, b)) => solve_riddle(a, steps).saturating_sub(solve_riddle(b, steps)),
+        Operation::Multiply((a, b)) => solve_riddle(a, steps) * solve_riddle(b, steps),
+        Operation::Divide((a, b)) => solve_riddle(a, steps) / solve_riddle(b, steps),
+    }
+}
+
+fn maybe_solve_riddle(monkey: &str, steps: &HashMap<&str, Operation>) -> Option<usize> {
+    if monkey == "humn" {
+        return None;
+    }
+
+    let operation = steps.get(monkey).unwrap();
+
+    match operation {
+        Operation::Value(number) => Some(*number),
+        Operation::Plus((a, b)) => {
+            Some(maybe_solve_riddle(a, steps)? + maybe_solve_riddle(b, steps)?)
+        }
+        Operation::Minus((a, b)) => {
+            Some(maybe_solve_riddle(a, steps)?.saturating_sub(maybe_solve_riddle(b, steps)?))
+        }
+        Operation::Multiply((a, b)) => {
+            Some(maybe_solve_riddle(a, steps)? * maybe_solve_riddle(b, steps)?)
+        }
+        Operation::Divide((a, b)) => {
+            Some(maybe_solve_riddle(a, steps)? / maybe_solve_riddle(b, steps)?)
+        }
+    }
+}
+
+fn reverse_riddle(monkey: &str, steps: &HashMap<&str, Operation>, target: usize) -> usize {
+    match monkey {
+        "humn" => target,
+        monkey => match steps.get(monkey).unwrap() {
+            Operation::Value(number) => *number,
+            Operation::Plus((a, b)) => match maybe_solve_riddle(a, steps) {
+                None => reverse_riddle(a, steps, target - solve_riddle(b, steps)),
+                Some(_) => reverse_riddle(b, steps, target - solve_riddle(a, steps)),
+            },
+            Operation::Minus((a, b)) => match maybe_solve_riddle(a, steps) {
+                None => reverse_riddle(a, steps, target + solve_riddle(b, steps)),
+                Some(_) => reverse_riddle(b, steps, solve_riddle(a, steps) - target),
+            },
+            Operation::Multiply((a, b)) => match maybe_solve_riddle(a, steps) {
+                None => reverse_riddle(a, steps, target / solve_riddle(b, steps)),
+                Some(_) => reverse_riddle(b, steps, target / solve_riddle(a, steps)),
+            },
+            Operation::Divide((a, b)) => match maybe_solve_riddle(a, steps) {
+                None => reverse_riddle(a, steps, target * solve_riddle(b, steps)),
+                Some(_) => reverse_riddle(b, steps, solve_riddle(a, steps) * target),
+            },
+        },
     }
 }
 
@@ -64,8 +113,22 @@ pub fn get_part_one(input: &str) -> usize {
     solve_riddle("root", &riddle)
 }
 
-pub fn get_part_two(_input: &str) -> usize {
-    0
+pub fn get_part_two(input: &str) -> usize {
+    let riddle = monkeys::riddle(input.trim()).unwrap();
+
+    let ((a_monkey, a_answer), (b_monkey, b_answer)) = match riddle.get("root") {
+        Some(Operation::Plus((a, b))) => (
+            (a, maybe_solve_riddle(a, &riddle)),
+            (b, maybe_solve_riddle(b, &riddle)),
+        ),
+        _ => unreachable!(),
+    };
+
+    match (a_answer, b_answer) {
+        (Some(a_answer), None) => reverse_riddle(b_monkey, &riddle, a_answer),
+        (None, Some(b_answer)) => reverse_riddle(a_monkey, &riddle, b_answer),
+        _ => unreachable!(),
+    }
 }
 
 #[cfg(test)]
@@ -96,6 +159,6 @@ hmdt: 32
 
     #[test]
     fn test_part_two() {
-        assert_eq!(2, get_part_two(INPUT));
+        assert_eq!(301, get_part_two(INPUT));
     }
 }

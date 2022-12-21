@@ -11,7 +11,7 @@ fn main() {
     );
 
     println!(
-        "{}",
+        "What number do you yell to pass root's equality test? {}",
         get_part_two(&input),
     );
 }

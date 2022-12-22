@@ -1,0 +1,15 @@
+[package]
+name = "day22"
+version = "0.1.0"
+authors = ["PsypherPunk <psypherpunk@gmail.com>"]
+edition = "2021"
+
+[dev-dependencies]
+criterion = "0.4.0"
+
+[[bench]]
+name = "day22"
+harness = false
+
+[dependencies]
+peg = "0.8.1"

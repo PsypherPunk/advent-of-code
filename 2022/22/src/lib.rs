@@ -1,21 +1,134 @@
-const DIRECTIONS: [(isize, isize); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+pub struct Notes {
+    map: Vec<Vec<Tile>>,
+    path: Vec<Step>,
+}
 
-#[derive(PartialEq, Clone, Debug, Copy)]
+#[derive(Copy, Clone)]
+struct Point {
+    row: isize,
+    column: isize,
+}
+
+enum Direction {
+    Right = 0,
+    Down = 1,
+    Left = 2,
+    Up = 3,
+}
+
+enum Spin {
+    Left,
+    Right,
+}
+
+#[derive(PartialEq)]
 enum Tile {
     Open,
     Wall,
     Void,
 }
 
-#[derive(Debug, Clone)]
 enum Step {
-    Turn(usize),
-    Steps(isize),
+    Turn(Spin),
+    Number(usize),
 }
 
-pub struct Notes {
-    map: Vec<Vec<Tile>>,
-    steps: Vec<Step>,
+impl Direction {
+    fn turn(self, turn: &Spin) -> Direction {
+        match (self, turn) {
+            (Self::Left, Spin::Left) => Self::Down,
+            (Self::Left, Spin::Right) => Self::Up,
+            (Self::Right, Spin::Left) => Self::Up,
+            (Self::Right, Spin::Right) => Self::Down,
+            (Self::Up, Spin::Left) => Self::Left,
+            (Self::Up, Spin::Right) => Self::Right,
+            (Self::Down, Spin::Left) => Self::Right,
+            (Self::Down, Spin::Right) => Self::Left,
+        }
+    }
+
+    fn step(&self) -> Point {
+        match &self {
+            Self::Left => Point { row: 0, column: -1 },
+            Self::Right => Point { row: 0, column: 1 },
+            Self::Up => Point { row: -1, column: 0 },
+            Self::Down => Point { row: 1, column: 0 },
+        }
+    }
+}
+
+impl Notes {
+    fn wrap_around(&self, position: &Point, direction: &Direction) -> Point {
+        let Point {
+            row: dr,
+            column: dc,
+        } = direction.step();
+        let mut current = *position;
+
+        while let Some(tile) = self
+            .map
+            .get((current.row - dr) as usize)
+            .and_then(|row| row.get((current.column - dc) as usize))
+        {
+            if *tile == Tile::Void {
+                break;
+            }
+            current = Point {
+                row: current.row - dr,
+                column: current.column - dc,
+            };
+        }
+
+        current
+    }
+}
+
+fn wrap_around_cube(position: &Point, direction: &Direction) -> (Point, Direction) {
+    let (cube_row, cube_col, new_dir) = match (position.row / 50, position.column / 50, direction) {
+        (0, 1, Direction::Up) => (3, 0, Direction::Right),
+        (0, 1, Direction::Left) => (2, 0, Direction::Right),
+        (0, 2, Direction::Up) => (3, 0, Direction::Up),
+        (0, 2, Direction::Right) => (2, 1, Direction::Left),
+        (0, 2, Direction::Down) => (1, 1, Direction::Left),
+        (1, 1, Direction::Right) => (0, 2, Direction::Up),
+        (1, 1, Direction::Left) => (2, 0, Direction::Down),
+        (2, 0, Direction::Up) => (1, 1, Direction::Right),
+        (2, 0, Direction::Left) => (0, 1, Direction::Right),
+        (2, 1, Direction::Right) => (0, 2, Direction::Left),
+        (2, 1, Direction::Down) => (3, 0, Direction::Left),
+        (3, 0, Direction::Right) => (2, 1, Direction::Up),
+        (3, 0, Direction::Down) => (0, 2, Direction::Down),
+        (3, 0, Direction::Left) => (0, 1, Direction::Down),
+        _ => unreachable!(),
+    };
+    let (row_idx, col_idx) = (position.row % 50, position.column % 50);
+
+    let i = match direction {
+        Direction::Left => 49 - row_idx,
+        Direction::Right => row_idx,
+        Direction::Up => col_idx,
+        Direction::Down => 49 - col_idx,
+    };
+
+    let new_row = match new_dir {
+        Direction::Left => 49 - i,
+        Direction::Right => i,
+        Direction::Up => 49,
+        Direction::Down => 0,
+    };
+    let new_col = match new_dir {
+        Direction::Left => 49,
+        Direction::Right => 0,
+        Direction::Up => i,
+        Direction::Down => 49 - i,
+    };
+
+    let new_pos = Point {
+        row: cube_row * 50 + new_row,
+        column: cube_col * 50 + new_col,
+    };
+
+    (new_pos, new_dir)
 }
 
 peg::parser! {
@@ -24,15 +137,15 @@ peg::parser! {
 
         rule __() = ['\n']*
 
-        rule number() -> isize
+        rule number() -> usize
             = n:$(['0'..='9']+) {? n.parse().or(Err("number()")) }
 
-        rule direction() -> usize
+        rule spin() -> Spin
             = t:$(['L' | 'R'])
                 {
                     match t {
-                        "L" => 3,
-                        "R" => 1,
+                        "L" => Spin::Left,
+                        "R" => Spin::Right,
                         _ => unreachable!(),
                     }
                 }
@@ -57,7 +170,7 @@ peg::parser! {
                 { tiles }
 
         rule step() -> Step
-            = steps:number() { Step::Steps(steps) } / direction:direction() { Step::Turn(direction) }
+            = steps:number() { Step::Number(steps) } / spin:spin() { Step::Turn(spin) }
 
         rule steps() -> Vec<Step>
             = steps:step() ++ ""
@@ -65,70 +178,56 @@ peg::parser! {
         pub rule notes() -> Notes
             = map:map() __ __ steps:steps()
                 {
-                    let width = map.iter().map(|row| row.len()).max().unwrap();
-
-                    let map = map.into_iter()
-                        .map(|row| {
-                            let len = row.len();
-                            [row, vec![Tile::Void; width - len]].concat()
-                        })
-                        .collect::<Vec<_>>();
-
                     Notes {
                         map,
-                        steps,
+                        path: steps,
                     }
                 }
     }
 }
 
-impl Notes {
-    // TODO: overflowing all over the place!
-    fn wrap(&self, mut row: usize, mut column: usize, direction: usize) -> (usize, usize) {
-        let (dr, dc) = DIRECTIONS[direction];
-        while *self
-            .map
-            .get(row - dr as usize)
-            .and_then(|row| row.get(column - dc as usize))
-            .unwrap_or(&Tile::Void)
-            != Tile::Void
-        {
-            (row, column) = (row - dr as usize, column - dc as usize);
-        }
-        (row, column)
-    }
-}
-
-pub fn get_part_one(input: &str) -> usize {
+pub fn get_part_one(input: &str) -> isize {
     let notes = monkeys::notes(input.trim_end()).unwrap();
 
-    let (mut row, mut column, mut direction) = (0, 0, 1);
+    let column = notes.map[0]
+        .iter()
+        .position(|tile| *tile == Tile::Open)
+        .unwrap() as isize;
 
-    while notes.map[0][column] != Tile::Open {
-        column += 1
-    }
+    let mut position = Point { row: 0, column };
+    let mut direction = Direction::Right;
 
-    for step in &notes.steps {
+    for step in &notes.path {
         match step {
-            Step::Turn(turn) => direction = (direction + turn) % 4,
-            Step::Steps(count) => {
-                for _ in 0..*count {
-                    let (dr, dc) = DIRECTIONS[direction];
-                    let next = notes
+            Step::Turn(turn) => direction = direction.turn(turn),
+            Step::Number(amount) => {
+                for _ in 0..*amount {
+                    let Point {
+                        row: dr,
+                        column: dc,
+                    } = direction.step();
+                    let new_tile = notes
                         .map
-                        .get(row + dr as usize)
-                        .and_then(|row| row.get(column + dc as usize))
+                        .get((position.row + dr) as usize)
+                        .and_then(|row| row.get((position.column + dc) as usize))
                         .unwrap_or(&Tile::Void);
 
-                    match next {
-                        Tile::Open => (row, column) = (row + dr as usize, column + dc as usize),
+                    match new_tile {
                         Tile::Wall => break,
+                        Tile::Open => {
+                            position = Point {
+                                row: position.row + dr,
+                                column: position.column + dc,
+                            };
+                        }
                         Tile::Void => {
-                            let (next_row, next_column) = notes.wrap(row, column, direction);
-                            if notes.map[next_row][next_column] == Tile::Wall {
+                            let new_position = notes.wrap_around(&position, &direction);
+                            if notes.map[new_position.row as usize][new_position.column as usize]
+                                == Tile::Wall
+                            {
                                 break;
                             }
-                            (row, column) = (next_row, next_column);
+                            position = new_position;
                         }
                     }
                 }
@@ -136,70 +235,53 @@ pub fn get_part_one(input: &str) -> usize {
         }
     }
 
-    1000 * (row + 1) + 4 * (column + 1) + [3, 0, 1, 2][direction]
+    1000 * (position.row + 1) + 4 * (position.column + 1) + direction as isize
 }
 
-fn wrap_cube(row: usize, column: usize, direction: usize) -> (usize, usize) {
-    // dbg!(&row, &column, &direction);
-    let (cube_row, cube_column, new_direction) = match (row / 50, column / 50, direction) {
-        (0, 1, 0) => (3, 0, 1),
-        (0, 1, 3) => (2, 0, 1),
-        (0, 2, 0) => (3, 0, 0),
-        (0, 2, 1) => (2, 1, 3),
-        (0, 2, 2) => (1, 1, 3),
-        (1, 1, 1) => (0, 2, 0),
-        (1, 1, 3) => (2, 0, 2),
-        (2, 0, 0) => (1, 1, 1),
-        (2, 0, 3) => (0, 1, 1),
-        (2, 1, 1) => (0, 2, 3),
-        (2, 1, 2) => (3, 0, 3),
-        (3, 0, 1) => (2, 1, 0),
-        (3, 0, 2) => (0, 2, 2),
-        (3, 0, 3) => (0, 1, 2),
-        _ => unreachable!(),
-    };
-    let (row_on_face, column_on_face) = (row % 50, column % 50);
-    let i = [
-        column_on_face,
-        row_on_face,
-        49 - column_on_face,
-        49 - row_on_face,
-    ][direction];
-    let (new_row, new_column) = [(49, i), (i, 0), (0, 49 - i), (49 - i, 49)][new_direction];
-
-    (cube_row * 50 + new_row, cube_column * 50 + new_column)
-}
-
-pub fn get_part_two(input: &str) -> usize {
+pub fn get_part_two(input: &str) -> isize {
     let notes = monkeys::notes(input.trim_end()).unwrap();
 
-    let (mut row, mut column, mut direction) = (0, 0, 1);
+    let column = notes.map[0]
+        .iter()
+        .position(|tile| *tile == Tile::Open)
+        .unwrap() as isize;
 
-    while notes.map[0][column] != Tile::Open {
-        column += 1
-    }
+    let mut position = Point { row: 0, column };
+    let mut direction = Direction::Right;
 
-    for step in &notes.steps {
+    for step in &notes.path {
         match step {
-            Step::Turn(turn) => direction = (direction + turn) % 4,
-            Step::Steps(count) => {
-                for _ in 0..*count {
-                    let (dr, dc) = DIRECTIONS[direction];
-                    let next = notes
+            Step::Turn(turn) => direction = direction.turn(turn),
+            Step::Number(amount) => {
+                for _ in 0..*amount {
+                    let Point {
+                        row: dr,
+                        column: dc,
+                    } = direction.step();
+                    let new_tile = notes
                         .map
-                        .get(row + dr as usize)
-                        .and_then(|row| row.get(column + dc as usize))
+                        .get((position.row + dr) as usize)
+                        .and_then(|row| row.get((position.column + dc) as usize))
                         .unwrap_or(&Tile::Void);
 
-                    match next {
-                        Tile::Open => (row, column) = (row + dr as usize, column + dc as usize),
+                    match new_tile {
                         Tile::Wall => break,
+                        Tile::Open => {
+                            position = Point {
+                                row: position.row + dr,
+                                column: position.column + dc,
+                            };
+                        }
                         Tile::Void => {
-                            let (next_row, next_column) = wrap_cube(row, column, direction);
-                            if notes.map[next_row][next_column] == Tile::Wall {
+                            let (new_position, new_direction) =
+                                wrap_around_cube(&position, &direction);
+                            if notes.map[new_position.row as usize][new_position.column as usize]
+                                == Tile::Wall
+                            {
                                 break;
                             }
-                            (row, column) = (next_row, next_column);
+                            position = new_position;
+                            direction = new_direction
                         }
                     }
                 }
@@ -207,7 +289,7 @@ pub fn get_part_two(input: &str) -> usize {
         }
     }
 
-    1000 * (row + 1) + 4 * (column + 1) + [3, 0, 1, 2][direction]
+    1000 * (position.row + 1) + 4 * (position.column + 1) + direction as isize
 }
 
 #[cfg(test)]
@@ -235,6 +317,7 @@ mod tests {
         assert_eq!(6_032, get_part_one(INPUT));
     }
 
+    // Different layout; doesn't work.
     // #[test]
     // fn test_part_two() {
     //     assert_eq!(5_031, get_part_two(INPUT));

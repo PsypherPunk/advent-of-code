@@ -21,7 +21,7 @@ pub fn get_part_one(input: &str) -> String {
         ),
         |&n| {
             match (n as usize + 2) / 5 {
-                n if n > 0 => Some(n as isize),
+                n @ 1.. => Some(n as isize),
                 _ => None,
             }
         },

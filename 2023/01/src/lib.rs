@@ -1,3 +1,7 @@
+const NUMBERS: [&str; 9] = [
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+];
+
 pub fn get_part_one(input: &str) -> Result<usize, String> {
     let calibration_values = input
         .trim()
@@ -8,12 +12,10 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
                 .filter(|c| c.is_ascii_digit())
                 .collect::<Vec<_>>();
             match (digits.first(), digits.last()) {
-                (Some(first), Some(last)) => vec![first, last]
-                    .into_iter()
-                    .collect::<String>()
-                    .parse::<usize>()
-                    .map_err(|_| "invalid digits".to_owned()),
-                _ => Err("invalid line".to_owned()),
+                (Some(first), Some(last)) => {
+                    Ok(((*first as usize - 48) * 10) + (*last as usize - 48))
+                }
+                _ => Err(format!("invalid line: {}", line)),
             }
         })
         .collect::<Result<Vec<usize>, String>>()?;
@@ -22,48 +24,30 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
 }
 
 pub fn get_part_two(input: &str) -> Result<usize, String> {
-    let numbers = [
-        "1", "2", "3", "4", "5", "6", "7", "8", "9", "one", "two", "three", "four", "five", "six",
-        "seven", "eight", "nine",
-    ];
-
     let calibration_values = input
         .trim()
         .lines()
         .map(|line| {
-            let mut positions = numbers
-                .iter()
-                .flat_map(|number| line.match_indices(number))
+            let digits = line
+                .char_indices()
+                .filter_map(|(position, c)| {
+                    match NUMBERS.iter().enumerate().find_map(|(i, number)| {
+                        match line[position..].starts_with(number) {
+                            true => Some(i + 1),
+                            false => None,
+                        }
+                    }) {
+                        Some(number) => Some(number),
+                        None => match c.is_ascii_digit() {
+                            true => Some(c as usize - 48),
+                            false => None,
+                        },
+                    }
+                })
                 .collect::<Vec<_>>();
-
-            positions.sort_unstable_by(|(a, _), (b, _)| a.cmp(b));
-
-            match (positions.first(), positions.last()) {
-                (Some(&(_, a)), Some(&(_, b))) => {
-                    let a = match a {
-                        "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => {
-                            a.parse::<usize>().map_err(|_| "invalid digits".to_owned())
-                        }
-                        word => Ok(numbers
-                            .iter()
-                            .position(|&n| n == word)
-                            .ok_or("invalid word".to_owned())?
-                            - 8),
-                    };
-                    let b = match b {
-                        "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => {
-                            b.parse::<usize>().map_err(|_| "invalid digits".to_owned())
-                        }
-                        word => Ok(numbers
-                            .iter()
-                            .position(|&n| n == word)
-                            .ok_or("invalid word".to_owned())?
-                            - 8),
-                    };
-
-                    Ok((a? * 10) + b?)
-                }
-                _ => Err("invalid line".to_owned()),
+            match (digits.first(), digits.last()) {
+                (Some(first), Some(last)) => Ok((first * 10) + last),
+                _ => Err(format!("invalid line: {}", line)),
             }
         })
         .collect::<Result<Vec<usize>, String>>()?;

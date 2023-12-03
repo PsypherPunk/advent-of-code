@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "What is the sum of all of the gear ratios in your engine schematic? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

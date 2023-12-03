@@ -65,8 +65,53 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(part_numbers.iter().sum())
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let line_length = input
+        .char_indices()
+        .find_map(|(position, c)| match c == '\n' {
+            true => Some(position + 1), // inc. newline char.
+            false => None,
+        })
+        .ok_or_else(|| "no lines?!".to_owned())?;
+    let positions = schematic::symbols(input.trim()).map_err(|e| e.to_string())?;
+
+    let gears = positions
+        .iter()
+        .filter_map(|position| match position {
+            Position::Symbol(n, _) => Some((n % line_length, n / line_length)),
+            _ => None,
+        })
+        .map(|(sx, sy)| {
+            positions
+                .iter()
+                .filter_map(|position| match position {
+                    Position::Number(start, end) => Some((start, end)),
+                    _ => None,
+                }) // get number start/end.
+                .filter(move |&(start, end)| {
+                    sy.abs_diff(start / line_length) <= 1 // y is within 1…
+                        && ((start % line_length).saturating_sub(1)..((end % line_length) + 1))
+                            .contains(&sx) // x-range is within 1.
+                })
+                .collect::<Vec<_>>()
+        })
+        .filter(|part_numbers| part_numbers.len() == 2)
+        .map(|part_numbers| {
+            part_numbers
+                .iter()
+                .map(|&(start, end)| {
+                    input[*start..*end]
+                        .parse::<usize>()
+                        .map_err(|e| e.to_string())
+                })
+                .collect::<Result<Vec<_>, String>>()
+        })
+        .collect::<Result<Vec<Vec<_>>, String>>()?
+        .iter()
+        .map(|part_numbers| part_numbers.iter().product::<usize>())
+        .collect::<Vec<_>>();
+
+    Ok(gears.iter().sum())
 }
 
 #[cfg(test)]
@@ -92,6 +137,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(467835), get_part_two(INPUT));
     }
 }

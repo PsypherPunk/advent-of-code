@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "…how many total scratchcards do you end up with? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

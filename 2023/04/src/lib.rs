@@ -18,14 +18,13 @@ peg::parser! {
               _ "|" _
               player:integer() ++ _
               {
-                let winning = winning
+                winning
                     .iter()
-                    .collect::<BTreeSet<_>>();
-                let player = player
-                    .iter()
-                    .collect::<BTreeSet<_>>();
-
-                winning.intersection(&player).count()
+                    .collect::<BTreeSet<_>>()
+                    .intersection(&player
+                        .iter()
+                        .collect())
+                    .count()
               }
 
         pub rule cards() -> Vec<usize>
@@ -51,8 +50,22 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(points)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let scratchcards = scratchcard::cards(input.trim()).map_err(|e| e.to_string())?;
+    let mut counts = vec![1; scratchcards.len()];
+
+    scratchcards
+        .iter()
+        .enumerate()
+        .filter(|(_, &matches)| matches > 0)
+        .for_each(|(index, matches)| {
+            let current_count = counts[index];
+            counts[(index + 1)..(index + 1 + matches)]
+                .iter_mut()
+                .for_each(|count| *count += current_count);
+        });
+
+    Ok(counts.iter().sum())
 }
 
 #[cfg(test)]
@@ -74,6 +87,6 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(30), get_part_two(INPUT));
     }
 }

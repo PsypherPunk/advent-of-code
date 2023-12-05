@@ -1,11 +1,14 @@
-pub struct Range {
+use rayon::prelude::*;
+
+#[derive(Debug)]
+pub struct MapRange {
     destination_range_start: usize,
     source_range_start: usize,
     range_length: usize,
 }
 
 pub struct Map {
-    ranges: Vec<Range>,
+    ranges: Vec<MapRange>,
 }
 
 pub struct Almanac {
@@ -14,23 +17,16 @@ pub struct Almanac {
 }
 
 impl Almanac {
-    // TODO: this could be a `fold()`…?
-    pub fn get_location_number(&self, seed: usize) -> usize {
-        let mut current_value = seed;
-
-        for category in self.maps.iter() {
-            for range in &category.ranges {
-                if range.source_range_start <= current_value
-                    && current_value <= range.source_range_start + range.range_length
-                {
-                    current_value =
-                        range.destination_range_start + (current_value - range.source_range_start);
-                    break;
-                }
+    pub fn get_seed_location_number(&self, seed: usize) -> usize {
+        self.maps.iter().fold(seed, |current, map| {
+            match map.ranges.iter().find(|range| {
+                range.source_range_start <= current
+                    && current <= range.source_range_start + range.range_length
+            }) {
+                Some(range) => range.destination_range_start + (current - range.source_range_start),
+                None => current,
             }
-        }
-
-        current_value
+        })
     }
 }
 
@@ -46,12 +42,12 @@ peg::parser! {
             = w:$(['a'..='z']+)
                 { w }
 
-        rule range() -> Range
+        rule range() -> MapRange
             = destination_range_start:integer() _
               source_range_start:integer() _
               range_length:integer()
               {
-                Range {
+                MapRange {
                     destination_range_start,
                     source_range_start,
                     range_length,
@@ -96,15 +92,27 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     let lowest_location = almanac
         .seeds
         .iter()
-        .map(|seed| almanac.get_location_number(*seed))
+        .map(|seed| almanac.get_seed_location_number(*seed))
         .min()
         .ok_or("could not find lowest location".to_owned())?;
 
     Ok(lowest_location)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+// TODO: yeah, this is bad.
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let almanac = almanac::almanac(input.trim()).map_err(|e| e.to_string())?;
+
+    let lowest_location = almanac
+        .seeds
+        .chunks(2)
+        .flat_map(|pair| pair[0]..(pair[0] + pair[1]))
+        .par_bridge()
+        .map(|seed| almanac.get_seed_location_number(seed))
+        .min()
+        .ok_or("could not find lowest location".to_owned())?;
+
+    Ok(lowest_location)
 }
 
 #[cfg(test)]
@@ -153,6 +161,6 @@ humidity-to-location map:
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(46), get_part_two(INPUT));
     }
 }

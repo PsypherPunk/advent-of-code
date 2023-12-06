@@ -73,9 +73,10 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
 pub fn get_part_two(input: &str) -> Result<usize, String> {
     let race = paper::race_rtfm(input.trim()).map_err(|e| format!("bad input: {}", e))?;
 
-    let ways = (0..=race.time)
-        .filter(|hold| ((race.time - hold) * hold) > race.distance)
-        .count();
+    let time = race.time as f64;
+    let distance = race.distance as f64;
+    let sqrt = (time * time - 4.0 * (distance + 1.0)).sqrt();
+    let ways = (((time + sqrt) / 2.0).floor() - ((time - sqrt) / 2.0).ceil()) as usize + 1;
 
     Ok(ways)
 }

@@ -1,5 +1,3 @@
-use rayon::prelude::*;
-
 #[derive(Debug)]
 pub struct MapRange {
     destination_range_start: usize,
@@ -17,16 +15,59 @@ pub struct Almanac {
 }
 
 impl Almanac {
-    pub fn get_seed_location_number(&self, seed: usize) -> usize {
+    fn get_seed_location_number(&self, seed: usize) -> usize {
         self.maps.iter().fold(seed, |current, map| {
-            match map.ranges.iter().find(|range| {
-                range.source_range_start <= current
-                    && current <= range.source_range_start + range.range_length
-            }) {
-                Some(range) => range.destination_range_start + (current - range.source_range_start),
-                None => current,
-            }
+            map.ranges
+                .iter()
+                .find_map(|range| range.map_seed(current))
+                .unwrap_or(current)
         })
+    }
+
+    fn get_optimum_located_seeds(&self) -> Vec<usize> {
+        self.maps.iter().rev().fold(vec![], |mut acc, map| {
+            acc = acc
+                .iter()
+                .map(|mapping| {
+                    map.ranges
+                        .iter()
+                        .find_map(|range| range.dees_pam(*mapping))
+                        .unwrap_or(*mapping)
+                })
+                .collect::<Vec<_>>();
+
+            let starts = map
+                .ranges
+                .iter()
+                .map(|range| range.source_range_start)
+                .collect::<Vec<_>>();
+
+            acc.extend(starts);
+
+            acc
+        })
+    }
+}
+
+impl MapRange {
+    fn map_seed(&self, seed: usize) -> Option<usize> {
+        if seed >= self.source_range_start && seed < self.source_range_start + self.range_length {
+            let offset = seed - self.source_range_start;
+            Some(self.destination_range_start + offset)
+        } else {
+            None
+        }
+    }
+
+    fn dees_pam(&self, seed: usize) -> Option<usize> {
+        if seed >= self.destination_range_start
+            && seed < self.destination_range_start + self.range_length
+        {
+            let offset = seed - self.destination_range_start;
+            Some(self.source_range_start + offset)
+        } else {
+            None
+        }
     }
 }
 
@@ -72,15 +113,15 @@ peg::parser! {
               }
 
         pub rule almanac() -> Almanac
-              = seeds:seeds()
-                _
-                maps:map() ++ _
-                {
-                    Almanac {
-                        seeds,
-                        maps,
-                    }
-                }
+            = seeds:seeds()
+              _
+              maps:map() ++ _
+              {
+                  Almanac {
+                      seeds,
+                      maps,
+                  }
+              }
 
 
     }
@@ -99,20 +140,29 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(lowest_location)
 }
 
-// TODO: yeah, this is bad.
 pub fn get_part_two(input: &str) -> Result<usize, String> {
     let almanac = almanac::almanac(input.trim()).map_err(|e| e.to_string())?;
 
-    let lowest_location = almanac
+    let seed_ranges = almanac
         .seeds
         .chunks(2)
-        .flat_map(|pair| pair[0]..(pair[0] + pair[1]))
-        .par_bridge()
-        .map(|seed| almanac.get_seed_location_number(seed))
+        .map(|pair| pair[0]..(pair[0] + pair[1]))
+        .collect::<Vec<_>>();
+
+    let optimium_located_seeds = almanac.get_optimum_located_seeds();
+
+    let min = optimium_located_seeds
+        .iter()
+        .filter(|seed| {
+            seed_ranges
+                .iter()
+                .any(|seed_range| seed_range.contains(seed))
+        })
+        .map(|&seed| almanac.get_seed_location_number(seed))
         .min()
         .ok_or("could not find lowest location".to_owned())?;
 
-    Ok(lowest_location)
+    Ok(min)
 }
 
 #[cfg(test)]

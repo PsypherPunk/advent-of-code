@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "How many ways can you beat the record in this one much longer race? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

@@ -1,4 +1,4 @@
-struct Races {
+struct Race {
     time: usize,
     distance: usize,
 }
@@ -11,7 +11,10 @@ peg::parser! {
             = n:$(['0'..='9']+)
                 {? n.parse().or(Err("invalid integer")) }
 
-        pub rule races() -> Vec<Races>
+        rule digits() -> &'input str
+            = n:$(['0'..='9']+)
+
+        pub rule races() -> Vec<Race>
             = "Time:"
               _
               times:integer() ++ _
@@ -24,12 +27,30 @@ peg::parser! {
                     .iter()
                     .zip(distances)
                     .map(|(time, distance)| {
-                        Races {
+                        Race {
                             time: *time,
                             distance,
                         }
                     })
                     .collect()
+                }
+
+        pub rule race_rtfm() -> Race
+            = "Time:"
+              _
+              times:digits() ++ _
+              _
+              "Distance:"
+              _
+              distances:digits() ++ _
+              {?
+                let time = times.join("").parse().or(Err("invalid integer"))?;
+                let distance = distances.join("").parse().or(Err("invalid integer"))?;
+
+                Ok(Race {
+                    time,
+                    distance,
+                })
               }
     }
 }
@@ -49,8 +70,14 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(product_of_ways)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let race = paper::race_rtfm(input.trim()).map_err(|e| format!("bad input: {}", e))?;
+
+    let ways = (0..=race.time)
+        .filter(|hold| ((race.time - hold) * hold) > race.distance)
+        .count();
+
+    Ok(ways)
 }
 
 #[cfg(test)]
@@ -68,6 +95,6 @@ Distance:  9  40  200
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(71503), get_part_two(INPUT));
     }
 }

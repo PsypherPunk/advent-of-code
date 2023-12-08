@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use rayon::iter::{ParallelBridge, ParallelIterator};
+
 pub fn get_part_one(input: &str) -> Result<usize, String> {
     let mut lines = input.trim().lines();
 
@@ -58,6 +60,7 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
     let steps = nodes
         .keys()
         .filter(|node| node.ends_with('A'))
+        .par_bridge()
         .map(|ghost| {
             let instructions = instructions.chars().cycle();
 
@@ -81,7 +84,7 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
                 })
                 .count()
         })
-        .fold(1, num_integer::lcm);
+        .reduce(|| 1, num_integer::lcm);
 
     Ok(steps)
 }

@@ -11,7 +11,7 @@ fn main() -> Result<(), String> {
     );
 
     println!(
-        "{}",
+        "How many steps does it take before you're only on nodes that end with Z? {}",
         get_part_two(&input)?,
     );
 

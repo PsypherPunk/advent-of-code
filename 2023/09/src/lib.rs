@@ -1,5 +1,7 @@
 use std::collections::BTreeSet;
 
+use rayon::iter::{ParallelBridge, ParallelIterator};
+
 fn extrapolate(history: Vec<isize>) -> Result<isize, String> {
     let values = history.iter().copied().collect::<BTreeSet<_>>();
 
@@ -29,6 +31,7 @@ pub fn get_part_one(input: &str) -> Result<isize, String> {
     let sum = input
         .trim()
         .lines()
+        .par_bridge()
         .map(|line| {
             let history = line
                 .split_ascii_whitespace()
@@ -48,11 +51,12 @@ pub fn get_part_two(input: &str) -> Result<isize, String> {
     let sum = input
         .trim()
         .lines()
+        .par_bridge()
         .map(|line| {
             let history = line
                 .split_ascii_whitespace()
-                .map(|n| n.parse::<isize>().map_err(|e| e.to_string()))
                 .rev()
+                .map(|n| n.parse::<isize>().map_err(|e| e.to_string()))
                 .collect::<Result<Vec<_>, _>>()?;
 
             extrapolate(history)

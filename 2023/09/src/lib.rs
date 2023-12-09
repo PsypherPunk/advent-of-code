@@ -44,8 +44,24 @@ pub fn get_part_one(input: &str) -> Result<isize, String> {
     Ok(sum)
 }
 
-pub fn get_part_two(_input: &str) -> Result<isize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<isize, String> {
+    let sum = input
+        .trim()
+        .lines()
+        .map(|line| {
+            let history = line
+                .split_ascii_whitespace()
+                .map(|n| n.parse::<isize>().map_err(|e| e.to_string()))
+                .rev()
+                .collect::<Result<Vec<_>, _>>()?;
+
+            extrapolate(history)
+        })
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
+        .sum();
+
+    Ok(sum)
 }
 
 #[cfg(test)]

@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "How many tiles are enclosed by the loop? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

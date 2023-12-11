@@ -12,7 +12,7 @@ fn main() -> Result<(), String> {
 
     println!(
         "What is the sum of these lengths? {}",
-        get_part_two(&input)?,
+        get_part_two(&input, 1000000)?,
     );
 
     Ok(())

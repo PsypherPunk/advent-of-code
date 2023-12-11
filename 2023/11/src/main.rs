@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "What is the sum of these lengths? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

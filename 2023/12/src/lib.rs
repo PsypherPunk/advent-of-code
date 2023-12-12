@@ -1,3 +1,5 @@
+use rayon::iter::ParallelIterator;
+use rayon::str::ParallelString;
 use std::collections::BTreeMap;
 
 fn count_the_ways(
@@ -89,8 +91,31 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(ways.iter().sum())
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let ways = input
+        .trim()
+        .par_lines()
+        .map(|line| {
+            let (springs, sizes) = line
+                .split_once(' ')
+                .ok_or(format!("bad input: {}", input))?;
+            let sizes = sizes
+                .split(',')
+                .map(|size| size.parse::<usize>())
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| e.to_string())?;
+
+            let springs = (0..5).map(|_| springs).collect::<Vec<_>>().join("?");
+            let springs = springs.as_bytes();
+            let sizes = (0..5).flat_map(|_| &sizes).copied().collect::<Vec<_>>();
+
+            let mut cache = BTreeMap::new();
+
+            Ok::<usize, String>(count_the_ways(&mut cache, springs, None, &sizes))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(ways.iter().sum())
 }
 
 #[cfg(test)]
@@ -112,6 +137,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(525152), get_part_two(INPUT));
     }
 }

@@ -7,7 +7,10 @@ fn main() -> Result<(), String> {
 
     println!("What is the sum of those counts? {}", get_part_one(&input)?);
 
-    println!("{}", get_part_two(&input)?);
+    println!(
+        "…what is the new sum of possible arrangement counts? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

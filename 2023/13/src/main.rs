@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "What number do you get after summarizing the new reflection line in each pattern in your notes? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

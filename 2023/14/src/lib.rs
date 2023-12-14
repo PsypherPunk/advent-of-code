@@ -1,33 +1,40 @@
 use std::collections::BTreeMap;
+use std::mem;
 
-// TODO: this is horrible; do better.
 fn tilt_north(positions: &mut Vec<Vec<u8>>) {
-    let mut done = false;
-
-    while !done {
-        done = true;
-        for y in 0..positions.len() - 1 {
-            for x in 0..positions[0].len() {
-                if positions[y + 1][x] == b'O' && positions[y][x] == b'.' {
-                    positions[y][x] = b'O';
-                    positions[y + 1][x] = b'.';
-                    done = false;
+    (0..(positions.len() - 1)).for_each(|y| {
+        (0..positions[0].len()).for_each(|x| {
+            if positions[y][x] == b'.'
+                && (y == 0 || (positions[y - 1][x] == b'#' || positions[y - 1][x] == b'O'))
+            {
+                if let Some((ty, b'O')) =
+                    ((y + 1)..positions.len()).find_map(|ty| match positions[ty][x] {
+                        b'#' => Some((ty, b'#')),
+                        b'O' => Some((ty, b'O')),
+                        _ => None,
+                    })
+                {
+                    let (a, b) = positions.split_at_mut(ty);
+                    mem::swap(&mut a[y][x], &mut b[0][x]);
                 }
             }
-        }
-    }
+        });
+    });
 }
 
-fn rotate_clockwise(positions: &Vec<Vec<u8>>) -> Vec<Vec<u8>> {
-    let mut rotated = vec![vec![0; positions.len()]; positions[0].len()];
+fn rotate_clockwise(positions: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
+    (0..positions[0].len())
+        .map(|x| positions.iter().rev().map(|row| row[x]).collect::<Vec<_>>())
+        .collect::<Vec<_>>()
+}
 
-    for y in 0..positions.len() {
-        for (x, row) in rotated.iter_mut().enumerate().take(positions[0].len()) {
-            row[positions.len() - 1 - y] = positions[y][x];
-        }
-    }
-
-    rotated
+#[allow(unused)]
+fn display(positions: &[Vec<u8>]) -> String {
+    positions
+        .iter()
+        .map(|row| row.iter().map(|b| *b as char).collect::<String>())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn total_load(positions: Vec<Vec<u8>>) -> usize {
@@ -68,7 +75,7 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
     for cycle in 1.. {
         for _ in 0..4 {
             tilt_north(&mut positions);
-            positions = rotate_clockwise(&positions);
+            positions = rotate_clockwise(positions);
         }
         if let Some(seen_cycle) = seen.insert(positions.clone(), cycle) {
             if (1000000000 - cycle) % (cycle - seen_cycle) == 0 {

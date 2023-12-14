@@ -11,7 +11,7 @@ fn main() -> Result<(), String> {
     );
 
     println!(
-        "{}",
+        "…what is the total load on the north support beams? {}",
         get_part_two(&input)?,
     );
 

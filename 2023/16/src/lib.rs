@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::collections::VecDeque;
 
 #[derive(Clone, Copy)]
@@ -12,6 +13,12 @@ struct Beam {
     x: usize,
     y: usize,
     direction: Direction,
+}
+
+impl Beam {
+    fn new(x: usize, y: usize, direction: Direction) -> Self {
+        Self { x, y, direction }
+    }
 }
 
 fn get_move(beam: Beam) -> Beam {
@@ -29,7 +36,7 @@ fn get_move(beam: Beam) -> Beam {
     }
 }
 
-fn get_energized_tiles(contraption: Vec<Vec<char>>, start: Beam) -> usize {
+fn get_energized_tiles(contraption: &[Vec<char>], start: Beam) -> usize {
     let mut seen = vec![vec![[false; 4]; contraption[0].len()]; contraption.len()];
     let mut beams = VecDeque::new();
     beams.push_back(start);
@@ -110,7 +117,7 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
         .collect::<Vec<_>>();
 
     Ok(get_energized_tiles(
-        contraption,
+        &contraption,
         Beam {
             x: 0,
             y: 0,
@@ -119,8 +126,32 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     ))
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let contraption = input
+        .trim()
+        .lines()
+        .map(|line| line.chars().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+
+    let energized_tiles = (0..contraption.len())
+        .flat_map(|y| {
+            [
+                Beam::new(0, y, Direction::Right),
+                Beam::new(contraption[0].len() - 1, y, Direction::Left),
+            ]
+        })
+        .chain((0..contraption[0].len()).flat_map(|x| {
+            [
+                Beam::new(x, 0, Direction::Down),
+                Beam::new(x, contraption.len() - 1, Direction::Up),
+            ]
+        }))
+        .par_bridge()
+        .map(|start| get_energized_tiles(&contraption, start))
+        .max()
+        .ok_or(format!("couldn't cound energized tiles: {}", input))?;
+
+    Ok(energized_tiles)
 }
 
 #[cfg(test)]
@@ -146,6 +177,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(51), get_part_two(INPUT));
     }
 }

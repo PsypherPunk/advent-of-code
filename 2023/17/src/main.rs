@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "…what is the least heat loss it can incur? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

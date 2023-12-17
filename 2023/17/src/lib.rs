@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BinaryHeap};
 
-fn dfs(map: Vec<Vec<u8>>) -> isize {
+fn dfs(map: Vec<Vec<u8>>, min_blocks: isize, max_blocks: isize) -> isize {
     let mut stack = BinaryHeap::new();
     let mut costs = BTreeMap::new();
 
@@ -13,7 +13,7 @@ fn dfs(map: Vec<Vec<u8>>) -> isize {
 
         if costs
             .get(&(y, x, direction))
-            .is_some_and(|&c| -heat_loss > c)
+            .is_some_and(|&cost| -heat_loss > cost)
         {
             continue;
         }
@@ -23,7 +23,7 @@ fn dfs(map: Vec<Vec<u8>>) -> isize {
                 continue;
             }
             let mut next_cost = -heat_loss;
-            for block in 1..=3 {
+            for block in 1..=max_blocks {
                 let ny = (y as isize + dy * block) as usize;
                 let nx = (x as isize + dx * block) as usize;
                 if ny >= map.len() || nx >= map[0].len() {
@@ -31,7 +31,9 @@ fn dfs(map: Vec<Vec<u8>>) -> isize {
                 }
                 next_cost += (map[ny][nx]) as isize;
                 let key = (ny, nx, (dy, dx));
-                if next_cost < *costs.get(&key).unwrap_or(&(map.len().pow(2) as isize)) {
+                if min_blocks <= block
+                    && next_cost < *costs.get(&key).unwrap_or(&(map.len().pow(2) as isize))
+                {
                     costs.insert(key, next_cost);
                     stack.push((-next_cost, key));
                 }
@@ -54,18 +56,29 @@ pub fn get_part_one(input: &str) -> Result<isize, String> {
         })
         .collect::<Vec<_>>();
 
-    Ok(dfs(map))
+    Ok(dfs(map, 1, 3))
 }
 
-pub fn get_part_two(_input: &str) -> Result<isize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<isize, String> {
+    let map = input
+        .trim()
+        .lines()
+        .map(|line| {
+            line.as_bytes()
+                .iter()
+                .map(|&b| b - b'0')
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+
+    Ok(dfs(map, 4, 10))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const INPUT: &str = r#"2413432311323
+    const ONE: &str = r#"2413432311323
 3215453535623
 3255245654254
 3446585845452
@@ -79,14 +92,21 @@ mod tests {
 2546548887735
 4322674655533
 "#;
+    const TWO: &str = r#"111111111111
+999999999991
+999999999991
+999999999991
+999999999991
+"#;
 
     #[test]
     fn test_part_one() {
-        assert_eq!(Ok(102), get_part_one(INPUT));
+        assert_eq!(Ok(102), get_part_one(ONE));
     }
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(94), get_part_two(ONE));
+        assert_eq!(Ok(71), get_part_two(TWO));
     }
 }

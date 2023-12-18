@@ -1,14 +1,15 @@
-use std::collections::{BTreeMap, BinaryHeap};
+use std::cmp::Reverse;
+use std::collections::{BinaryHeap, HashMap};
 
-fn dfs(map: Vec<Vec<u8>>, min_blocks: isize, max_blocks: isize) -> isize {
+fn dfs(map: Vec<&[u8]>, min_blocks: isize, max_blocks: isize) -> isize {
     let mut stack = BinaryHeap::new();
-    let mut costs = BTreeMap::new();
+    let mut costs = HashMap::new();
 
-    stack.push((0, (0, 0, (0, 0))));
+    stack.push((Reverse(0), (0, 0, (0, 0))));
 
-    while let Some((heat_loss, (y, x, direction))) = stack.pop() {
+    while let Some((Reverse(heat_loss), (y, x, direction))) = stack.pop() {
         if (y, x) == (map.len() - 1, map[0].len() - 1) {
-            return -heat_loss;
+            return heat_loss;
         }
 
         if costs
@@ -22,20 +23,21 @@ fn dfs(map: Vec<Vec<u8>>, min_blocks: isize, max_blocks: isize) -> isize {
             if direction == (dy, dx) || direction == (-dy, -dx) {
                 continue;
             }
-            let mut next_cost = -heat_loss;
+            let mut next_cost = heat_loss;
             for block in 1..=max_blocks {
                 let ny = (y as isize + dy * block) as usize;
                 let nx = (x as isize + dx * block) as usize;
                 if ny >= map.len() || nx >= map[0].len() {
                     continue;
                 }
-                next_cost += (map[ny][nx]) as isize;
+                next_cost += (map[ny][nx] - b'0') as isize;
+                if block < min_blocks {
+                    continue;
+                }
                 let key = (ny, nx, (dy, dx));
-                if min_blocks <= block
-                    && next_cost < *costs.get(&key).unwrap_or(&(map.len().pow(2) as isize))
-                {
+                if next_cost < *costs.get(&key).unwrap_or(&isize::MAX) {
                     costs.insert(key, next_cost);
-                    stack.push((-next_cost, key));
+                    stack.push((Reverse(next_cost), key));
                 }
             }
         }
@@ -45,31 +47,13 @@ fn dfs(map: Vec<Vec<u8>>, min_blocks: isize, max_blocks: isize) -> isize {
 }
 
 pub fn get_part_one(input: &str) -> Result<isize, String> {
-    let map = input
-        .trim()
-        .lines()
-        .map(|line| {
-            line.as_bytes()
-                .iter()
-                .map(|&b| b - b'0')
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
+    let map = input.trim().lines().map(str::as_bytes).collect::<Vec<_>>();
 
     Ok(dfs(map, 1, 3))
 }
 
 pub fn get_part_two(input: &str) -> Result<isize, String> {
-    let map = input
-        .trim()
-        .lines()
-        .map(|line| {
-            line.as_bytes()
-                .iter()
-                .map(|&b| b - b'0')
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
+    let map = input.trim().lines().map(str::as_bytes).collect::<Vec<_>>();
 
     Ok(dfs(map, 4, 10))
 }

@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "…how many cubic meters of lava could the lagoon hold? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

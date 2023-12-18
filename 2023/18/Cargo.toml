@@ -1,0 +1,17 @@
+[package]
+name = "day18"
+version = "0.1.0"
+authors = ["PsypherPunk <psypherpunk@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+itertools = "^0.12"
+
+[dev-dependencies]
+criterion = "^0.5"
+
+[[bench]]
+name = "day18"
+harness = false

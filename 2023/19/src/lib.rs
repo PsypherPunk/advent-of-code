@@ -142,7 +142,7 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     let ratings = parts
         .iter()
         .filter(|part| {
-            // TODO: there must be a nice way to do this…?!
+            // TODO: there must be a nicer way to do this…?!
             let mut label = "in";
             while label != "A" && label != "R" {
                 label = workflows.get(&label).unwrap().perform(part);
@@ -155,8 +155,55 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(ratings)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+fn get_combinations(
+    workflows: &HashMap<&str, Workflow>,
+    label: &str,
+    mut part_ranges: Vec<Vec<usize>>,
+) -> Result<usize, String> {
+    if label == "A" {
+        return Ok(part_ranges
+            .iter()
+            .map(|categories| categories.len())
+            .product());
+    }
+
+    if label == "R" {
+        return Ok(0);
+    }
+
+    let workflow = workflows
+        .get(label)
+        .ok_or(format!("bad label: {}", label))?;
+
+    let combinations = workflow
+        .rules
+        .iter()
+        .map(|rule| {
+            let mut new_part_ranges = part_ranges.clone();
+
+            // TODO: work with ranges, not entire lists.
+            (new_part_ranges[rule.category], part_ranges[rule.category]) = part_ranges
+                [rule.category]
+                .iter()
+                .partition(|&part_range| rule.operation.matches(*part_range, rule.value));
+
+            get_combinations(workflows, rule.target, new_part_ranges)
+        })
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
+        .sum::<usize>();
+
+    Ok(combinations + get_combinations(workflows, workflow.otherwise, part_ranges)?)
+}
+
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let (workflows, _) = ratings::input(input.trim()).map_err(|e| e.to_string())?;
+
+    let part_ranges = (0..4)
+        .map(|_| (1..=4000).collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+
+    get_combinations(&workflows, "in", part_ranges)
 }
 
 #[cfg(test)]
@@ -197,6 +244,6 @@ hdj{m>838:A,pv}
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(167409079868000), get_part_two(INPUT));
     }
 }

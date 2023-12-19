@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "How many distinct combinations of ratings will be accepted by the Elves' workflows? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

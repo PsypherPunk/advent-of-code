@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "…what is the fewest number of button presses required to deliver a single low pulse to the module named rx? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

@@ -13,23 +13,23 @@ enum Type<'a> {
 
 struct Module<'a> {
     r#type: Type<'a>,
-    outputs: Vec<&'a str>,
+    destinations: Vec<&'a str>,
 }
 
-fn from_str(input: &str) -> (Vec<&str>, HashMap<&str, Module>) {
+fn from_str(input: &str) -> Result<(Vec<&str>, HashMap<&str, Module>), String> {
     let broadcaster_targets = input
         .lines()
         .find_map(|line| {
             line.strip_prefix("broadcaster -> ")
                 .map(|targets| targets.split(", ").collect::<Vec<_>>())
         })
-        .unwrap();
+        .ok_or(format!("couldn't find broadcaster: {}", input))?;
 
     let mut rules = input
         .lines()
         .filter(|line| !line.starts_with("broadcaster"))
         .map(|line| {
-            let (name, outputs) = line[1..].split_once(" -> ").unwrap();
+            let (name, outputs) = line[1..].split_once(" -> ").ok_or(format!("bad line: {}", line))?;
             let outputs = outputs.split(", ").collect::<Vec<_>>();
 
             let kind = match line.chars().next() {
@@ -42,15 +42,15 @@ fn from_str(input: &str) -> (Vec<&str>, HashMap<&str, Module>) {
 
             let module = Module {
                 r#type: kind,
-                outputs,
+                destinations: outputs,
             };
-            (name, module)
+            Ok((name, module))
         })
-        .collect::<HashMap<_, _>>();
+        .collect::<Result<HashMap<_, _>, String>>()?;
 
     let input_to_outputs = rules
         .iter()
-        .map(|(name, module)| (*name, module.outputs.clone()))
+        .map(|(name, module)| (*name, module.destinations.clone()))
         .collect::<Vec<_>>();
 
     for (name, outputs) in input_to_outputs {
@@ -67,7 +67,7 @@ fn from_str(input: &str) -> (Vec<&str>, HashMap<&str, Module>) {
             });
     }
 
-    (broadcaster_targets, rules)
+    Ok((broadcaster_targets, rules))
 }
 
 fn pulsify<'a>(
@@ -106,7 +106,7 @@ fn pulsify<'a>(
     };
     queue.extend(
         module
-            .outputs
+            .destinations
             .iter()
             .map(|target| (*target, name, pulse_type)),
     );
@@ -115,7 +115,7 @@ fn pulsify<'a>(
 }
 
 pub fn get_part_one(input: &str) -> Result<usize, String> {
-    let (broadcaster_targets, mut modules) = from_str(input);
+    let (broadcaster_targets, mut modules) = from_str(input)?;
     let mut low_pulses = 1000;
     let mut high_pulses = 0;
     let mut queue = VecDeque::new();
@@ -139,8 +139,60 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(low_pulses * high_pulses)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let (broadcaster_targets, mut rules) = from_str(input)?;
+
+    let rx_sender = rules
+        .iter()
+        .find_map(|(name, module)| module.destinations.contains(&"rx").then_some(*name))
+        .ok_or("couldn't find senders to rx".to_owned())?;
+
+    let rx_sender_senders = {
+        let module = &rules[rx_sender];
+        let Type::Conjunction { last_pulses } = &module.r#type else {
+            unreachable!();
+        };
+        last_pulses
+            .iter()
+            .map(|(input, _pulse)| *input)
+            .collect::<Vec<_>>()
+    };
+
+    let mut button_pushes = rx_sender_senders.iter().map(|_| None).collect::<Vec<_>>();
+
+    let mut pushes = 1;
+    let mut queue = VecDeque::new();
+    while button_pushes.iter().any(Option::is_none) {
+        queue.extend(
+            broadcaster_targets
+                .iter()
+                .map(|target| (*target, "broadcaster", Pulse::Low)),
+        );
+
+        while let Some((name, parent_name, pulse)) = queue.pop_front() {
+            pulsify(&mut queue, &mut rules, name, parent_name, pulse)?;
+            if name == rx_sender {
+                let sender = rx_sender_senders
+                    .iter()
+                    .position(|input| input == &parent_name)
+                    .ok_or("couldn't find rx sender".to_owned())?;
+
+                if button_pushes[sender].is_none() && pulse == Pulse::High {
+                    button_pushes[sender] = Some(pushes);
+                }
+            }
+        }
+
+        pushes += 1;
+    }
+
+    let fewest = button_pushes
+        .into_iter()
+        .flatten()
+        .reduce(num_integer::lcm)
+        .ok_or("couldn't find fewest".to_owned())?;
+
+    Ok(fewest)
 }
 
 #[cfg(test)]
@@ -164,10 +216,5 @@ mod tests {
     fn test_part_one() {
         assert_eq!(Ok(32000000), get_part_one(ONE));
         assert_eq!(Ok(11687500), get_part_one(TWO));
-    }
-
-    #[test]
-    fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(ONE));
     }
 }

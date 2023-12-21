@@ -13,7 +13,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("part_two input", |b| {
-        b.iter(|| get_part_two(black_box(&input)))
+        b.iter(|| get_part_two(black_box(&input), black_box(26501365)))
     });
 }
 

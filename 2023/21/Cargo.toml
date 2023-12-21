@@ -10,6 +10,7 @@ edition = "2021"
 
 [dev-dependencies]
 criterion = "^0.5"
+parameterized = "^1.1"
 
 [[bench]]
 name = "day21"

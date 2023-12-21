@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input, 64)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "…how many garden plots could the Elf reach in exactly 26501365 steps? {}",
+        get_part_two(&input, 26501365)?,
+    );
 
     Ok(())
 }

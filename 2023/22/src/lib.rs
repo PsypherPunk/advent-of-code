@@ -1,4 +1,7 @@
-use std::str::FromStr;
+use std::{
+    collections::{HashSet, VecDeque},
+    str::FromStr,
+};
 
 struct Brick {
     x: (usize, usize),
@@ -79,8 +82,73 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(safe.iter().filter(|&brick| *brick).count())
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let mut bricks = input
+        .trim()
+        .lines()
+        .map(Brick::from_str)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    bricks.sort_unstable_by_key(|brick| brick.z.0);
+
+    for i in 0..bricks.len() {
+        let mut min_z = 1;
+
+        for j in 0..i {
+            if bricks[i].covers(&bricks[j]) {
+                min_z = min_z.max(bricks[j].z.1 + 1);
+            }
+        }
+
+        let height = bricks[i].z.1 - bricks[i].z.0;
+        bricks[i].z.0 = min_z;
+        bricks[i].z.1 = min_z + height;
+    }
+
+    let mut above = vec![Vec::new(); bricks.len()];
+    let mut below = vec![Vec::new(); bricks.len()];
+    for i in 0..bricks.len() {
+        for j in 0..i {
+            if bricks[i].covers(&bricks[j]) && bricks[i].z.0 == bricks[j].z.1 + 1 {
+                above[j].push(i);
+                below[i].push(j);
+            }
+        }
+    }
+
+    let mut safe = vec![true; below.len()];
+    for underneath in &below {
+        if underneath.len() == 1 {
+            safe[underneath[0]] = false;
+        }
+    }
+
+    let mut chained = 0;
+    let mut queue = VecDeque::new();
+    let mut seen = HashSet::new();
+
+    for (start, &safe) in safe.iter().enumerate() {
+        if safe {
+            continue;
+        }
+
+        queue.push_back(start);
+        seen.insert(start);
+
+        while let Some(current) = queue.pop_front() {
+            for &next in &above[current] {
+                if below[next].iter().all(|brick| seen.contains(brick)) && !seen.contains(&next) {
+                    seen.insert(next);
+                    chained += 1;
+                    queue.push_back(next);
+                }
+            }
+        }
+
+        seen.clear();
+    }
+
+    Ok(chained)
 }
 
 #[cfg(test)]
@@ -103,6 +171,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(7), get_part_two(INPUT));
     }
 }

@@ -1,14 +1,18 @@
-use pathfinding::prelude::Matrix;
-use std::collections::HashSet;
+// TODO: ditch pathfinding; more trouble than its worth.
+use pathfinding::prelude::{bfs, Grid, Matrix};
+use std::collections::{HashMap, HashSet};
+
+// TODO: this is horrid.
+type PathDistances = HashMap<(usize, usize), HashSet<((usize, usize), usize)>>;
 
 fn go_hiking(
     trails: &Matrix<&u8>,
     tile: (usize, usize),
     distance: usize,
     seen: &mut HashSet<(usize, usize)>,
-) -> Result<usize, String> {
+) -> usize {
     if tile.0 == trails.rows - 1 {
-        return Ok(distance);
+        return distance;
     }
 
     seen.insert(tile);
@@ -28,7 +32,34 @@ fn go_hiking(
         .into_iter()
         .map(|neighbour| go_hiking(trails, neighbour, distance + 1, seen))
         .max()
-        .unwrap_or(Ok(0));
+        .unwrap_or(0);
+
+    seen.remove(&tile);
+
+    distance
+}
+
+fn go_hiking_again(
+    trails: &Grid,
+    proximity: &PathDistances,
+    tile: (usize, usize),
+    distance: usize,
+    seen: &mut HashSet<(usize, usize)>,
+) -> usize {
+    if tile.1 == trails.height - 1 {
+        return distance;
+    }
+
+    seen.insert(tile);
+
+    let distance = proximity[&tile]
+        .iter()
+        .filter(|(n, _)| !seen.contains(n))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .map(|(neighbour, c)| go_hiking_again(trails, proximity, *neighbour, distance + c, seen))
+        .max()
+        .unwrap_or(0);
 
     seen.remove(&tile);
 
@@ -42,13 +73,57 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
         .map(str::as_bytes)
         .collect::<Matrix<_>>();
 
-    let hike = go_hiking(&trails, (0, 1), 0, &mut HashSet::new())?;
+    let hike = go_hiking(&trails, (0, 1), 0, &mut HashSet::new());
 
     Ok(hike)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let trails = input
+        .trim()
+        .lines()
+        .map(str::as_bytes)
+        .collect::<Matrix<_>>();
+    let trails: Grid = trails.map(|b| *b != b'#').into();
+
+    let junctions = trails
+        .iter()
+        .filter(|&n| trails.neighbours(n).len() != 2)
+        .collect::<HashSet<_>>();
+
+    let mut neighbours: PathDistances = HashMap::new();
+
+    for &junction in &junctions {
+        for next in trails.neighbours(junction) {
+            neighbours.entry(junction).or_default().insert((next, 1));
+            neighbours.entry(next).or_default().insert((junction, 1));
+            if let Some(path) = bfs(
+                &next,
+                |tile| {
+                    trails
+                        .neighbours(*tile)
+                        .into_iter()
+                        .filter(|n| !junctions.contains(n))
+                },
+                |tile| {
+                    *tile != next
+                        && trails
+                            .neighbours(*tile)
+                            .into_iter()
+                            .any(|tile| junctions.contains(&tile))
+                },
+            ) {
+                let end = path
+                    .last()
+                    .ok_or(format!("couldn't find end of path: {:?}", path))?;
+                let distance = path.len() - 1;
+                neighbours.entry(next).or_default().insert((*end, distance));
+            }
+        }
+    }
+    let hike = go_hiking_again(&trails, &neighbours, (1, 0), 0, &mut HashSet::new());
+
+    Ok(hike)
 }
 
 #[cfg(test)]
@@ -87,6 +162,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(154), get_part_two(INPUT));
     }
 }

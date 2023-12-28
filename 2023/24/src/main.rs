@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input, 200_000_000_000_000.0, 400_000_000_000_000.0)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "What do you get if you add up the X, Y, and Z coordinates of that initial position? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

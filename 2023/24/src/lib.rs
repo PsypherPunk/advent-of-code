@@ -1,3 +1,6 @@
+use ndarray::prelude::*;
+use ndarray_linalg::Solve;
+
 type Position = (isize, isize, isize);
 type Velocity = (isize, isize, isize);
 type Hailstone = (Position, Velocity);
@@ -78,8 +81,72 @@ pub fn get_part_one(input: &str, min: f64, max: f64) -> Result<usize, String> {
     Ok(intersections)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+fn possible(dimension: Vec<(isize, isize)>) -> Option<isize> {
+    let min = dimension.iter().min_by_key(|(_, dx)| dx)?.1;
+    let max: isize = dimension.iter().max_by_key(|(_, dx)| dx)?.1;
+
+    let mut possible = vec![true; (max - min + 1) as usize];
+
+    for (i, (a, da)) in dimension.iter().enumerate() {
+        for (b, db) in dimension.iter().skip(i) {
+            if da == db {
+                let dist = a.abs_diff(*b) as isize;
+                for (i, s) in possible.iter_mut().enumerate() {
+                    let ss = i as isize + min - db;
+                    if ss != 0 && *s && dist % ss != 0 {
+                        *s = false;
+                    }
+                }
+            }
+        }
+    }
+
+    Some(possible.into_iter().position(|s| s)? as isize + min)
+}
+
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let hailstones = trajectories::hailstones(input.trim()).map_err(|e| e.to_string())?;
+
+    let x = possible(
+        hailstones
+            .iter()
+            .map(|((x, _, _), (dx, _, _))| (*x, *dx))
+            .collect(),
+    )
+    .ok_or("could not determine x".to_owned())? as f64;
+    let y = possible(
+        hailstones
+            .iter()
+            .map(|((_, y, _), (_, dy, _))| (*y, *dy))
+            .collect(),
+    )
+    .ok_or("could not determine y".to_owned())? as f64;
+    let z = possible(
+        hailstones
+            .iter()
+            .map(|((_, _, z), (_, _, dz))| (*z, *dz))
+            .collect(),
+    )
+    .ok_or("could not determine z".to_owned())? as f64;
+
+    let a: Array2<f64> = array![
+        [1.0, 0.0, 0.0, x - hailstones[0].1 .0 as f64, 0.0],
+        [0.0, 1.0, 0.0, y - hailstones[0].1 .1 as f64, 0.0],
+        [0.0, 0.0, 1.0, z - hailstones[0].1 .2 as f64, 0.0],
+        [1.0, 0.0, 0.0, 0.0, x - hailstones[1].1 .0 as f64],
+        [0.0, 1.0, 0.0, 0.0, y - hailstones[1].1 .1 as f64]
+    ];
+
+    let b: Array1<f64> = array![
+        hailstones[0].0 .0 as f64,
+        hailstones[0].0 .1 as f64,
+        hailstones[0].0 .2 as f64,
+        hailstones[1].0 .0 as f64,
+        hailstones[1].0 .1 as f64
+    ];
+    let solution = a.solve_into(b).map_err(|e| e.to_string())?;
+
+    Ok((solution[0] + solution[1] + solution[2]).round() as usize)
 }
 
 #[cfg(test)]
@@ -100,6 +167,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(47), get_part_two(INPUT));
     }
 }

@@ -9,7 +9,13 @@ fn criterion_benchmark(c: &mut Criterion) {
     let input = fs::read_to_string("input.txt").expect("Error reading input.txt");
 
     c.bench_function("part_one input", |b| {
-        b.iter(|| get_part_one(black_box(&input)))
+        b.iter(|| {
+            get_part_one(
+                black_box(&input),
+                black_box(200_000_000_000_000.0),
+                black_box(400_000_000_000_000.0),
+            )
+        })
     });
 
     c.bench_function("part_two input", |b| {

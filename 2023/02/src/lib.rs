@@ -7,7 +7,7 @@ struct Set {
 
 struct Game {
     id: usize,
-    sets: Vec<Set>,
+    set: Set,
 }
 
 peg::parser! {
@@ -41,9 +41,19 @@ peg::parser! {
               sets:set() ++ "; "
               _
               {
+                let set = sets
+                    .iter()
+                    .fold(Set::default(), |acc, set| {
+                        Set {
+                            red: acc.red.max(set.red),
+                            green: acc.green.max(set.green),
+                            blue: acc.blue.max(set.blue),
+                        }
+                    });
+
                 Game {
                     id,
-                    sets,
+                    set,
                 }
               }
 
@@ -60,14 +70,7 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
         .map_err(|e| e.to_string())?
         .iter()
         .filter_map(|game| {
-            match game
-                .sets
-                .iter()
-                .find(|set| set.red > 12 || set.green > 13 || set.blue > 14)
-            {
-                Some(_) => None,
-                None => Some(game.id),
-            }
+            (game.set.red <= 12 && game.set.green <= 13 && game.set.blue <= 14).then_some(game.id)
         })
         .sum())
 }
@@ -76,17 +79,7 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
     Ok(game::games(input)
         .map_err(|e| e.to_string())?
         .iter()
-        .map(|game| {
-            let minimal = game.sets.iter().fold(Set::default(), |acc, set| Set {
-                red: acc.red.max(set.red),
-                green: acc.green.max(set.green),
-                blue: acc.blue.max(set.blue),
-            });
-
-            Ok(minimal.red * minimal.green * minimal.blue)
-        })
-        .collect::<Result<Vec<_>, String>>()?
-        .iter()
+        .map(|game| game.set.red * game.set.green * game.set.blue)
         .sum())
 }
 

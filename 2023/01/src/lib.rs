@@ -7,13 +7,12 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
         .trim()
         .lines()
         .map(|line| {
-            let digits = line
-                .chars()
-                .filter(|c| c.is_ascii_digit())
-                .collect::<Vec<_>>();
-            match (digits.first(), digits.last()) {
+            let first = line.bytes().find(u8::is_ascii_digit);
+            let last = line.bytes().rfind(u8::is_ascii_digit);
+
+            match (first, last) {
                 (Some(first), Some(last)) => {
-                    Ok(((*first as usize - 48) * 10) + (*last as usize - 48))
+                    Ok(((first as usize - 48) * 10) + (last as usize - 48))
                 }
                 _ => Err(format!("invalid line: {}", line)),
             }
@@ -28,25 +27,33 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
         .trim()
         .lines()
         .map(|line| {
-            let digits = line
-                .char_indices()
-                .filter_map(|(position, c)| {
-                    match NUMBERS.iter().enumerate().find_map(|(i, number)| {
-                        match line[position..].starts_with(number) {
-                            true => Some(i + 1),
+            let first = line.char_indices().find_map(|(i, c)| {
+                if c.is_ascii_digit() {
+                    c.to_digit(10)
+                } else {
+                    NUMBERS.iter().enumerate().find_map(|(n, number)| {
+                        match line[i..].starts_with(number) {
+                            true => Some((n as u32) + 1),
                             false => None,
                         }
-                    }) {
-                        Some(number) => Some(number),
-                        None => match c.is_ascii_digit() {
-                            true => Some(c as usize - 48),
+                    })
+                }
+            });
+            let last = line.char_indices().rev().find_map(|(i, c)| {
+                if c.is_ascii_digit() {
+                    c.to_digit(10)
+                } else {
+                    NUMBERS.iter().enumerate().find_map(|(n, number)| {
+                        match line[i..].starts_with(number) {
+                            true => Some((n as u32) + 1),
                             false => None,
-                        },
-                    }
-                })
-                .collect::<Vec<_>>();
-            match (digits.first(), digits.last()) {
-                (Some(first), Some(last)) => Ok((first * 10) + last),
+                        }
+                    })
+                }
+            });
+
+            match (first, last) {
+                (Some(first), Some(last)) => Ok((first as usize * 10) + last as usize),
                 _ => Err(format!("invalid line: {}", line)),
             }
         })

@@ -1,7 +1,7 @@
 #[derive(Debug)]
 enum Position {
     Number(usize, usize),
-    Symbol(usize, usize),
+    Symbol(usize, usize, char),
 }
 
 peg::parser! {
@@ -18,8 +18,8 @@ peg::parser! {
                 }
 
         rule symbol() -> Position
-            = start:position!() $(['=' | '&' | '@' | '+' | '*' | '%' | '/' | '$' | '#' | '-']) end:position!()
-                { Position::Symbol(start, end) }
+            = start:position!() c:$(['=' | '&' | '@' | '+' | '*' | '%' | '/' | '$' | '#' | '-']) end:position!()
+                { Position::Symbol(start, end, c.chars().next().unwrap_or('=')) }
 
         pub rule symbols() -> Vec<Position>
             = _
@@ -31,18 +31,15 @@ peg::parser! {
 
 pub fn get_part_one(input: &str) -> Result<usize, String> {
     let line_length = input
-        .char_indices()
-        .find_map(|(position, c)| match c == '\n' {
-            true => Some(position + 1), // inc. newline char.
-            false => None,
-        })
-        .ok_or_else(|| "no lines?!".to_owned())?;
+        .find(|c| c == '\n')
+        .ok_or_else(|| format!("invalid input: {}", input))?
+        + 1;
     let positions = schematic::symbols(input.trim()).map_err(|e| e.to_string())?;
 
     let part_numbers = positions
         .iter()
         .filter_map(|position| match position {
-            Position::Symbol(n, _) => Some((n % line_length, n / line_length)),
+            Position::Symbol(n, _, _) => Some((n % line_length, n / line_length)),
             _ => None,
         })
         .flat_map(|(sx, sy)| {
@@ -67,18 +64,16 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
 
 pub fn get_part_two(input: &str) -> Result<usize, String> {
     let line_length = input
-        .char_indices()
-        .find_map(|(position, c)| match c == '\n' {
-            true => Some(position + 1), // inc. newline char.
-            false => None,
-        })
-        .ok_or_else(|| "no lines?!".to_owned())?;
+        .find(|c| c == '\n')
+        .ok_or_else(|| format!("invalid input: {}", input))?
+        + 1;
     let positions = schematic::symbols(input.trim()).map_err(|e| e.to_string())?;
 
     let gears = positions
         .iter()
         .filter_map(|position| match position {
-            Position::Symbol(n, _) => Some((n % line_length, n / line_length)),
+            Position::Symbol(n, _, '*') => Some((n % line_length, n / line_length)),
+            Position::Symbol(_, _, _) => None,
             _ => None,
         })
         .map(|(sx, sy)| {
@@ -109,9 +104,9 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
         .collect::<Result<Vec<Vec<_>>, String>>()?
         .iter()
         .map(|part_numbers| part_numbers.iter().product::<usize>())
-        .collect::<Vec<_>>();
+        .sum();
 
-    Ok(gears.iter().sum())
+    Ok(gears)
 }
 
 #[cfg(test)]

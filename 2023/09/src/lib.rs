@@ -1,71 +1,81 @@
-use std::collections::BTreeSet;
-
-use rayon::iter::{ParallelBridge, ParallelIterator};
-
-fn extrapolate(history: Vec<isize>) -> Result<isize, String> {
-    let values = history.iter().copied().collect::<BTreeSet<_>>();
-
-    match values.len() {
-        1 => {
-            let value = values
-                .first()
-                .ok_or(format!("couldn't extrapolate: {:?}", values))?;
-
-            Ok(*value)
-        }
-        _ => {
-            let next = history
-                .windows(2)
-                .map(|pair| pair[1] - pair[0])
-                .collect::<Vec<_>>();
-            let last = history
-                .last()
-                .ok_or(format!("no last number: {:?}", history))?;
-
-            Ok(last + extrapolate(next)?)
-        }
-    }
-}
+//! Can be viewed as a
+//! [binomial coefficient](https://en.wikipedia.org/wiki/Binomial_coefficient)
+//! problem.
+//!
+//! Specifically,
+//! [Pascal's Triangle](https://en.wikipedia.org/wiki/Pascal%27s_triangle) can
+//! be used to simplify things.
 
 pub fn get_part_one(input: &str) -> Result<isize, String> {
-    let sum = input
+    let report = input
         .trim()
         .lines()
-        .par_bridge()
         .map(|line| {
-            let history = line
-                .split_ascii_whitespace()
-                .map(|n| n.parse::<isize>().map_err(|e| e.to_string()))
-                .collect::<Result<Vec<_>, _>>()?;
-
-            extrapolate(history)
+            line.split_ascii_whitespace()
+                .map(|digit| digit.parse::<isize>())
+                .collect::<Result<Vec<_>, _>>()
         })
-        .collect::<Result<Vec<_>, _>>()?
-        .iter()
-        .sum();
+        .collect::<Result<Vec<Vec<_>>, _>>()
+        .map_err(|e| e.to_string())?;
+    let num_values = report.first().ok_or(format!("bad input: {}", input))?.len() as isize;
 
-    Ok(sum)
+    let mut coefficient = 1;
+    let mut triangle = vec![coefficient];
+
+    // TODO: as an iterator?
+    for i in 0..num_values {
+        coefficient = (coefficient * (i - num_values)) / (i + 1);
+        triangle.push(coefficient);
+    }
+
+    let sum = report
+        .iter()
+        .map(|history| {
+            history
+                .iter()
+                .enumerate()
+                .map(|(i, value)| value * triangle[i])
+                .sum::<isize>()
+        })
+        .sum::<isize>();
+
+    Ok(sum.abs())
 }
 
 pub fn get_part_two(input: &str) -> Result<isize, String> {
-    let sum = input
+    let report = input
         .trim()
         .lines()
-        .par_bridge()
         .map(|line| {
-            let history = line
-                .split_ascii_whitespace()
-                .rev()
-                .map(|n| n.parse::<isize>().map_err(|e| e.to_string()))
-                .collect::<Result<Vec<_>, _>>()?;
-
-            extrapolate(history)
+            line.split_ascii_whitespace()
+                .map(|digit| digit.parse::<isize>())
+                .collect::<Result<Vec<_>, _>>()
         })
-        .collect::<Result<Vec<_>, _>>()?
-        .iter()
-        .sum();
+        .collect::<Result<Vec<Vec<_>>, _>>()
+        .map_err(|e| e.to_string())?;
+    let num_values = report.first().ok_or(format!("bad input: {}", input))?.len() as isize;
 
-    Ok(sum)
+    let mut coefficient = 1;
+    let mut triangle = vec![coefficient];
+
+    // TODO: as an iterator?
+    for i in 0..num_values {
+        coefficient = (coefficient * (i - num_values)) / (i + 1);
+        triangle.push(coefficient);
+    }
+
+    let sum = report
+        .iter()
+        .map(|history| {
+            history
+                .iter()
+                .enumerate()
+                .map(|(i, value)| value * triangle[i + 1])
+                .sum::<isize>()
+        })
+        .sum::<isize>();
+
+    Ok(sum.abs())
 }
 
 #[cfg(test)]

@@ -1,212 +1,109 @@
-use std::cmp::Reverse;
-use std::collections::{BTreeSet, BinaryHeap, VecDeque};
+//! Uses the [Shoelace formula](https://en.wikipedia.org/wiki/Shoelace_formula)
+//! and [Pick's theorem](https://en.wikipedia.org/wiki/Pick%27s_theorem).
+use num_complex::Complex;
 
-#[derive(Debug, Default)]
-struct Tile {
-    north: bool,
-    east: bool,
-    south: bool,
-    west: bool,
-    start: bool,
-}
+const UP: Complex<isize> = Complex::new(0, -1);
+const DOWN: Complex<isize> = Complex::new(0, 1);
+const LEFT: Complex<isize> = Complex::new(-1, 0);
+const RIGHT: Complex<isize> = Complex::new(1, 0);
 
-impl From<char> for Tile {
-    fn from(value: char) -> Self {
-        match value {
-            '|' => Self {
-                north: true,
-                south: true,
-                ..Default::default()
-            },
-            '-' => Self {
-                east: true,
-                west: true,
-                ..Default::default()
-            },
-            'L' => Self {
-                north: true,
-                east: true,
-                ..Default::default()
-            },
-            'J' => Self {
-                north: true,
-                west: true,
-                ..Default::default()
-            },
-            '7' => Self {
-                south: true,
-                west: true,
-                ..Default::default()
-            },
-            'F' => Self {
-                south: true,
-                east: true,
-                ..Default::default()
-            },
-            '.' => Default::default(),
-            'S' => Self {
-                start: true,
-                ..Default::default()
-            },
-            _ => panic!("invalid char: {}", value),
-        }
-    }
-}
-
-// TODO: this is crap.
 pub fn get_part_one(input: &str) -> Result<usize, String> {
-    let mut sketch: Vec<Vec<Tile>> = input
+    let sketch = input
         .lines()
-        .map(|s| s.chars().map(|c| c.into()).collect())
-        .collect();
+        .map(|line| line.chars().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
 
     let start = (0..sketch.len())
-        .find_map(|y| (0..sketch[y].len()).find_map(|x| (sketch[y][x].start).then_some((y, x))))
+        .find_map(|y| {
+            (0..sketch[y].len())
+                .find_map(|x| (sketch[y][x] == 'S').then_some(Complex::new(x as isize, y as isize)))
+        })
         .ok_or(format!("no start: {}", input))?;
 
-    sketch[start.0][start.1].north = start.0 > 0 && sketch[start.0 - 1][start.1].south;
-    sketch[start.0][start.1].south =
-        start.0 < sketch.len() - 1 && sketch[start.0 + 1][start.1].north;
-    sketch[start.0][start.1].west = start.1 > 0 && sketch[start.0][start.1 - 1].east;
-    sketch[start.0][start.1].east =
-        start.1 < sketch[start.0].len() - 1 && sketch[start.0][start.1 + 1].west;
+    // TODO: determine?
+    let mut direction = RIGHT;
+    let mut position = start + direction;
+    let mut steps = 1;
 
-    let mut distance = 0;
-    let mut stack = BinaryHeap::new();
-    let mut discovered: BTreeSet<(usize, usize)> = BTreeSet::new();
-    stack.push((Reverse(0), start));
-    while let Some((Reverse(current_distance), (y, x))) = stack.pop() {
-        if !discovered.insert((y, x)) {
-            continue;
+    loop {
+        while sketch[position.im as usize][position.re as usize] == '-'
+            || sketch[position.im as usize][position.re as usize] == '|'
+        {
+            position += direction;
+            steps += 1;
         }
-        distance = distance.max(current_distance);
-        let tile = &sketch[y][x];
-        if tile.north {
-            stack.push((Reverse(current_distance + 1), (y - 1, x)));
-        }
-        if tile.south {
-            stack.push((Reverse(current_distance + 1), (y + 1, x)));
-        }
-        if tile.west {
-            stack.push((Reverse(current_distance + 1), (y, x - 1)));
-        }
-        if tile.east {
-            stack.push((Reverse(current_distance + 1), (y, x + 1)));
-        }
+
+        direction = match sketch[position.im as usize][position.re as usize] {
+            '7' if direction == UP => LEFT,
+            'F' if direction == UP => RIGHT,
+            'J' if direction == DOWN => LEFT,
+            'L' if direction == DOWN => RIGHT,
+            'J' | 'L' => UP,
+            '7' | 'F' => DOWN,
+            _ => break,
+        };
+
+        position += direction;
+        steps += 1;
     }
 
-    Ok(distance)
+    Ok(steps / 2)
 }
 
-pub fn get_part_two(input: &str) -> Result<usize, String> {
-    let mut sketch: Vec<Vec<Tile>> = input
-        .lines()
-        .map(|s| s.chars().map(|c| c.into()).collect())
-        .collect();
+fn determinant(a: Complex<isize>, b: Complex<isize>) -> isize {
+    a.re * b.im - a.im * b.re
+}
 
-    let start = (0..sketch.len())
-        .find_map(|y| (0..sketch[y].len()).find_map(|x| (sketch[y][x].start).then_some((y, x))))
+pub fn get_part_two(input: &str) -> Result<isize, String> {
+    let sketch = input
+        .lines()
+        .map(|line| line.chars().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+
+    let mut corner = (0..sketch.len())
+        .find_map(|y| {
+            (0..sketch[y].len())
+                .find_map(|x| (sketch[y][x] == 'S').then_some(Complex::new(x as isize, y as isize)))
+        })
         .ok_or(format!("no start: {}", input))?;
 
-    sketch[start.0][start.1].north = start.0 > 0 && sketch[start.0 - 1][start.1].south;
-    sketch[start.0][start.1].south =
-        start.0 < sketch.len() - 1 && sketch[start.0 + 1][start.1].north;
-    sketch[start.0][start.1].west = start.1 > 0 && sketch[start.0][start.1 - 1].east;
-    sketch[start.0][start.1].east =
-        start.1 < sketch[start.0].len() - 1 && sketch[start.0][start.1 + 1].west;
+    // TODO: true for tests/input but universally…?
+    let mut direction = match sketch[(corner + RIGHT).im as usize][(corner + RIGHT).re as usize] {
+        'F' => DOWN,
+        _ => RIGHT,
+    };
+    let mut position = corner + direction;
+    let mut area = 0;
+    let mut steps = 1;
 
-    let mut stack = BinaryHeap::new();
-    let mut discovered = BTreeSet::new();
-    stack.push((Reverse(0), start));
-    while let Some((Reverse(current_distance), (y, x))) = stack.pop() {
-        if !discovered.insert((y, x)) {
-            continue;
+    loop {
+        while sketch[position.im as usize][position.re as usize] == '-'
+            || sketch[position.im as usize][position.re as usize] == '|'
+        {
+            position += direction;
+            steps += 1;
         }
-        let tile = &sketch[y][x];
-        if tile.north {
-            stack.push((Reverse(current_distance + 1), (y - 1, x)));
-        }
-        if tile.south {
-            stack.push((Reverse(current_distance + 1), (y + 1, x)));
-        }
-        if tile.west {
-            stack.push((Reverse(current_distance + 1), (y, x - 1)));
-        }
-        if tile.east {
-            stack.push((Reverse(current_distance + 1), (y, x + 1)));
-        }
+
+        direction = match sketch[position.im as usize][position.re as usize] {
+            '7' if direction == UP => LEFT,
+            'F' if direction == UP => RIGHT,
+            'J' if direction == DOWN => LEFT,
+            'L' if direction == DOWN => RIGHT,
+            'J' | 'L' => UP,
+            '7' | 'F' => DOWN,
+            _ => {
+                area += determinant(corner, position);
+                break;
+            }
+        };
+
+        area += determinant(corner, position);
+        corner = position;
+        position += direction;
+        steps += 1;
     }
 
-    let s = match (
-        sketch[start.0][start.1].north,
-        sketch[start.0][start.1].east,
-        sketch[start.0][start.1].south,
-        sketch[start.0][start.1].west,
-    ) {
-        (true, true, false, false) => "L",
-        (true, false, true, false) => "|",
-        (false, true, false, true) => "-",
-        (true, false, false, true) => "J",
-        (false, false, true, true) => "7",
-        (false, true, true, false) => "F",
-        _ => unreachable!(),
-    };
-
-    let enclosed = input
-        .replace("S", s)
-        .trim()
-        .lines()
-        .enumerate()
-        .map(|(y, row)| {
-            let discovered = &discovered;
-            let mut stack = VecDeque::new();
-
-            row.char_indices()
-                .map(move |(x, c)| match discovered.contains(&(y, x)) {
-                    false => stack.len() % 2,
-                    true => {
-                        match c {
-                            '|' => {
-                                stack.push_front(c);
-                            }
-                            'J' => {
-                                match stack.iter().peekable().peek() {
-                                    None => {}
-                                    Some('F') => {
-                                        _ = stack.pop_front();
-                                        stack.push_front('|');
-                                    }
-                                    Some('|') => {}
-                                    _ => {
-                                        _ = stack.pop_front();
-                                    }
-                                };
-                            }
-                            '7' => match stack.iter().peekable().peek() {
-                                None => {}
-                                Some('L') => {
-                                    _ = stack.pop_front();
-                                    stack.push_front('|');
-                                }
-                                Some('|') => {}
-                                _ => {
-                                    _ = stack.pop_front();
-                                }
-                            },
-                            'L' | 'F' => {
-                                stack.push_front(c);
-                            }
-                            _ => {}
-                        };
-
-                        0
-                    }
-                })
-                .sum::<usize>()
-        })
-        .sum::<usize>();
-
-    Ok(enclosed)
+    Ok(area.abs() / 2 - steps / 2 + 1)
 }
 
 #[cfg(test)]

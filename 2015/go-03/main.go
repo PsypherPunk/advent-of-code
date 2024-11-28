@@ -9,23 +9,28 @@ import (
 //go:embed input.txt
 var input string
 
-var dirs = map[rune][2]int{
-	'^': [2]int{0, -1},
-	'v': [2]int{0, 1},
-	'<': [2]int{-1, 0},
-	'>': [2]int{1, 0},
+type coord struct {
+	x int
+	y int
+}
+
+var dirs = map[rune]coord{
+	'^': {0, -1},
+	'v': {0, 1},
+	'<': {-1, 0},
+	'>': {1, 0},
 }
 
 func PartOne(input string) int {
-	houses := map[[2]int]int{[2]int{}: 1}
-	current := [2]int{0, 0}
+	houses := map[coord]int{{}: 1}
+	current := coord{0, 0}
 
 	for _, c := range strings.TrimSuffix(input, "\n") {
 		move := dirs[c]
 
-		current = [2]int{
-			current[0] + move[0],
-			current[1] + move[1],
+		current = coord{
+			current.x + move.x,
+			current.y + move.y,
 		}
 
 		houses[current]++
@@ -35,24 +40,24 @@ func PartOne(input string) int {
 }
 
 func PartTwo(input string) int {
-	houses := map[[2]int]int{[2]int{}: 1}
-	santa := [2]int{0, 0}
-	roboSanta := [2]int{0, 0}
+	houses := map[coord]int{{}: 1}
+	santa := coord{0, 0}
+	roboSanta := coord{0, 0}
 
 	for i, c := range strings.TrimSuffix(input, "\n") {
 		move := dirs[c]
 
 		if i%2 == 0 {
-			santa = [2]int{
-				santa[0] + move[0],
-				santa[1] + move[1],
+			santa = coord{
+				santa.x + move.x,
+				santa.y + move.y,
 			}
 
 			houses[santa]++
 		} else {
-			roboSanta = [2]int{
-				roboSanta[0] + move[0],
-				roboSanta[1] + move[1],
+			roboSanta = coord{
+				roboSanta.x + move.x,
+				roboSanta.y + move.y,
 			}
 
 			houses[roboSanta]++

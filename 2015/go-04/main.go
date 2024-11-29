@@ -12,13 +12,14 @@ var input string
 
 func PartOne(input string) int {
 	secretKey := strings.TrimSpace(input)
+	prefix := strings.Repeat("0", 5)
 
 	number := 0
 	for {
 		hashInput := fmt.Sprintf("%s%d", secretKey, number)
 		hash := md5.Sum([]byte(hashInput))
 
-		if strings.HasPrefix(fmt.Sprintf("%x", hash), strings.Repeat("0", 5)) {
+		if strings.HasPrefix(fmt.Sprintf("%x", hash), prefix) {
 			break
 		}
 
@@ -30,13 +31,14 @@ func PartOne(input string) int {
 
 func PartTwo(input string) int {
 	secretKey := strings.TrimSpace(input)
+	prefix := strings.Repeat("0", 6)
 
 	number := 0
 	for {
 		hashInput := fmt.Sprintf("%s%d", secretKey, number)
 		hash := md5.Sum([]byte(hashInput))
 
-		if strings.HasPrefix(fmt.Sprintf("%x", hash), strings.Repeat("0", 6)) {
+		if strings.HasPrefix(fmt.Sprintf("%x", hash), prefix) {
 			break
 		}
 

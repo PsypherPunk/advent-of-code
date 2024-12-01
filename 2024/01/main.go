@@ -49,9 +49,34 @@ func PartOne(input string) int {
 }
 
 func PartTwo(input string) int {
-	return 0
+	var left []int
+	right := make(map[int]int)
+
+	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(input)))
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Fields(line)
+		a, errA := strconv.Atoi(parts[0])
+		b, errB := strconv.Atoi(parts[1])
+		if errA != nil || errB != nil {
+			fmt.Println("Invalid line:", line, errA, errB)
+			continue
+		}
+
+		left = append(left, a)
+		right[b]++
+	}
+
+	similarity := 0
+	for _, l := range left {
+		similarity += l * right[l]
+	}
+
+	return similarity
 }
 
 func main() {
 	fmt.Println("What is the total distance between your lists?", PartOne(input))
+
+	fmt.Println("What is their similarity score?", PartTwo(input))
 }

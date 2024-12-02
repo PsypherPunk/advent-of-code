@@ -3,7 +3,6 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"strings"
 )
 
 //go:embed input.txt
@@ -25,7 +24,7 @@ func PartOne(input string) int {
 	houses := map[coord]int{{}: 1}
 	current := coord{0, 0}
 
-	for _, c := range strings.TrimSuffix(input, "\n") {
+	for _, c := range input {
 		move := dirs[c]
 
 		current = coord{
@@ -44,7 +43,7 @@ func PartTwo(input string) int {
 	santa := coord{0, 0}
 	roboSanta := coord{0, 0}
 
-	for i, c := range strings.TrimSuffix(input, "\n") {
+	for i, c := range input {
 		move := dirs[c]
 
 		if i%2 == 0 {

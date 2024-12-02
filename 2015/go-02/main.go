@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	_ "embed"
 	"fmt"
 	"slices"
@@ -13,7 +14,9 @@ var input string
 func PartOne(input string) int {
 	var feet int
 
-	for _, line := range strings.Split(strings.TrimSuffix(input, "\n"), "\n") {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	for scanner.Scan() {
+		line := scanner.Text()
 		var l, w, h int
 
 		_, err := fmt.Sscanf(line, "%dx%dx%d", &l, &w, &h)
@@ -37,7 +40,9 @@ func PartOne(input string) int {
 func PartTwo(input string) int {
 	var feet int
 
-	for _, line := range strings.Split(strings.TrimSuffix(input, "\n"), "\n") {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	for scanner.Scan() {
+		line := scanner.Text()
 		var l, w, h int
 
 		_, err := fmt.Sscanf(line, "%dx%dx%d", &l, &w, &h)

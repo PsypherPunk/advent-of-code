@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	_ "embed"
 	"fmt"
 	"strings"
@@ -78,8 +79,9 @@ func IsNiceButBetter(line string) bool {
 func PartOne(input string) int {
 	niceCount := 0
 
-	for _, line := range strings.Split(strings.TrimSpace(input), "\n") {
-		if IsNice(line) {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	for scanner.Scan() {
+		if IsNice(scanner.Text()) {
 			niceCount++
 		}
 	}
@@ -90,8 +92,9 @@ func PartOne(input string) int {
 func PartTwo(input string) int {
 	niceCount := 0
 
-	for _, line := range strings.Split(strings.TrimSpace(input), "\n") {
-		if IsNiceButBetter(line) {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	for scanner.Scan() {
+		if IsNiceButBetter(scanner.Text()) {
 			niceCount++
 		}
 	}

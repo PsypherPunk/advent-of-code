@@ -25,7 +25,9 @@ func Test_PartTwo(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected int
-	}{}
+	}{
+		{"xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))", 48},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {

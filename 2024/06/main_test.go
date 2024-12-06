@@ -34,7 +34,18 @@ func Test_PartTwo(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected int
-	}{}
+	}{
+		{`....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#...`, 6},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 //go:embed input.txt
@@ -77,29 +78,46 @@ func PartOne(input string) int {
 func PartTwo(input string) int {
 	scanner := bufio.NewScanner(strings.NewReader(input))
 
+	channel := make(chan int)
+	var wg sync.WaitGroup
+
 	totalCalibrationResult := 0
 	for scanner.Scan() {
 		line := scanner.Text()
+		wg.Add(1)
 
-		testValueNumbers := strings.SplitN(line, ":", 2)
-		testValue, err := strconv.Atoi(testValueNumbers[0])
-		if err != nil {
-			fmt.Println("invalid line:", line, err)
-		}
+		go func(line string, c chan int) {
+			defer wg.Done()
 
-		stringNumbers := strings.Fields(testValueNumbers[1])
-		numbers := make([]int, len(stringNumbers), len(stringNumbers))
-		for i, stringNumber := range stringNumbers {
-			number, err := strconv.Atoi(stringNumber)
+			testValueNumbers := strings.SplitN(line, ":", 2)
+			testValue, err := strconv.Atoi(testValueNumbers[0])
 			if err != nil {
-				fmt.Println("invalid line", line, err)
+				fmt.Println("invalid line:", line, err)
 			}
-			numbers[i] = number
-		}
 
-		if IsStillValid(testValue, numbers, 1, numbers[0]) {
-			totalCalibrationResult += testValue
-		}
+			stringNumbers := strings.Fields(testValueNumbers[1])
+			numbers := make([]int, len(stringNumbers), len(stringNumbers))
+			for i, stringNumber := range stringNumbers {
+				number, err := strconv.Atoi(stringNumber)
+				if err != nil {
+					fmt.Println("invalid line", line, err)
+				}
+				numbers[i] = number
+			}
+
+			if IsStillValid(testValue, numbers, 1, numbers[0]) {
+				c <- testValue
+			}
+		}(line, channel)
+	}
+
+	go func() {
+		wg.Wait()
+		close(channel)
+	}()
+
+	for result := range channel {
+		totalCalibrationResult += result
 	}
 
 	return totalCalibrationResult

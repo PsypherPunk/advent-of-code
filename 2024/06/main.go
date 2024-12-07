@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"strings"
+	"sync"
 )
 
 //go:embed input.txt
@@ -147,28 +148,46 @@ func PartTwo(input string) int {
 	}
 
 	loops := 0
+	channel := make(chan int)
+	var wg sync.WaitGroup
+
 	for step := range guard.steps {
 		// "The new obstruction can't be placed at the guard's starting position…"
 		if step.Eq(start) {
 			continue
 		}
 
-		newGuard := Guard{map[image.Point]image.Point{start: {0, -1}}, start, image.Point{0, -1}}
-		extendedObstructions := make(map[image.Point]bool)
-		for k, v := range obstructions {
-			extendedObstructions[k] = v
-		}
-		extendedObstructions[step] = true
-		for {
-			step := stepInArea(extendedObstructions, &newGuard, maxX, maxY)
-			if step == OutOfMap {
-				break
+		wg.Add(1)
+
+		go func(s image.Point, c chan int) {
+			defer wg.Done()
+
+			newGuard := Guard{map[image.Point]image.Point{start: {0, -1}}, start, image.Point{0, -1}}
+			extendedObstructions := make(map[image.Point]bool)
+			for k, v := range obstructions {
+				extendedObstructions[k] = v
 			}
-			if step == Loop {
-				loops += 1
-				break
+			extendedObstructions[step] = true
+			for {
+				step := stepInArea(extendedObstructions, &newGuard, maxX, maxY)
+				if step == OutOfMap {
+					break
+				}
+				if step == Loop {
+					c <- 1
+					break
+				}
 			}
-		}
+		}(step, channel)
+	}
+
+	go func() {
+		wg.Wait()
+		close(channel)
+	}()
+
+	for result := range channel {
+		loops += result
 	}
 
 	return loops

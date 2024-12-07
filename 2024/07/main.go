@@ -4,6 +4,7 @@ import (
 	"bufio"
 	_ "embed"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -11,6 +12,12 @@ import (
 
 //go:embed input.txt
 var input string
+
+func concatInts(a, b int) int {
+	numDigits := int(math.Log10(float64(b))) + 1
+
+	return a*int(math.Pow(10, float64(numDigits))) + b
+}
 
 func IsValid(testValue int, numbers []int, i int, currentValue int) bool {
 	if i >= len(numbers) {
@@ -33,15 +40,9 @@ func IsStillValid(testValue int, numbers []int, i int, currentValue int) bool {
 		return false
 	}
 
-	nextValue, err := strconv.Atoi(fmt.Sprintf("%d%d", currentValue, numbers[i]))
-	if err != nil {
-		fmt.Println("invalid numbers", numbers)
-		return false
-	}
-
 	return IsStillValid(testValue, numbers, i+1, currentValue+numbers[i]) ||
 		IsStillValid(testValue, numbers, i+1, currentValue*numbers[i]) ||
-		IsStillValid(testValue, numbers, i+1, nextValue)
+		IsStillValid(testValue, numbers, i+1, concatInts(currentValue, numbers[i]))
 }
 
 func PartOne(input string) int {

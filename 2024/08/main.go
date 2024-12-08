@@ -29,6 +29,44 @@ func applyNefariousEffects(a, b image.Point, maxX, maxY int) []image.Point {
 	return antinodes
 }
 
+func applyNefariousEffectsWithResonantHarmonics(a, b image.Point, maxX, maxY int) []image.Point {
+	antinodes := []image.Point{}
+
+	dx := b.X - a.X
+	dy := b.Y - a.Y
+
+	count := 1
+	for {
+		ax := a.X + (dx * count)
+		ay := a.Y + (dy * count)
+
+		if ay >= 0 && ay <= maxY && ax >= 0 && ax <= maxX {
+			antinodes = append(antinodes, image.Point{ax, ay})
+		} else {
+			break
+		}
+		count += 1
+	}
+
+	dx = a.X - b.X
+	dy = a.Y - b.Y
+
+	count = 1
+	for {
+		ax := b.X + (dx * count)
+		ay := b.Y + (dy * count)
+
+		if ay >= 0 && ay <= maxY && ax >= 0 && ax <= maxX {
+			antinodes = append(antinodes, image.Point{ax, ay})
+		} else {
+			break
+		}
+		count += 1
+	}
+
+	return antinodes
+}
+
 func PartOne(input string) int {
 	scanner := bufio.NewScanner(strings.NewReader(input))
 
@@ -72,11 +110,49 @@ func PartOne(input string) int {
 }
 
 func PartTwo(input string) int {
-	return 0
+	scanner := bufio.NewScanner(strings.NewReader(input))
+
+	var maxX, maxY int
+	city := make(map[rune]map[image.Point]bool)
+
+	y := 0
+	for scanner.Scan() {
+		maxY = y
+		for x, r := range scanner.Text() {
+			if r != '.' {
+				_, ok := city[r]
+				if !ok {
+					city[r] = make(map[image.Point]bool)
+				}
+				city[r][image.Point{x, y}] = true
+			}
+			maxX = x
+		}
+		y++
+	}
+
+	antinodes := make(map[image.Point]bool)
+	for _, antennae := range city {
+		points := []image.Point{}
+
+		for point := range antennae {
+			points = append(points, point)
+		}
+
+		for i, a := range points {
+			for _, b := range points[i+1:] {
+				for _, antinode := range applyNefariousEffectsWithResonantHarmonics(a, b, maxX, maxY) {
+					antinodes[antinode] = true
+				}
+			}
+		}
+	}
+
+	return len(antinodes)
 }
 
 func main() {
 	fmt.Println("How many unique locations within the bounds of the map contain an antinode?", PartOne(input))
 
-	fmt.Println("", PartTwo(input))
+	fmt.Println("How many unique locations within the bounds of the map contain an antinode?", PartTwo(input))
 }

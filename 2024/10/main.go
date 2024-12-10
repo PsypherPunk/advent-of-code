@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"strings"
+	"sync"
 )
 
 //go:embed input.txt
@@ -85,11 +86,28 @@ func PartTwo(input string) int {
 		y++
 	}
 
+	ch := make(chan int)
+	var wg sync.WaitGroup
+
 	sumOfScores := 0
 	for position, height := range topographicMap {
 		if height == '0' {
-			sumOfScores += dfsDistinctHikingTrails(topographicMap, position)
+			wg.Add(1)
+			go func(pos image.Point) {
+				defer wg.Done()
+				score := dfsDistinctHikingTrails(topographicMap, pos)
+				ch <- score
+			}(position)
 		}
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for score := range ch {
+		sumOfScores += score
 	}
 
 	return sumOfScores

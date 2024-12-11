@@ -32,8 +32,8 @@ func Blink(stones map[int]int, blinks int) (totalStones int) {
 		stones = next
 	}
 
-	for _, v := range stones {
-		totalStones += v
+	for _, count := range stones {
+		totalStones += count
 	}
 
 	return totalStones
@@ -56,11 +56,23 @@ func PartOne(input string) int {
 }
 
 func PartTwo(input string) int {
-	return 0
+	fields := strings.Fields(input)
+
+	stones := map[int]int{}
+	for _, f := range fields {
+		stone, err := strconv.Atoi(f)
+		if err != nil {
+			fmt.Println("invalid input: ", input)
+			continue
+		}
+		stones[stone]++
+	}
+
+	return Blink(stones, 75)
 }
 
 func main() {
 	fmt.Println("How many stones will you have after blinking 25 times?", PartOne(input))
 
-	fmt.Println("", PartTwo(input))
+	fmt.Println("How many stones would you have after blinking a total of 75 times?", PartTwo(input))
 }

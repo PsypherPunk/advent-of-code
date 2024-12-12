@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"container/list"
 	_ "embed"
 	"fmt"
 	"image"
@@ -14,13 +15,11 @@ var input string
 func PartOne(input string) int {
 	scanner := bufio.NewScanner(strings.NewReader(input))
 	garden := make(map[image.Point]rune)
-	notSeen := make(map[image.Point]bool)
 
 	y := 0
 	for scanner.Scan() {
 		for x, r := range scanner.Text() {
 			garden[image.Point{x, y}] = r
-			notSeen[image.Point{x, y}] = true
 		}
 		y++
 	}
@@ -32,38 +31,36 @@ func PartOne(input string) int {
 		{-1, 0},
 	}
 
+	seen := make(map[image.Point]bool)
 	price := 0
-	for len(notSeen) > 0 {
-		var start image.Point
-		for k := range notSeen {
-			start = k
-			break
+
+	for plot, plant := range garden {
+		if seen[plot] {
+			continue
 		}
-		delete(notSeen, start)
-		plot := garden[start]
+		seen[plot] = true
 
-		stack := []image.Point{start}
 		area, perimeter := 0, 0
-		sides := make(map[[2]image.Point]bool)
+		stack := list.New()
+		stack.PushBack(plot)
 
-		for len(stack) > 0 {
-			currentPlot := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
+		for stack.Len() > 0 {
+			current := stack.Remove(stack.Back()).(image.Point)
 			area++
 			perimeter += 4
 
 			for _, direction := range directions {
-				neighbourPlot := currentPlot.Add(direction)
-				if garden[neighbourPlot] != plot {
-					sides[[2]image.Point{currentPlot, direction}] = true
+				neighbourPlot := current.Add(direction)
+
+				if garden[neighbourPlot] != plant {
 					continue
 				}
 				perimeter--
-				if !notSeen[neighbourPlot] {
+				if seen[neighbourPlot] {
 					continue
 				}
-				delete(notSeen, neighbourPlot)
-				stack = append(stack, neighbourPlot)
+				seen[neighbourPlot] = true
+				stack.PushBack(neighbourPlot)
 			}
 		}
 
@@ -76,13 +73,11 @@ func PartOne(input string) int {
 func PartTwo(input string) int {
 	scanner := bufio.NewScanner(strings.NewReader(input))
 	garden := make(map[image.Point]rune)
-	notSeen := make(map[image.Point]bool)
 
 	y := 0
 	for scanner.Scan() {
 		for x, r := range scanner.Text() {
 			garden[image.Point{x, y}] = r
-			notSeen[image.Point{x, y}] = true
 		}
 		y++
 	}
@@ -94,38 +89,38 @@ func PartTwo(input string) int {
 		{-1, 0},
 	}
 
+	seen := make(map[image.Point]bool)
 	price := 0
-	for len(notSeen) > 0 {
-		var start image.Point
-		for k := range notSeen {
-			start = k
-			break
-		}
-		delete(notSeen, start)
-		plot := garden[start]
 
-		stack := []image.Point{start}
+	for plot, plant := range garden {
+		if seen[plot] {
+			continue
+		}
+		seen[plot] = true
+
 		area, perimeter := 0, 0
 		sides := make(map[[2]image.Point]bool)
+		stack := list.New()
+		stack.PushBack(plot)
 
-		for len(stack) > 0 {
-			currentPlot := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
+		for stack.Len() > 0 {
+			current := stack.Remove(stack.Back()).(image.Point)
 			area++
 			perimeter += 4
 
 			for _, direction := range directions {
-				neighbourPlot := currentPlot.Add(direction)
-				if garden[neighbourPlot] != plot {
-					sides[[2]image.Point{currentPlot, direction}] = true
+				neighbourPlot := current.Add(direction)
+
+				if garden[neighbourPlot] != plant {
+					sides[[2]image.Point{current, direction}] = true
 					continue
 				}
 				perimeter--
-				if !notSeen[neighbourPlot] {
+				if seen[neighbourPlot] {
 					continue
 				}
-				delete(notSeen, neighbourPlot)
-				stack = append(stack, neighbourPlot)
+				seen[neighbourPlot] = true
+				stack.PushBack(neighbourPlot)
 			}
 		}
 

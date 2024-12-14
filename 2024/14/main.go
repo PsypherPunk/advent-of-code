@@ -72,11 +72,58 @@ func PartOne(input string) int {
 }
 
 func PartTwo(input string) int {
-	return 0
+	scanner := bufio.NewScanner(strings.NewReader(input))
+
+	robots := []Robot{}
+
+	for scanner.Scan() {
+		robot := Robot{}
+		fmt.Sscanf(scanner.Text(), "p=%d,%d v=%d,%d", &robot.P.X, &robot.P.Y, &robot.V.X, &robot.V.Y)
+		robots = append(robots, robot)
+	}
+
+	seconds := 1
+	for {
+		easterEgg := true
+		positions := make(map[image.Point]int)
+		for i := range robots {
+			robots[i].runSeconds(1)
+			positions[robots[i].P]++
+		}
+		for _, count := range positions {
+			if count > 1 {
+				easterEgg = false
+				break
+			}
+		}
+		if easterEgg {
+			break
+		}
+		seconds++
+	}
+
+	/*
+		positions := make(map[image.Point]int)
+		for i := range robots {
+			positions[robots[i].P]++
+		}
+		for y := 0; y <= Height; y++ {
+			for x := 0; x <= Width; x++ {
+				if _, ok := positions[image.Point{x, y}]; ok {
+					fmt.Print("█")
+				} else {
+					fmt.Print(".")
+				}
+			}
+			fmt.Println()
+		}
+	*/
+
+	return seconds
 }
 
 func main() {
 	fmt.Println("What will the safety factor be after exactly 100 seconds have elapsed?", PartOne(input))
 
-	fmt.Println("", PartTwo(input))
+	fmt.Println("What is the fewest number of seconds that must elapse for the robots to display the Easter egg?", PartTwo(input))
 }

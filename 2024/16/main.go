@@ -21,6 +21,7 @@ type Reindeer struct {
 }
 
 type ReindeerChoice struct {
+	path     []image.Point
 	reindeer Reindeer
 	score    int
 }
@@ -29,7 +30,13 @@ type ReindeerChoice struct {
 var input string
 
 func reindeerOlympics(maze ReindeerMaze) int {
-	queue := []ReindeerChoice{{Reindeer{maze.start, image.Point{1, 0}}, 0}}
+	queue := []ReindeerChoice{
+		{
+			[]image.Point{},
+			Reindeer{maze.start, image.Point{1, 0}},
+			0,
+		},
+	}
 	seen := make(map[Reindeer]bool)
 
 	for len(queue) > 0 {
@@ -54,6 +61,7 @@ func reindeerOlympics(maze ReindeerMaze) int {
 		next := current.reindeer.position.Add(current.reindeer.direction)
 		if maze.tiles[next] {
 			queue = append(queue, ReindeerChoice{
+				[]image.Point{},
 				Reindeer{
 					next,
 					current.reindeer.direction,
@@ -65,6 +73,7 @@ func reindeerOlympics(maze ReindeerMaze) int {
 
 		queue = append(queue,
 			ReindeerChoice{
+				[]image.Point{},
 				Reindeer{
 					current.reindeer.position,
 					image.Point{current.reindeer.direction.Y, -current.reindeer.direction.X},
@@ -72,6 +81,7 @@ func reindeerOlympics(maze ReindeerMaze) int {
 				current.score + 1000,
 			},
 			ReindeerChoice{
+				[]image.Point{},
 				Reindeer{
 					current.reindeer.position,
 					image.Point{-current.reindeer.direction.Y, current.reindeer.direction.X},
@@ -84,7 +94,77 @@ func reindeerOlympics(maze ReindeerMaze) int {
 	return -1
 }
 
-func PartOne(input string) int {
+func winningPaths(maze ReindeerMaze, winningScore int) [][]image.Point {
+	queue := []ReindeerChoice{
+		{
+			[]image.Point{maze.start},
+			Reindeer{maze.start, image.Point{1, 0}},
+			0,
+		},
+	}
+
+	seen := make(map[Reindeer]int)
+	var paths [][]image.Point
+
+	for len(queue) > 0 {
+		// TODO: container/list?
+		current := queue[0]
+		queue = queue[1:]
+
+		if current.score > winningScore {
+			continue
+		}
+
+		if previousScore, ok := seen[current.reindeer]; ok && previousScore < current.score {
+			continue
+		}
+		seen[current.reindeer] = current.score
+
+		if current.reindeer.position.Eq(maze.end) && current.score == winningScore {
+			paths = append(paths, current.path)
+			continue
+		}
+
+		next := current.reindeer.position.Add(current.reindeer.direction)
+		if maze.tiles[next] {
+			nextPath := make([]image.Point, len(current.path))
+			copy(nextPath, current.path)
+
+			queue = append(queue, ReindeerChoice{
+				append(nextPath, next),
+				Reindeer{
+					next,
+					current.reindeer.direction,
+				},
+				current.score + 1,
+			},
+			)
+		}
+
+		queue = append(queue,
+			ReindeerChoice{
+				current.path,
+				Reindeer{
+					current.reindeer.position,
+					image.Point{current.reindeer.direction.Y, -current.reindeer.direction.X},
+				},
+				current.score + 1000,
+			},
+			ReindeerChoice{
+				current.path,
+				Reindeer{
+					current.reindeer.position,
+					image.Point{-current.reindeer.direction.Y, current.reindeer.direction.X},
+				},
+				current.score + 1000,
+			},
+		)
+	}
+
+	return paths
+}
+
+func readMap(input string) ReindeerMaze {
 	scanner := bufio.NewScanner(strings.NewReader(input))
 
 	var maze ReindeerMaze
@@ -106,15 +186,33 @@ func PartOne(input string) int {
 		y++
 	}
 
+	return maze
+}
+
+func PartOne(input string) int {
+	maze := readMap(input)
+
 	return reindeerOlympics(maze)
 }
 
 func PartTwo(input string) int {
-	return 0
+	maze := readMap(input)
+	lowestScore := reindeerOlympics(maze)
+
+	bestPaths := winningPaths(maze, lowestScore)
+
+	tiles := make(map[image.Point]struct{})
+	for _, path := range bestPaths {
+		for _, tile := range path {
+			tiles[tile] = struct{}{}
+		}
+	}
+
+	return len(tiles)
 }
 
 func main() {
 	fmt.Println("What is the lowest score a Reindeer could possibly get?", PartOne(input))
 
-	fmt.Println("", PartTwo(input))
+	fmt.Println("How many tiles are part of at least one of the best paths through the maze?", PartTwo(input))
 }

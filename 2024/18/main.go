@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"fmt"
 	"image"
-	"strconv"
 	"strings"
 )
 
@@ -59,26 +58,38 @@ func PartOne(input string, fallen int, max int) int {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		bytePosition := strings.Split(line, ",")
-		byteX, errX := strconv.Atoi(bytePosition[0])
-		byteY, errY := strconv.Atoi(bytePosition[1])
-
-		if errX != nil || errY != nil {
-			fmt.Println("invalid line:", line, errX, errY)
-			continue
-		}
-		bytePositions = append(bytePositions, image.Point{byteX, byteY})
+		bytePosition := image.Point{}
+		fmt.Sscanf(line, "%d,%d", &bytePosition.X, &bytePosition.Y)
+		bytePositions = append(bytePositions, bytePosition)
 	}
 
 	return reachExit(bytePositions[:fallen], max)
 }
 
-func PartTwo(input string) int {
-	return 0
+func PartTwo(input string, max int) string {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+
+	bytePositions := []image.Point{}
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		bytePosition := image.Point{}
+		fmt.Sscanf(line, "%d,%d", &bytePosition.X, &bytePosition.Y)
+		bytePositions = append(bytePositions, bytePosition)
+	}
+
+	for i := 1024; i < len(bytePositions); i++ {
+		if steps := reachExit(bytePositions[:i], max); steps == -1 {
+			firstByte := bytePositions[i-1]
+			return fmt.Sprintf("%d,%d", firstByte.X, firstByte.Y)
+		}
+	}
+
+	return ""
 }
 
 func main() {
 	fmt.Println("…what is the minimum number of steps needed to reach the exit?", PartOne(input, 1024, 70))
 
-	fmt.Println("", PartTwo(input))
+	fmt.Println("What are the coordinates of the first byte that will prevent the exit from being reachable from your starting position?", PartTwo(input, 70))
 }

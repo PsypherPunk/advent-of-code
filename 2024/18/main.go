@@ -41,7 +41,7 @@ func reachExit(fallingBytes []image.Point, max int) int {
 
 		for _, direction := range []image.Point{{0, -1}, {1, 0}, {0, 1}, {-1, 0}} {
 			next := current.bytePosition.Add(direction)
-			if next.X >= 0 && next.X <= 70 && next.Y >= 0 && next.Y <= 70 && !fallenBytes[next] && !seen[next] {
+			if next.X >= 0 && next.X <= max && next.Y >= 0 && next.Y <= max && !fallenBytes[next] && !seen[next] {
 				seen[next] = true
 				queue.PushBack(Path{next, current.steps + 1})
 			}
@@ -78,7 +78,7 @@ func PartTwo(input string, max int) string {
 		bytePositions = append(bytePositions, bytePosition)
 	}
 
-	for i := 1024; i < len(bytePositions); i++ {
+	for i := 0; i < len(bytePositions); i++ {
 		if steps := reachExit(bytePositions[:i], max); steps == -1 {
 			firstByte := bytePositions[i-1]
 			return fmt.Sprintf("%d,%d", firstByte.X, firstByte.Y)

@@ -7,7 +7,7 @@ import (
 func Test_PartOne(t *testing.T) {
 	tests := []struct {
 		input    string
-		count    int
+		fallen   int
 		max      int
 		expected int
 	}{
@@ -41,7 +41,7 @@ func Test_PartOne(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			if actual := PartOne(tt.input, tt.count, tt.max); actual != tt.expected {
+			if actual := PartOne(tt.input, tt.fallen, tt.max); actual != tt.expected {
 				t.Errorf("PartOne() = %v, expected %v", actual, tt.expected)
 			}
 		})

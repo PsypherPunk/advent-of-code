@@ -20,7 +20,7 @@ func abs(x int) int {
 	return x
 }
 
-func PartOne(input string) int {
+func PartOne(input string, saving int) int {
 	scanner := bufio.NewScanner(strings.NewReader(input))
 
 	racetrack := make(map[image.Point]bool)
@@ -60,7 +60,7 @@ func PartOne(input string) int {
 	for a := range distances {
 		for b := range distances {
 			distance := abs(b.X-a.X) + abs(b.Y-a.Y)
-			if distance <= 2 && distances[b] >= distances[a]+distance+100 {
+			if distance <= 2 && distances[b] >= distances[a]+distance+saving {
 				cheats++
 			}
 		}
@@ -69,7 +69,7 @@ func PartOne(input string) int {
 	return cheats
 }
 
-func PartTwo(input string) int {
+func PartTwo(input string, saving int) int {
 	scanner := bufio.NewScanner(strings.NewReader(input))
 
 	racetrack := make(map[image.Point]bool)
@@ -109,7 +109,7 @@ func PartTwo(input string) int {
 	for a := range distances {
 		for b := range distances {
 			distance := abs(b.X-a.X) + abs(b.Y-a.Y)
-			if distance <= 20 && distances[b] >= distances[a]+distance+100 {
+			if distance <= 20 && distances[b] >= distances[a]+distance+saving {
 				cheats++
 			}
 		}
@@ -119,7 +119,7 @@ func PartTwo(input string) int {
 }
 
 func main() {
-	fmt.Println("How many cheats would save you at least 100 picoseconds?", PartOne(input))
+	fmt.Println("How many cheats would save you at least 100 picoseconds?", PartOne(input, 100))
 
-	fmt.Println("How many cheats would save you at least 100 picoseconds?", PartTwo(input))
+	fmt.Println("How many cheats would save you at least 100 picoseconds?", PartTwo(input, 100))
 }

@@ -166,11 +166,20 @@ func PartOne(input string) int {
 }
 
 func PartTwo(input string) int {
-	return 0
+	shortestSequenceCache = make(map[string]int)
+	sequencesCache = make(map[string][]string)
+
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	codes := []string{}
+	for scanner.Scan() {
+		codes = append(codes, scanner.Text())
+	}
+
+	return complexities(codes, 25)
 }
 
 func main() {
 	fmt.Println("What is the sum of the complexities of the five codes on your list?", PartOne(input))
 
-	fmt.Println("", PartTwo(input))
+	fmt.Println("What is the sum of the complexities of the five codes on your list?", PartTwo(input))
 }

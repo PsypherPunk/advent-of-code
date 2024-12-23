@@ -4,14 +4,48 @@ import (
 	"bufio"
 	_ "embed"
 	"fmt"
+	"sort"
 	"strings"
 )
 
 //go:embed input.txt
 var input string
 
+// https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm
+func bronKerbosch(r, p, x []string, adjacencyList map[string]map[string]struct{}, cliques *[][]string) {
+	if len(p) == 0 && len(x) == 0 {
+		*cliques = append(*cliques, append([]string{}, r...))
+		return
+	}
+
+	for i := 0; i < len(p); i++ {
+		node := p[i]
+		newR := append(r, node)
+		newP := []string{}
+		newX := []string{}
+
+		for _, neighbor := range p {
+			if _, ok := adjacencyList[node][neighbor]; ok {
+				newP = append(newP, neighbor)
+			}
+		}
+
+		for _, neighbor := range x {
+			if _, ok := adjacencyList[node][neighbor]; ok {
+				newX = append(newX, neighbor)
+			}
+		}
+
+		bronKerbosch(newR, newP, newX, adjacencyList, cliques)
+
+		p = append(p[:i], p[i+1:]...)
+		x = append(x, node)
+		i--
+	}
+}
+
 func PartOne(input string) int {
-	adjacencyList := make(map[string]map[string]bool)
+	adjacencyList := make(map[string]map[string]struct{})
 
 	scanner := bufio.NewScanner(strings.NewReader(input))
 	for scanner.Scan() {
@@ -19,13 +53,13 @@ func PartOne(input string) int {
 		parts := strings.Split(line, "-")
 		a, b := parts[0], parts[1]
 		if adjacencyList[a] == nil {
-			adjacencyList[a] = make(map[string]bool)
+			adjacencyList[a] = make(map[string]struct{})
 		}
 		if adjacencyList[b] == nil {
-			adjacencyList[b] = make(map[string]bool)
+			adjacencyList[b] = make(map[string]struct{})
 		}
-		adjacencyList[a][b] = true
-		adjacencyList[b][a] = true
+		adjacencyList[a][b] = struct{}{}
+		adjacencyList[b][a] = struct{}{}
 	}
 
 	interConnected := [][]string{}
@@ -38,7 +72,7 @@ func PartOne(input string) int {
 				if c <= b {
 					continue
 				}
-				if !adjacencyList[a][c] {
+				if _, ok := adjacencyList[a][c]; !ok {
 					continue
 				}
 				interConnected = append(interConnected, []string{a, b, c})
@@ -59,12 +93,46 @@ func PartOne(input string) int {
 	return count
 }
 
-func PartTwo(input string) int {
-	return 0
+func PartTwo(input string) string {
+	adjacencyList := make(map[string]map[string]struct{})
+
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, "-")
+		a, b := parts[0], parts[1]
+		if adjacencyList[a] == nil {
+			adjacencyList[a] = make(map[string]struct{})
+		}
+		if adjacencyList[b] == nil {
+			adjacencyList[b] = make(map[string]struct{})
+		}
+		adjacencyList[a][b] = struct{}{}
+		adjacencyList[b][a] = struct{}{}
+	}
+
+	computers := []string{}
+	for computer := range adjacencyList {
+		computers = append(computers, computer)
+	}
+	cliques := [][]string{}
+	bronKerbosch([]string{}, computers, []string{}, adjacencyList, &cliques)
+
+	largestClique := []string{}
+	for _, clique := range cliques {
+		if len(clique) > len(largestClique) {
+			largestClique = clique
+		}
+	}
+
+	sort.Strings(largestClique)
+	password := strings.Join(largestClique, ",")
+
+	return password
 }
 
 func main() {
 	fmt.Println("How many contain at least one computer with a name that starts with t?", PartOne(input))
 
-	fmt.Println("", PartTwo(input))
+	fmt.Println("What is the password to get into the LAN party?", PartTwo(input))
 }

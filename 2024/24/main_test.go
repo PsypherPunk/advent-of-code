@@ -82,7 +82,7 @@ tnw OR pbm -> gnj
 func Test_PartTwo(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int
+		expected string
 	}{}
 
 	for _, tt := range tests {

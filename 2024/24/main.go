@@ -9,6 +9,15 @@ import (
 	"strings"
 )
 
+type logicGate struct {
+	operation   string
+	left        string
+	right       string
+	destination string
+}
+
+var xyz = []string{"x", "y", "z"}
+
 //go:embed input.txt
 var input string
 
@@ -35,6 +44,16 @@ func traceWire(wire string, wireValues map[string]int, logicGates map[string]str
 		fmt.Println("invalid operation:", operation)
 		return 0
 	}
+}
+
+func hasAnyPrefix(s string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func PartOne(input string) int64 {
@@ -89,12 +108,80 @@ func PartOne(input string) int64 {
 	return result
 }
 
-func PartTwo(input string) int {
-	return 0
+func PartTwo(input string) string {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+
+	wireValues := make(map[string]int)
+	logicGates := make(map[logicGate]struct{})
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if len(line) == 0 {
+			break
+		}
+
+		parts := strings.Split(line, ": ")
+		value, err := strconv.Atoi(parts[1])
+		if err != nil {
+			fmt.Println("invalid line:", line)
+		}
+		wireValues[parts[0]] = value
+	}
+
+	for scanner.Scan() {
+		var gate logicGate
+
+		fmt.Sscanf(scanner.Text(), "%s %s %s -> %s", &gate.left, &gate.operation, &gate.right, &gate.destination)
+		logicGates[gate] = struct{}{}
+	}
+
+	swapped := make(map[string]struct{})
+
+	for gate := range logicGates {
+		if strings.HasPrefix(gate.destination, "z") && gate.operation != "XOR" && gate.destination != "z45" {
+			swapped[gate.destination] = struct{}{}
+			continue
+		}
+
+		if gate.operation == "XOR" &&
+			!hasAnyPrefix(gate.destination, xyz) &&
+			!hasAnyPrefix(gate.left, xyz) &&
+			!hasAnyPrefix(gate.right, xyz) {
+			swapped[gate.destination] = struct{}{}
+			continue
+		}
+
+		if gate.operation == "AND" && (gate.left != "x00" && gate.right != "x00") {
+			for other := range logicGates {
+				if (gate.destination == other.left || gate.destination == other.right) && other.operation != "OR" {
+					swapped[gate.destination] = struct{}{}
+					break
+				}
+			}
+		}
+
+		if gate.operation == "XOR" {
+			for other := range logicGates {
+				if (gate.destination == other.left || gate.destination == other.right) && other.operation == "OR" {
+					swapped[gate.destination] = struct{}{}
+					break
+				}
+			}
+		}
+	}
+
+	wires := make([]string, 0, len(swapped))
+	for wire := range swapped {
+		wires = append(wires, wire)
+	}
+
+	sort.Strings(wires)
+
+	return strings.Join(wires, ",")
 }
 
 func main() {
 	fmt.Println("What decimal number does it output on the wires starting with z?", PartOne(input))
 
-	fmt.Println("", PartTwo(input))
+	fmt.Println("…what do you get if you sort the names of the eight wires involved in a swap and then join those names with commas?", PartTwo(input))
 }

@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/linux,python,direnv,intellij,visualstudiocode,rust
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,python,direnv,intellij,visualstudiocode,rust
 
+input.txt
+
 ### direnv ###
 .direnv
 .envrc

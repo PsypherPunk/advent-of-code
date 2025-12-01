@@ -12,14 +12,8 @@ impl FromStr for Rotation {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
 
-        if s.is_empty() {
-            return Err("empty line".to_string());
-        }
-
-        let mut chars = s.chars();
-        let dir = chars.next().ok_or_else(|| "empty line".to_string())?;
-        let rest: String = chars.collect();
-        let value: isize = rest
+        let dir = s.chars().next().ok_or_else(|| "empty line".to_string())?;
+        let value: isize = s[1..]
             .parse()
             .map_err(|e| format!("invalid distance: {}", e))?;
 
@@ -41,8 +35,8 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
         .iter()
         .scan(50, |state, rotation| {
             match rotation {
-                Rotation::Left(dist) => *state = (((*state - dist) % 100) + 100) % 100,
-                Rotation::Right(dist) => *state = (((*state + dist) % 100) + 100) % 100,
+                Rotation::Left(distance) => *state = (((*state - distance) % 100) + 100) % 100,
+                Rotation::Right(distance) => *state = (((*state + distance) % 100) + 100) % 100,
             };
             Some(*state)
         })
@@ -52,8 +46,41 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(count)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<isize, String> {
+    let rotations = input
+        .lines()
+        .map(Rotation::from_str)
+        .collect::<Result<Vec<Rotation>, _>>()?;
+
+    let count = rotations
+        .iter()
+        .scan(50, |state, rotation| {
+            let inc = match rotation {
+                Rotation::Left(distance) => {
+                    let zero = if *state == 0 { 100 } else { *state };
+                    let inc = if *distance >= zero {
+                        1 + (*distance - zero) / 100
+                    } else {
+                        0
+                    };
+
+                    *state = (((*state - distance) % 100) + 100) % 100;
+
+                    inc
+                }
+                Rotation::Right(dist) => {
+                    let inc = (*state + *dist) / 100;
+                    *state = (((*state + dist) % 100) + 100) % 100;
+
+                    inc
+                }
+            };
+
+            Some(inc)
+        })
+        .sum();
+
+    Ok(count)
 }
 
 #[cfg(test)]
@@ -79,6 +106,6 @@ L82
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(6), get_part_two(INPUT));
     }
 }

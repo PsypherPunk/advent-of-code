@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "…what is the password to open the door? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

@@ -1,5 +1,8 @@
 use std::ops::RangeInclusive;
 
+use itoa::Buffer;
+use rayon::prelude::*;
+
 fn get_ranges(input: &str) -> Result<Vec<RangeInclusive<usize>>, String> {
     input
         .trim()
@@ -24,26 +27,22 @@ fn get_ranges(input: &str) -> Result<Vec<RangeInclusive<usize>>, String> {
 
 pub fn get_part_one(input: &str) -> Result<usize, String> {
     let total = get_ranges(input)?
-        .into_iter()
+        .into_par_iter()
         .map(|range| {
             range
                 .map(|id| {
-                    let chars = id.to_string().chars().collect::<Vec<_>>();
-                    match chars.len() % 2 {
-                        0 => {
-                            let mut chunks = chars.chunks(chars.len() / 2);
-                            match chunks.next() {
-                                Some(first) => {
-                                    if chunks.all(|chunk| chunk == first) {
-                                        id
-                                    } else {
-                                        0
-                                    }
-                                }
-                                None => 0,
-                            }
-                        }
-                        _ => 0,
+                    let mut buffer = Buffer::new();
+                    let s = buffer.format(id).as_bytes();
+
+                    if !s.len().is_multiple_of(2) {
+                        return 0;
+                    }
+
+                    let half = s.len() / 2;
+                    if s[half..] == s[..half] {
+                        id
+                    } else {
+                        0
                     }
                 })
                 .sum::<usize>()
@@ -55,21 +54,22 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
 
 pub fn get_part_two(input: &str) -> Result<usize, String> {
     let total = get_ranges(input)?
-        .into_iter()
+        .into_par_iter()
         .map(|range| {
             range
                 .map(|id| {
-                    let chars = id.to_string().chars().collect::<Vec<_>>();
+                    let mut buffer = Buffer::new();
+                    let s = buffer.format(id).as_bytes();
 
-                    match (2..=chars.len()).find(|n| match chars.len() % n {
-                        0 => {
-                            let mut chunks = chars.chunks(chars.len() / n);
-                            match chunks.next() {
-                                Some(first) => chunks.all(|chunk| chunk == first),
-                                None => false,
-                            }
+                    match (2..=s.len()).find(|&n| {
+                        if !s.len().is_multiple_of(n) {
+                            return false;
                         }
-                        _ => false,
+
+                        let chunk = s.len() / n;
+                        let first = &s[0..chunk];
+
+                        (1..n).all(|p| &s[p * chunk..(p + 1) * chunk] == first)
                     }) {
                         Some(_) => id,
                         None => 0,

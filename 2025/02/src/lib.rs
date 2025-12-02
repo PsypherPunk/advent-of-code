@@ -1,7 +1,7 @@
 use std::ops::RangeInclusive;
 
-pub fn get_part_one(input: &str) -> Result<usize, String> {
-    let ranges = input
+fn get_ranges(input: &str) -> Result<Vec<RangeInclusive<usize>>, String> {
+    input
         .trim()
         .split(',')
         .map(|range| {
@@ -19,34 +19,67 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
                     Ok(s..=e)
                 })
         })
-        .collect::<Result<Vec<RangeInclusive<usize>>, _>>()?;
+        .collect::<Result<Vec<RangeInclusive<usize>>, _>>()
+}
 
-    let total = ranges
+pub fn get_part_one(input: &str) -> Result<usize, String> {
+    let total = get_ranges(input)?
         .into_iter()
-        .flat_map(|range| {
-            range.map(|id| {
-                let chars = id.to_string().chars().collect::<Vec<_>>();
-                match chars.len() % 2 {
-                    0 => {
-                        let mut chunks = chars.chunks(chars.len() / 2);
-                        let first = chunks.next().unwrap();
-                        if chunks.all(|c| c == first) {
-                            id
-                        } else {
-                            0
+        .map(|range| {
+            range
+                .map(|id| {
+                    let chars = id.to_string().chars().collect::<Vec<_>>();
+                    match chars.len() % 2 {
+                        0 => {
+                            let mut chunks = chars.chunks(chars.len() / 2);
+                            match chunks.next() {
+                                Some(first) => {
+                                    if chunks.all(|chunk| chunk == first) {
+                                        id
+                                    } else {
+                                        0
+                                    }
+                                }
+                                None => 0,
+                            }
                         }
+                        _ => 0,
                     }
-                    _ => 0,
-                }
-            })
+                })
+                .sum::<usize>()
         })
         .sum::<usize>();
 
     Ok(total)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let total = get_ranges(input)?
+        .into_iter()
+        .map(|range| {
+            range
+                .map(|id| {
+                    let chars = id.to_string().chars().collect::<Vec<_>>();
+
+                    match (2..=chars.len()).find(|n| match chars.len() % n {
+                        0 => {
+                            let mut chunks = chars.chunks(chars.len() / n);
+                            match chunks.next() {
+                                Some(first) => chunks.all(|chunk| chunk == first),
+                                None => false,
+                            }
+                        }
+                        _ => false,
+                    }) {
+                        Some(_) => id,
+                        None => 0,
+                    }
+                })
+                .sum::<usize>()
+        })
+        .sum::<usize>();
+
+    Ok(total)
 }
 
 #[cfg(test)]
@@ -62,6 +95,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(4174379265), get_part_two(INPUT));
     }
 }

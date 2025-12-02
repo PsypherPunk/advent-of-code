@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "What do you get if you add up all of the invalid IDs using these new rules? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

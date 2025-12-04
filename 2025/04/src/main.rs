@@ -11,7 +11,7 @@ fn main() -> Result<(), String> {
     );
 
     println!(
-        "{}",
+        "How many rolls of paper in total can be removed by the Elves and their forklifts? {}",
         get_part_two(&input)?,
     );
 

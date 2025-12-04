@@ -6,41 +6,41 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     let bytes_per_row = width + 1;
     let height = bytes.len() / bytes_per_row;
 
-    let mut occurrences = 0usize;
+    let mut rolls = 0;
 
-    for r in 0..height {
-        let row_start = r * bytes_per_row;
-        for c in 0..width {
-            let idx = row_start + c;
+    for y in 0..height {
+        let row_start = y * bytes_per_row;
+        for x in 0..width {
+            let idx = row_start + x;
             if bytes[idx] != b'@' {
                 continue;
             }
 
-            let mut neighbors = 0usize;
-            for dr in -1isize..=1 {
-                for dc in -1isize..=1 {
-                    if dr == 0 && dc == 0 {
+            let mut adjacent = 0;
+            for dy in -1isize..=1 {
+                for dx in -1isize..=1 {
+                    if dy == 0 && dx == 0 {
                         continue;
                     }
-                    let nr = r as isize + dr;
-                    let nc = c as isize + dc;
-                    if nr < 0 || nr >= height as isize || nc < 0 || nc >= width as isize {
+                    let ny = y as isize + dy;
+                    let nx = x as isize + dx;
+                    if ny < 0 || ny >= height as isize || nx < 0 || nx >= width as isize {
                         continue;
                     }
-                    let nidx = (nr as usize) * bytes_per_row + (nc as usize);
-                    if bytes[nidx] == b'@' {
-                        neighbors += 1;
+                    let i = (ny as usize) * bytes_per_row + (nx as usize);
+                    if bytes[i] == b'@' {
+                        adjacent += 1;
                     }
                 }
             }
 
-            if neighbors < 4 {
-                occurrences += 1;
+            if adjacent < 4 {
+                rolls += 1;
             }
         }
     }
 
-    Ok(occurrences)
+    Ok(rolls)
 }
 
 pub fn get_part_two(input: &str) -> Result<usize, String> {
@@ -52,47 +52,48 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
 
     let mut removed = 0;
     loop {
-        let mut to_clear: Vec<usize> = Vec::new();
+        let mut can_be_removed: Vec<usize> = Vec::new();
 
-        for r in 0..height {
-            let row_start = r * bytes_per_row;
-            for c in 0..width {
-                let idx = row_start + c;
-                if bytes[idx] != b'@' {
+        for y in 0..height {
+            let row_start = y * bytes_per_row;
+            for x in 0..width {
+                let i = row_start + x;
+                if bytes[i] != b'@' {
                     continue;
                 }
 
-                let mut neighbors = 0usize;
-                for dr in -1isize..=1 {
-                    for dc in -1isize..=1 {
-                        if dr == 0 && dc == 0 {
+                let mut adjacent = 0;
+                for dy in -1..=1 {
+                    for dx in -1..=1 {
+                        if dy == 0 && dx == 0 {
                             continue;
                         }
-                        let nr = r as isize + dr;
-                        let nc = c as isize + dc;
-                        if nr < 0 || nr >= height as isize || nc < 0 || nc >= width as isize {
+                        let ny = y as isize + dy;
+                        let nx = x as isize + dx;
+                        if ny < 0 || ny >= height as isize || nx < 0 || nx >= width as isize {
                             continue;
                         }
-                        let nidx = (nr as usize) * bytes_per_row + (nc as usize);
-                        if bytes[nidx] == b'@' {
-                            neighbors += 1;
+                        let i = (ny as usize) * bytes_per_row + (nx as usize);
+                        if bytes[i] == b'@' {
+                            adjacent += 1;
                         }
                     }
                 }
 
-                if neighbors < 4 {
-                    to_clear.push(idx);
-                    removed += 1;
+                if adjacent < 4 {
+                    can_be_removed.push(i);
                 }
             }
         }
 
-        if to_clear.is_empty() {
+        if can_be_removed.is_empty() {
             break;
         }
 
-        for idx in to_clear {
-            bytes[idx] = b'.';
+        removed += can_be_removed.len();
+
+        for i in can_be_removed {
+            bytes[i] = b'.';
         }
     }
 

@@ -1,29 +1,19 @@
-fn get_joltage(bank: &[u8], digits: usize) -> Result<Vec<u8>, String> {
-    if digits == 1 {
-        let max = bank.iter().max().ok_or("bank is empty")?;
-        return Ok(vec![*max]);
-    }
+fn get_joltage(bank: &[u8], digits: usize) -> Result<Vec<&u8>, String> {
+    let batteries = (0..digits)
+        .scan((0, digits), |state, _| {
+            let (i, digit) = bank[state.0..bank.len() - state.1 + 1]
+                .iter()
+                .enumerate()
+                .max_by(|(i1, &b1), (i2, &b2)| b1.cmp(&b2).then(i2.cmp(i1)))
+                .unzip();
 
-    let digit = bank[..bank.len() - digits + 1]
-        .iter()
-        // .enumerate().max_by_key(|&(i, &b)| b)
-        // …doesn't necessarily get the first occurrence (i.e. wrong `i`)
-        // .enumerate().max_by(|(i1, &b1), (i2, &b2)| b1.cmp(&b2).then(i2.cmp(i1)))
-        // …is slower
-        .max()
-        .ok_or("bank is empty")?;
+            *state = (state.0 + i.unwrap() + 1, state.1 - 1);
 
-    let mut result = vec![*digit];
+            digit
+        })
+        .collect();
 
-    let i = bank
-        .iter()
-        .position(|&b| b == *digit)
-        .ok_or("digit not found in bank")?
-        + 1;
-
-    result.extend(get_joltage(&bank[i..], digits - 1)?);
-
-    Ok(result)
+    Ok(batteries)
 }
 
 pub fn get_part_one(input: &str) -> Result<usize, String> {
@@ -36,9 +26,11 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
                 .iter()
                 .fold(0, |acc, &b| acc * 10 + (b - b'0') as usize))
         })
-        .collect::<Result<Vec<_>, String>>()?;
+        .collect::<Result<Vec<_>, String>>()?
+        .iter()
+        .sum();
 
-    Ok(total_output_joltage.iter().sum())
+    Ok(total_output_joltage)
 }
 
 pub fn get_part_two(input: &str) -> Result<usize, String> {
@@ -51,9 +43,11 @@ pub fn get_part_two(input: &str) -> Result<usize, String> {
                 .iter()
                 .fold(0, |acc, &b| acc * 10 + (b - b'0') as usize))
         })
-        .collect::<Result<Vec<_>, String>>()?;
+        .collect::<Result<Vec<_>, String>>()?
+        .iter()
+        .sum();
 
-    Ok(total_output_joltage.iter().sum())
+    Ok(total_output_joltage)
 }
 
 #[cfg(test)]

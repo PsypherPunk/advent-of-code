@@ -11,7 +11,7 @@ fn main() -> Result<(), String> {
     );
 
     println!(
-        "{}",
+        "How many ingredient IDs are considered to be fresh according to the fresh ingredient ID ranges? {}",
         get_part_two(&input)?,
     );
 

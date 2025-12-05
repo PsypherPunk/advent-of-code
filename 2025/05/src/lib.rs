@@ -1,6 +1,5 @@
 use std::ops::RangeInclusive;
 
-#[derive(Debug)]
 struct Database {
     ranges: Vec<RangeInclusive<usize>>,
     ids: Vec<usize>,
@@ -49,8 +48,33 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(fresh)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<usize, String> {
+    let mut database = database::database(input.trim()).map_err(|e| e.to_string())?;
+
+    database.ranges.sort_unstable_by_key(|range| *range.start());
+
+    let fresh = database
+        .ranges
+        .into_iter()
+        .fold(
+            Vec::new(),
+            |mut merged: Vec<RangeInclusive<usize>>, range| {
+                if let Some(last) = merged.last_mut() {
+                    if range.start() <= &last.end().saturating_add(1) {
+                        *last = *last.start()..=(*last.end().max(range.end()));
+                        return merged;
+                    }
+                }
+                merged.push(range);
+
+                merged
+            },
+        )
+        .iter()
+        .map(|r| r.end() - r.start() + 1)
+        .sum();
+
+    Ok(fresh)
 }
 
 #[cfg(test)]
@@ -77,6 +101,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(14), get_part_two(INPUT));
     }
 }

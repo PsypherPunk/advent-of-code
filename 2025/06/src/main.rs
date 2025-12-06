@@ -11,7 +11,7 @@ fn main() -> Result<(), String> {
     );
 
     println!(
-        "{}",
+        "What is the grand total found by adding together all of the answers to the individual problems? {}",
         get_part_two(&input)?,
     );
 

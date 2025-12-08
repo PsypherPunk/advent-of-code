@@ -11,7 +11,7 @@ fn main() -> Result<(), String> {
     );
 
     println!(
-        "{}",
+        "In total, how many different timelines would a single tachyon particle end up on? {}",
         get_part_two(&input)?,
     );
 

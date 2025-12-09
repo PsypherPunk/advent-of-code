@@ -43,15 +43,13 @@ impl FromStr for JunctionBox {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.trim().split(',').collect();
-
-        if parts.len() != 3 {
-            return Err(format!("invalid input: {}", s));
-        }
-
-        let x = parts[0].parse::<isize>().map_err(|e| e.to_string())?;
-        let y = parts[1].parse::<isize>().map_err(|e| e.to_string())?;
-        let z = parts[2].parse::<isize>().map_err(|e| e.to_string())?;
+        let [x, y, z] = s
+            .trim()
+            .splitn(3, ',')
+            .map(|p| p.parse::<isize>().map_err(|e| e.to_string()))
+            .collect::<Result<Vec<_>, _>>()?
+            .try_into()
+            .map_err(|_| "invalid input".to_string())?;
 
         Ok(Self { x, y, z })
     }

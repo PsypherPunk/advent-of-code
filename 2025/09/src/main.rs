@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "…what is the largest area of any rectangle you can make using only red and green tiles? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

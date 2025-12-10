@@ -10,7 +10,10 @@ fn main() -> Result<(), String> {
         get_part_one(&input)?,
     );
 
-    println!("{}", get_part_two(&input)?,);
+    println!(
+        "What is the fewest button presses required to correctly configure the joltage level counters on all of the machines? {}",
+        get_part_two(&input)?,
+    );
 
     Ok(())
 }

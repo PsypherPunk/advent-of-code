@@ -1,6 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 
-#[allow(dead_code)]
+use z3::{ast::Int, Optimize, SatResult};
+
 #[derive(Debug)]
 struct FactoryMachine {
     light_diagram: Vec<bool>,
@@ -51,7 +52,43 @@ peg::parser! {
     }
 }
 
-fn fewest_presses(factory_machine: &FactoryMachine) -> Option<usize> {
+fn fewest_presses_joltage(factory_machine: &FactoryMachine) -> Option<u64> {
+    let joltages = &factory_machine.joltage_requirements;
+
+    let opt = Optimize::new();
+    let total_presses = Int::fresh_const("total_presses");
+
+    let button_presses: Vec<Int> = (0..factory_machine.buttons.len())
+        .map(|i| Int::fresh_const(&format!("button_{i}")))
+        .collect();
+    button_presses.iter().for_each(|b| opt.assert(&b.ge(0)));
+
+    for (i, &target) in joltages.iter().enumerate() {
+        let mut terms = Vec::new();
+
+        for (j, button) in factory_machine.buttons.iter().enumerate() {
+            if button.contains(&i) {
+                terms.push(button_presses[j].clone());
+            }
+        }
+        let sum = Int::add(&terms.iter().collect::<Vec<&Int>>());
+        opt.assert(&sum.eq(Int::from_u64(target as u64)));
+    }
+
+    opt.assert(&total_presses.eq(Int::add(&button_presses)));
+    opt.minimize(&total_presses);
+
+    match opt.check(&[]) {
+        SatResult::Sat => opt
+            .get_model()
+            .unwrap()
+            .eval(&total_presses, true)
+            .and_then(|t| t.as_u64()),
+        _ => None,
+    }
+}
+
+fn fewest_presses_lights(factory_machine: &FactoryMachine) -> Option<usize> {
     let initial_lights = vec![false; factory_machine.light_diagram.len()];
 
     let mut seen: HashSet<Vec<bool>> = HashSet::new();
@@ -90,7 +127,7 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
 
     let fewest_presses = factory_machines
         .iter()
-        .map(fewest_presses)
+        .map(fewest_presses_lights)
         .collect::<Option<Vec<_>>>()
         .ok_or("invalid manual")?
         .iter()
@@ -99,8 +136,22 @@ pub fn get_part_one(input: &str) -> Result<usize, String> {
     Ok(fewest_presses)
 }
 
-pub fn get_part_two(_input: &str) -> Result<usize, String> {
-    Ok(0)
+pub fn get_part_two(input: &str) -> Result<u64, String> {
+    let factory_machines = input
+        .lines()
+        .map(factory_machine::machine)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    let fewest_presses = factory_machines
+        .iter()
+        .map(fewest_presses_joltage)
+        .collect::<Option<Vec<_>>>()
+        .ok_or("invalid manual")?
+        .iter()
+        .sum();
+
+    Ok(fewest_presses)
 }
 
 #[cfg(test)]
@@ -119,6 +170,6 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        assert_eq!(Ok(2), get_part_two(INPUT));
+        assert_eq!(Ok(33), get_part_two(INPUT));
     }
 }

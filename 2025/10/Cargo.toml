@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 peg = "0.8.5"
+z3 = "0.19.5"
 
 [dev-dependencies]
 criterion = "^0.5"

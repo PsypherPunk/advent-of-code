@@ -11,7 +11,7 @@ fn main() -> Result<(), String> {
     );
 
     println!(
-        "{}",
+        "How many of those paths visit both dac and fft? {}",
         get_part_two(&input)?,
     );
 
